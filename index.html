@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seek Like Silver</title>
+  <meta name="description" content="Christian theology questions for every level, with Scripture and theologians to guide your answer.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a href="#" class="brand" data-nav="home">
+      <span class="brand-mark" aria-hidden="true">◈</span>
+      <span>Seek Like Silver</span>
+    </a>
+    <nav class="nav">
+      <button class="nav-link" data-nav="home">Study</button>
+      <button class="nav-link" data-nav="answers">My answers</button>
+      <button class="nav-link" data-nav="settings">Settings</button>
+      <button class="btn btn-small" id="auth-button">Sign in</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Home: pick a level -->
+    <section id="view-home" class="view">
+      <div class="hero">
+        <p class="hero-verse">“If thou seekest her as silver, and searchest for her as for hid treasures; then shalt thou understand the fear of the LORD, and find the knowledge of God.”</p>
+        <p class="hero-ref">Proverbs 2:4–5 (KJV)</p>
+      </div>
+      <h1 class="section-title">Choose your level</h1>
+      <div class="levels">
+        <button class="level-card" data-level="beginner">
+          <span class="level-name">Beginner</span>
+          <span class="level-desc">What does the passage say? Start with the heart of the text.</span>
+        </button>
+        <button class="level-card" data-level="moderate">
+          <span class="level-name">Moderate</span>
+          <span class="level-desc">How does it fit with the rest of Scripture? Trace the big themes.</span>
+        </button>
+        <button class="level-card" data-level="philosopher">
+          <span class="level-name">Philosopher</span>
+          <span class="level-desc">Where have Christians wrestled and disagreed? Weigh what's at stake.</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Question -->
+    <section id="view-question" class="view" hidden>
+      <div class="question-top">
+        <button class="link-button" data-nav="home">← Change level</button>
+        <span class="level-pill" id="q-level"></span>
+      </div>
+      <article class="question-card">
+        <h2 class="question-text" id="q-prompt"></h2>
+
+        <div class="helps">
+          <div class="help-block">
+            <h3>Read</h3>
+            <ul id="q-verses" class="verse-list"></ul>
+          </div>
+          <div class="help-block">
+            <h3>Look up</h3>
+            <ul id="q-readings" class="reading-list"></ul>
+          </div>
+        </div>
+
+        <div class="tradition-block">
+          <h3>Go deeper in your tradition <span class="muted" id="q-tradition-label"></span></h3>
+          <ul id="q-tradition" class="reading-list"></ul>
+        </div>
+      </article>
+
+      <div class="answer-card">
+        <label for="answer" class="answer-label">Your answer</label>
+        <textarea id="answer" rows="9" maxlength="20000" placeholder="Take your time. Write what you find in the text, and why."></textarea>
+        <div class="answer-actions">
+          <span class="status" id="save-status" role="status"></span>
+          <button class="btn btn-ghost" id="next-question">New question</button>
+          <button class="btn" id="save-answer">Save answer</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- My answers -->
+    <section id="view-answers" class="view" hidden>
+      <h1 class="section-title">My answers</h1>
+      <p class="muted" id="answers-empty" hidden>You haven't saved any answers yet. Pick a level and start seeking.</p>
+      <p class="muted" id="answers-signed-out" hidden>Sign in to see your saved answers.</p>
+      <div id="answers-list" class="answers-list"></div>
+    </section>
+
+    <!-- Settings -->
+    <section id="view-settings" class="view" hidden>
+      <h1 class="section-title">Settings</h1>
+      <p class="muted" id="settings-signed-out" hidden>Sign in to save your settings.</p>
+      <form id="settings-form" class="settings-form" hidden>
+        <label>Display name
+          <input type="text" id="set-name" maxlength="60" autocomplete="nickname">
+        </label>
+        <label>Denomination
+          <select id="set-denomination"></select>
+        </label>
+        <label>Preferred Bible translation (for verse links)
+          <select id="set-translation"></select>
+        </label>
+        <div class="answer-actions">
+          <span class="status" id="settings-status" role="status"></span>
+          <button class="btn" type="submit">Save settings</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Seek Like Silver is written from the perspective of historic Christianity as summarized in the Nicene Creed.</p>
+    <p>Verse links open on Bible Gateway.</p>
+  </footer>
+
+  <!-- Sign-in dialog -->
+  <dialog id="signin-dialog" class="dialog">
+    <form method="dialog" class="dialog-close-row">
+      <button class="link-button" aria-label="Close">✕</button>
+    </form>
+    <h2>Sign in</h2>
+    <p class="muted">Sign in to save your answers and settings.</p>
+
+    <button class="btn btn-full btn-provider" id="signin-google">Continue with Google</button>
+    <button class="btn btn-full btn-provider" disabled title="Coming soon">Continue with YouVersion (coming soon)</button>
+
+    <div class="divider"><span>or use your email</span></div>
+
+    <form id="email-form" class="email-form">
+      <input type="email" id="email" placeholder="you@example.com" required autocomplete="email">
+      <button class="btn btn-full" type="submit">Email me a code</button>
+    </form>
+
+    <form id="code-form" class="email-form" hidden>
+      <p class="muted" id="code-sent-to"></p>
+      <input type="text" id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" placeholder="6-digit code" required>
+      <button class="btn btn-full" type="submit">Sign in</button>
+      <button class="link-button" type="button" id="code-back">Use a different email</button>
+    </form>
+
+    <p class="status" id="signin-status" role="status"></p>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="questions.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
