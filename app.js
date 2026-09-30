@@ -288,26 +288,105 @@ async function sendCode(e) {
   setStatus("signin-status", "Sending…");
   const { error } = await db.auth.signInWithOtp({
     email: pendingEmail,
-    options: { shouldCreateUser: true }
+    // The email contains a sign-in link, and also a 6-digit code once the email
+    // template includes {{ .Token }} (requires custom SMTP). Either one works.
+    options: { shouldCreateUser: true, emailRedirectTo: redirectUrl() }
   });
   if (error) return setStatus("signin-status", error.message, "err");
   $("email-form").hidden = true;
   $("code-form").hidden = false;
-  $("code-sent-to").textContent = "We sent a code to " + pendingEmail + ". It may take a minute; check your spam folder too.";
+  $("code-sent-to").textContent = "We sent a " + OTP_LENGTH + "-digit code to " + pendingEmail + ". It may take a minute; check your spam folder too.";
   setStatus("signin-status", "");
-  $("code").focus();
+  clearOtp();
+}
+
+// ─────────────────────────── Code boxes ───────────────────────────
+// One box per digit. Typing moves to the next box, Backspace moves back,
+// pasting or phone autofill spreads the digits across the boxes,
+// and the code submits by itself once every box is filled.
+
+const otpBoxes = [];
+let verifying = false;
+
+function buildOtp() {
+  const wrap = $("otp");
+  for (let i = 0; i < OTP_LENGTH; i++) {
+    const box = document.createElement("input");
+    box.className = "otp-box";
+    box.type = "text";
+    box.inputMode = "numeric";
+    box.maxLength = OTP_LENGTH; // lets autofill/paste land the whole code in one box; we spread it out
+    box.autocomplete = i === 0 ? "one-time-code" : "off";
+    box.setAttribute("aria-label", "Digit " + (i + 1) + " of " + OTP_LENGTH);
+
+    box.addEventListener("input", () => {
+      const digits = box.value.replace(/\D/g, "");
+      if (digits.length > 1) return fillOtpFrom(i, digits);
+      box.value = digits;
+      if (digits && i < OTP_LENGTH - 1) otpBoxes[i + 1].focus();
+      maybeSubmitOtp();
+    });
+    box.addEventListener("keydown", (e) => {
+      if (e.key === "Backspace" && !box.value && i > 0) {
+        otpBoxes[i - 1].value = "";
+        otpBoxes[i - 1].focus();
+        e.preventDefault();
+      } else if (e.key === "ArrowLeft" && i > 0) {
+        otpBoxes[i - 1].focus();
+      } else if (e.key === "ArrowRight" && i < OTP_LENGTH - 1) {
+        otpBoxes[i + 1].focus();
+      }
+    });
+    box.addEventListener("paste", (e) => {
+      e.preventDefault();
+      fillOtpFrom(i, (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, ""));
+    });
+    box.addEventListener("focus", () => box.select());
+
+    otpBoxes.push(box);
+    wrap.append(box);
+  }
+}
+
+function fillOtpFrom(start, digits) {
+  for (let j = 0; j < digits.length && start + j < OTP_LENGTH; j++) {
+    otpBoxes[start + j].value = digits[j];
+  }
+  const next = Math.min(start + digits.length, OTP_LENGTH - 1);
+  otpBoxes[next].focus();
+  maybeSubmitOtp();
+}
+
+function getOtp() {
+  return otpBoxes.map((b) => b.value).join("");
+}
+
+function clearOtp() {
+  otpBoxes.forEach((b) => (b.value = ""));
+  otpBoxes[0].focus();
+}
+
+function maybeSubmitOtp() {
+  if (/^\d+$/.test(getOtp()) && getOtp().length === OTP_LENGTH) verifyCode();
 }
 
 async function verifyCode(e) {
-  e.preventDefault();
-  if (!db) return;
+  if (e) e.preventDefault();
+  if (!db || verifying) return;
+  const token = getOtp();
+  if (token.length !== OTP_LENGTH) {
+    return setStatus("signin-status", "Enter all " + OTP_LENGTH + " digits.", "err");
+  }
+  verifying = true;
+  otpBoxes.forEach((b) => (b.disabled = true));
   setStatus("signin-status", "Checking…");
-  const { error } = await db.auth.verifyOtp({
-    email: pendingEmail,
-    token: $("code").value.trim(),
-    type: "email"
-  });
-  if (error) return setStatus("signin-status", error.message, "err");
+  const { error } = await db.auth.verifyOtp({ email: pendingEmail, token, type: "email" });
+  verifying = false;
+  otpBoxes.forEach((b) => (b.disabled = false));
+  if (error) {
+    setStatus("signin-status", "That code didn't work (" + error.message + "). Try again or request a new one.", "err");
+    return clearOtp();
+  }
   $("signin-dialog").close();
 }
 
@@ -379,6 +458,7 @@ $("save-answer").addEventListener("click", saveAnswer);
 $("auth-button").addEventListener("click", () => (state.user ? signOut() : openSignIn()));
 $("signin-google").addEventListener("click", signInWithGoogle);
 $("email-form").addEventListener("submit", sendCode);
+buildOtp();
 $("code-form").addEventListener("submit", verifyCode);
 $("code-back").addEventListener("click", () => {
   $("code-form").hidden = true;

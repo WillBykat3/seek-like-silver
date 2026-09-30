@@ -1,6 +1,6 @@
 # Seek Like Silver: Setup Guide
 
-Do these in order. Steps 1–4 get the site live with email-code sign-in; step 5 adds Google.
+Do these in order. Steps 1–4 get the site live and let you test email sign-in yourself; step 5 adds Google.
 
 ## Files
 
@@ -21,21 +21,22 @@ Do these in order. Steps 1–4 get the site live with email-code sign-in; step 5
 2. Open `supabase-setup.sql`, copy all of it, paste it in, and click **Run**.
 3. You should see "Success. No rows returned." Under **Table Editor** you'll now see `profiles` and `answers`.
 
-## 2. Turn on 6-digit email codes (2 minutes)
+## 2. Email sign-in: works now for testing, needs custom email before launch
 
-By default Supabase emails a sign-in *link*. The site asks for a *code*, so change the email:
+**For testing right now, do nothing.** The site sends a sign-in *link* using Supabase's default email.
 
-1. Go to **Authentication → Emails** (email templates) and open the **Magic Link** template.
-2. Replace its body with:
+Supabase's built-in email has two limits:
+- It only sends to members of your Supabase team (right now, just you).
+- About 2 emails per hour.
 
-   ```html
-   <h2>Your Seek Like Silver sign-in code</h2>
-   <p>Enter this code to sign in: <strong>{{ .Token }}</strong></p>
-   <p>If you didn't request this, you can ignore this email.</p>
-   ```
-3. Save.
+**Before other people can sign in by email**, set up custom email (SMTP) under **Authentication → Emails → Set up SMTP**, using a free service such as Resend or Brevo. Once that's done, you can optionally edit the **Magic link or OTP** template to include a 6-digit code:
 
-**Note:** Supabase's built-in email sender has a low hourly limit, fine for you and a few testers. Before sharing widely, connect a free email service under **Custom SMTP**. We can do that together later.
+```html
+<h2>Your Seek Like Silver sign-in</h2>
+<p><a href="{{ .ConfirmationURL }}">Sign in</a>, or enter this code: <strong>{{ .Token }}</strong></p>
+```
+
+The site already accepts either the link or the code. Google sign-in (step 5) has no such limits.
 
 ## 3. Put the site on GitHub Pages (5 minutes)
 
@@ -54,7 +55,7 @@ Sign-in only returns to addresses you approve.
 3. Under **Redirect URLs**, add the same address.
 4. Save.
 
-Now test it: open the site, answer a question, press **Save answer**, and sign in with the email code.
+Now test it: open the site, answer a question, press **Save answer**, enter *your own* email, and click the link in the email you receive.
 
 ## 5. Add "Continue with Google" (10–15 minutes)
 
@@ -83,4 +84,5 @@ Google's menus get renamed from time to time; if a label doesn't match, look for
 - **"Couldn't save" or answers don't appear:** re-run `supabase-setup.sql` (it's safe to run again).
 - **Google sign-in shows `redirect_uri_mismatch`:** the redirect URI in Google doesn't exactly match step 5.3.
 - **Signed in with Google but landed on the wrong page:** check the URLs in step 4.
-- **No email code arrives:** check spam, wait a minute (one code per 60 seconds), and make sure step 2 is saved.
+- **No email arrives:** check spam and wait a minute. The default sender allows only about 2 emails per hour and only to your own address (see step 2).
+- **"Email address not authorized":** custom email (step 2) isn't set up yet; the default sender only emails you.
