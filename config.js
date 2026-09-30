@@ -1,6 +1,8 @@
 // Supabase connection. Both values are meant to be public.
 // NEVER put the secret (service_role) key in this file or anywhere in the site.
 const SUPABASE_URL = "https://monriqwuhiwunqrdffao.supabase.co";
+// Google OAuth Client ID (public by design). The client SECRET lives only in Supabase.
+const GOOGLE_CLIENT_ID = "684287820535-5dh585uinpli7afbirco3r33jejkclqi.apps.googleusercontent.com";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_vWbk2Kf64RBq5b1LeCOXQQ_GZN9IRws";
 
 // Length of the email sign-in code. Must match Supabase:

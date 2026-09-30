@@ -128,7 +128,8 @@
     <h2>Sign in</h2>
     <p class="muted">Sign in to save your answers and settings.</p>
 
-    <button class="btn btn-full btn-provider" id="signin-google">Continue with Google</button>
+    <div id="google-btn" class="google-btn"></div>
+    <button class="btn btn-full btn-provider" id="signin-google" hidden>Continue with Google</button>
     <button class="btn btn-full btn-provider" disabled title="Coming soon">Continue with YouVersion (coming soon)</button>
 
     <div class="divider"><span>or use your email</span></div>
@@ -148,6 +149,7 @@
     <p class="status" id="signin-status" role="status"></p>
   </dialog>
 
+  <script src="https://accounts.google.com/gsi/client" async></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="questions.js"></script>

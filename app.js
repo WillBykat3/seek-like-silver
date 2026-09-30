@@ -268,6 +268,70 @@ function openSignIn() {
   $("code-form").hidden = true;
   setStatus("signin-status", db ? "" : "Sign-in couldn't load. Check your connection or ad blocker, then refresh.", db ? "" : "err");
   $("signin-dialog").showModal();
+  setUpGoogleButton();
+}
+
+// ─────────────────────────── Google button ───────────────────────────
+// Google's own button signs in on this page, so Google's screen shows this
+// site instead of the supabase.co address. If Google's script can't load,
+// we fall back to the redirect button (which works, but shows supabase.co).
+
+let googleNonce = null;
+
+async function makeNonce() {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  const raw = btoa(String.fromCharCode(...bytes));
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
+  const hashed = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return { raw, hashed };
+}
+
+async function setUpGoogleButton() {
+  const holder = $("google-btn");
+  const gsi = window.google && window.google.accounts && window.google.accounts.id;
+  if (!db || !gsi || !window.crypto || !crypto.subtle) {
+    holder.hidden = true;
+    $("signin-google").hidden = false;
+    return;
+  }
+  holder.hidden = false;
+  $("signin-google").hidden = true;
+
+  // A fresh nonce each time: Google gets the hashed one, Supabase checks the raw one.
+  googleNonce = await makeNonce();
+  gsi.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogleCredential,
+    nonce: googleNonce.hashed,
+    ux_mode: "popup",
+    context: "signin"
+  });
+  holder.replaceChildren();
+  gsi.renderButton(holder, {
+    type: "standard",
+    theme: "outline",
+    size: "large",
+    text: "continue_with",
+    shape: "rectangular",
+    logo_alignment: "center",
+    width: Math.min(400, Math.max(200, holder.clientWidth || 320))
+  });
+}
+
+async function handleGoogleCredential(response) {
+  if (!googleNonce) return;
+  setStatus("signin-status", "Signing in…");
+  const { error } = await db.auth.signInWithIdToken({
+    provider: "google",
+    token: response.credential,
+    nonce: googleNonce.raw
+  });
+  googleNonce = null;
+  if (error) {
+    setStatus("signin-status", "Google sign-in failed: " + error.message, "err");
+    return setUpGoogleButton(); // ready for another try with a new nonce
+  }
+  $("signin-dialog").close();
 }
 
 async function signInWithGoogle() {
