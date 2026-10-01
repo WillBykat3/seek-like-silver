@@ -17,7 +17,8 @@ create table if not exists public.profiles (
     'reformed', 'methodist', 'baptist', 'pentecostal'
   )),
   translation  text not null default 'ESV' check (translation in (
-    'ESV', 'NIV', 'KJV', 'NKJV', 'CSB', 'NASB', 'NRSVUE'
+    'ESV', 'NIV', 'NLT', 'KJV', 'NKJV', 'CSB', 'NASB', 'NASB1995', 'LSB', 'AMP',
+    'NET', 'NRSVUE', 'RSV', 'NABRE', 'CEB', 'MSG', 'NIRV', 'ASV'
   )),
   created_at   timestamptz not null default now()
 );

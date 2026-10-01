@@ -378,4 +378,29 @@ const TRADITIONS = {
   }
 };
 
-const TRANSLATIONS = ["ESV", "NIV", "KJV", "NKJV", "CSB", "NASB", "NRSVUE"];
+// Translations offered in Settings, in display order.
+//   id   = bible.com / YouVersion version number (each checked on a live bible.com page, 2026-09-30)
+//   abbr = bible.com's abbreviation, used at the end of verse links
+// Adding one here also requires adding its code to the database's allowed list
+// (see supabase-migrations/002-more-translations.sql).
+const TRANSLATION_INFO = [
+  { code: "ESV",      name: "English Standard Version",         id: 59,   abbr: "ESV" },
+  { code: "NIV",      name: "New International Version",        id: 111,  abbr: "NIV" },
+  { code: "NLT",      name: "New Living Translation",           id: 116,  abbr: "NLT" },
+  { code: "KJV",      name: "King James Version",               id: 1,    abbr: "KJV" },
+  { code: "NKJV",     name: "New King James Version",           id: 114,  abbr: "NKJV" },
+  { code: "CSB",      name: "Christian Standard Bible",         id: 1713, abbr: "CSB" },
+  { code: "NASB",     name: "New American Standard Bible 2020", id: 2692, abbr: "NASB2020" },
+  { code: "NASB1995", name: "New American Standard Bible 1995", id: 100,  abbr: "NASB1995" },
+  { code: "LSB",      name: "Legacy Standard Bible",            id: 3345, abbr: "LSB" },
+  { code: "AMP",      name: "Amplified Bible",                  id: 1588, abbr: "AMP" },
+  { code: "NET",      name: "New English Translation",          id: 107,  abbr: "NET" },
+  { code: "NRSVUE",   name: "New Revised Standard Version Updated Edition", id: 3523, abbr: "NRSVUE" },
+  { code: "RSV",      name: "Revised Standard Version",         id: 2020, abbr: "RSV" },
+  { code: "NABRE",    name: "New American Bible, Revised Edition", id: 463, abbr: "NABRE" },
+  { code: "CEB",      name: "Common English Bible",             id: 37,   abbr: "CEB" },
+  { code: "MSG",      name: "The Message",                      id: 97,   abbr: "MSG" },
+  { code: "NIRV",     name: "New International Reader's Version", id: 110, abbr: "NIRV" },
+  { code: "ASV",      name: "American Standard Version",        id: 12,   abbr: "ASV" }
+];
+const TRANSLATIONS = TRANSLATION_INFO.map((t) => t.code);

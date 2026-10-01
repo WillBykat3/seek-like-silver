@@ -59,16 +59,8 @@ function pickQuestion(level) {
 }
 
 // ─────────────────────────── Verse links (YouVersion / bible.com) ───────────────────────────
-// bible.com version IDs, each checked against a live bible.com page on 2026-09-30.
-const YV_VERSIONS = {
-  KJV: [1, "KJV"],
-  NIV: [111, "NIV"],
-  ESV: [59, "ESV"],
-  NKJV: [114, "NKJV"],
-  CSB: [1713, "CSB"],
-  NASB: [2692, "NASB2020"],
-  NRSVUE: [3523, "NRSVUE"]
-};
+// Built from TRANSLATION_INFO in questions.js.
+const YV_VERSIONS = Object.fromEntries(TRANSLATION_INFO.map((t) => [t.code, [t.id, t.abbr]]));
 
 // Standard (USFM) book codes used by bible.com.
 const BOOK_CODES = {
@@ -231,7 +223,7 @@ function renderSettings() {
   }
   const trans = $("set-translation");
   if (!trans.options.length) {
-    for (const t of TRANSLATIONS) trans.add(new Option(t, t));
+    for (const t of TRANSLATION_INFO) trans.add(new Option(t.name + " (" + t.code + ")", t.code));
   }
   $("set-name").value = state.profile.display_name || "";
   denom.value = state.profile.denomination;
