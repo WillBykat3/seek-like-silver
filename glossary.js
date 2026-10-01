@@ -1,0 +1,67 @@
+// Seek Like Silver — glossary
+//
+// Hard words in questions get a definition you can hover or tap.
+//   term  – shown as the heading of the definition
+//   match – regular expression (as a string) for the words in a question that should show it
+//   cs    – true if the match is case-sensitive (e.g. "the Law" but not "the law")
+//   def   – one or two plain sentences; fair to every tradition the site serves
+// Only the first match of each term in a question is marked.
+
+const GLOSSARY = [
+  { term: "Apostles", match: "\\bapostles\\b", def: "The Twelve whom Jesus chose and sent out, along with Paul: the first witnesses to the risen Christ and leaders of the church." },
+  { term: "Apostolic", match: "\\bapostolic\\b", def: "Founded on and faithful to the teaching of the apostles. Many traditions also include an unbroken line of bishops going back to them." },
+  { term: "Ascension", match: "\\bascended\\b", def: "Jesus being taken up into heaven forty days after his resurrection, where he reigns at the Father's right hand." },
+  { term: "Baptism", match: "\\bbapti(?:sm|zed)\\b", def: "Washing with water in the name of the Father, Son, and Holy Spirit, which joins a person to Christ and his church. Traditions differ on what it accomplishes and who should receive it." },
+  { term: "Bathsheba", match: "\\bBathsheba\\b", def: "The wife of Uriah. King David committed adultery with her and then arranged Uriah's death in battle." },
+  { term: "Beatitudes", match: "\\bBeatitudes\\b", def: "The \"Blessed are…\" sayings that open Jesus' Sermon on the Mount. The name comes from the Latin word for \"blessed.\"" },
+  { term: "Catholic (in the Creed)", match: "\\bcatholic\\b", cs: true, def: "\"Universal\" or \"whole.\" In the Creed it means the one church spread through the whole world, not only the Roman Catholic Church." },
+  { term: "Church fathers", match: "\\bchurch fathers\\b", def: "Influential Christian teachers of the church's first centuries, from the generation after the apostles to about the 8th century." },
+  { term: "Council of Chalcedon", match: "\\bCouncil of Chalcedon\\b", def: "A council of bishops in 451 that defined Christ as one person in two natures, divine and human, \"without confusion, without change, without division, without separation.\"" },
+  { term: "Council of Ephesus", match: "\\bCouncil of Ephesus\\b", def: "A council of bishops in 431 that rejected Nestorius' teaching and affirmed that Christ is one person, so Mary is rightly called Theotokos." },
+  { term: "Covenant", match: "\\bcovenant\\b", def: "A binding relationship God makes with people, with promises and obligations: for example with Noah, Abraham, Moses, David, and the new covenant in Christ." },
+  { term: "Creed", match: "\\bCreed\\b", cs: true, def: "Here, the Nicene Creed (325, expanded in 381): the church's shared summary of the faith, still confessed by Catholic, Orthodox, and most Protestant churches." },
+  { term: "Day of Atonement", match: "\\bDay of Atonement\\b", def: "Yom Kippur: the one day each year when Israel's high priest entered the Most Holy Place to make atonement for the sins of the people." },
+  { term: "Day of the Lord", match: "\\bday of the Lord\\b", def: "In the prophets, the coming day when God acts decisively to judge evil and rescue his people." },
+  { term: "Debt of honor", match: "\\bdebt of honor\\b", def: "The view associated with Anselm of Canterbury: sin robs God of the honor due to him, and Christ, being God and man, makes satisfaction for it." },
+  { term: "Elijah", match: "\\bElijah\\b", def: "A great prophet of Israel who was taken up into heaven without dying. Malachi promised he would come again before the day of the Lord." },
+  { term: "Exodus", match: "\\bexodus\\b", cs: true, def: "Israel's departure from slavery in Egypt under Moses: the Old Testament's central story of God's rescue." },
+  { term: "Foreknowledge", match: "\\bforeknowledge\\b", def: "God's knowing things before they happen." },
+  { term: "Gentile", match: "\\bGentiles?\\b", def: "Anyone who is not Jewish." },
+  { term: "Gospel", match: "\\bgospel\\b", def: "\"Good news\": the message that God saves through the life, death, and resurrection of Jesus. \"The Gospels\" are the four books about Jesus: Matthew, Mark, Luke, and John." },
+  { term: "High priest", match: "\\bhigh priest\\b", def: "The chief priest of Israel. He alone entered the Most Holy Place, once a year on the Day of Atonement." },
+  { term: "Holiness", match: "\\bholiness\\b", def: "Being set apart for God. God is holy (utterly pure and unlike anything else) and calls his people to share his holiness." },
+  { term: "Holy Spirit", match: "\\bHoly Spirit\\b", def: "The third person of the Trinity, fully God with the Father and the Son." },
+  { term: "Iconoclasm", match: "\\biconoclast\\w*", def: "The 8th–9th century movement in the Byzantine Empire that rejected and destroyed religious images. The Second Council of Nicaea (787) restored the veneration of icons." },
+  { term: "Image of God", match: "\\bimage of God\\b", def: "The teaching that human beings are made to reflect God and to represent him in the world (in Latin, imago Dei)." },
+  { term: "Infallible", match: "\\binfallible\\b", def: "Unable to err." },
+  { term: "John the Baptist", match: "\\bJohn the Baptist\\b", def: "Jesus' relative and forerunner: a prophet who called Israel to repent and who baptized Jesus." },
+  { term: "Justification", match: "\\bjustified\\b", def: "Being declared or made righteous before God. Catholic, Orthodox, and Protestant Christians describe how this happens differently." },
+  { term: "Just war", match: "\\bjust war\\b", def: "A tradition, developed by Augustine and Thomas Aquinas, setting conditions under which war may be morally justified, such as a just cause, rightful authority, and right intention." },
+  { term: "Kingdom of God", match: "\\bkingdom of God\\b", def: "God's reign: his rule breaking into the world through Jesus, to be completed when Christ returns." },
+  { term: "Last Supper", match: "\\bLast Supper\\b", def: "Jesus' final meal with his disciples on the night before he died, when he gave them bread and wine as his body and blood." },
+  { term: "The Law", match: "\\b(?:the )?Law(?: of Moses)?\\b", cs: true, def: "The commands God gave Israel through Moses, found in the first five books of the Bible (the Torah)." },
+  { term: "Lord's Supper", match: "\\bLord's Supper\\b", def: "The meal Jesus commanded his followers to share in remembrance of him; also called Communion or the Eucharist." },
+  { term: "Manna", match: "\\bmanna\\b", def: "The bread-like food God provided for Israel each morning during their years in the wilderness." },
+  { term: "Melchizedek", match: "\\bMelchizedek\\b", def: "A king of Salem and \"priest of God Most High\" who blessed Abraham. A psalm and the letter to the Hebrews connect him with the Messiah's priesthood." },
+  { term: "New covenant", match: "\\bnew covenant\\b", def: "The covenant promised through the prophet Jeremiah, in which God writes his law on hearts and forgives sins. Jesus said his blood established it." },
+  { term: "Nicodemus", match: "\\bNicodemus\\b", def: "A Pharisee and member of the Jewish ruling council who came to Jesus at night. He later helped bury Jesus." },
+  { term: "Nineveh", match: "\\bNineveh\\b", def: "The capital of the Assyrian empire, one of Israel's most feared enemies." },
+  { term: "Original sin", match: "\\boriginal sin\\b", def: "The fallen condition all people inherit from Adam's first sin. Traditions differ on whether it includes inherited guilt." },
+  { term: "Parable", match: "\\bparable\\b", def: "A short story Jesus told, drawn from everyday life, to teach about God and his kingdom." },
+  { term: "Passover", match: "\\bPassover\\b", def: "Israel's yearly feast remembering how God spared their firstborn and freed them from Egypt. A lamb was sacrificed and eaten." },
+  { term: "Pentecost", match: "\\bPentecost\\b", def: "A Jewish harvest feast fifty days after Passover. On that day the Holy Spirit came upon Jesus' followers." },
+  { term: "Prodigal", match: "\\bprodigal\\b", def: "Wastefully extravagant. The prodigal son spends his whole inheritance on reckless living." },
+  { term: "Reformers", match: "\\bReformers\\b", def: "The leaders of the 16th-century Protestant Reformation, such as Martin Luther and John Calvin." },
+  { term: "Resurrection", match: "\\bresurrection\\b", def: "Rising bodily from death to new life. Christians confess that Jesus rose on the third day and that the dead will be raised at the end of the age." },
+  { term: "Sabbath", match: "\\bSabbath\\b", def: "The seventh day of the week (Saturday), set apart for rest and worship under the Law of Moses." },
+  { term: "Samaritan", match: "\\bSamaritan\\b", def: "Someone from Samaria. Jews and Samaritans of Jesus' day were bitterly divided over worship and ancestry, which made a Samaritan hero shocking." },
+  { term: "Sermon on the Mount", match: "\\bSermon on the Mount\\b", def: "Jesus' long teaching in Matthew 5–7, which includes the Beatitudes and the Lord's Prayer." },
+  { term: "Son of Man", match: "\\bSon of Man\\b", def: "A title Jesus used for himself. It can mean simply \"a human being,\" but in Daniel's vision \"one like a son of man\" receives everlasting dominion from God." },
+  { term: "Suffering servant", match: "\\bsuffering servant\\b", def: "The \"Servant of the Lord\" in Isaiah, who suffers for the sins of others. The New Testament identifies him with Jesus." },
+  { term: "Tabernacle", match: "\\btabernacle\\b", def: "The portable tent-sanctuary Israel carried through the wilderness, where God's presence dwelt among them before the temple was built." },
+  { term: "Ten Commandments", match: "\\bTen Commandments\\b", def: "The ten commands God gave Israel at Mount Sinai, also called the Decalogue." },
+  { term: "Theotokos", match: "\\bTheotokos\\b", def: "Greek for \"God-bearer.\" The Council of Ephesus (431) affirmed this title for Mary because the one she bore is truly God." },
+  { term: "Tower of Babel", match: "\\bTower of Babel\\b", def: "The tower people tried to build up to the heavens. God confused their language and scattered them across the earth." },
+  { term: "Tradition", match: "\\bTradition\\b", cs: true, def: "In Catholic and Orthodox teaching, the faith handed down from the apostles in the church's life and teaching, alongside Scripture." },
+  { term: "The Word", match: "\\bthe Word\\b", cs: true, def: "In Greek, Logos: John's name for the Son of God, who was with God and was God, and through whom all things were made." }
+];

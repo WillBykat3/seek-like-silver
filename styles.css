@@ -511,3 +511,136 @@ textarea:focus, input:focus, select:focus { outline: 2px solid var(--silver); ou
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* ───────── Browse ───────── */
+.browse { margin-top: 8px; }
+.browse-title { font-size: 1.6rem; margin-top: 40px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.chip {
+  font: inherit; font-size: 0.92rem;
+  padding: 5px 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer;
+}
+.chip:hover { border-color: var(--silver); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.browse-filters { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: end; margin-bottom: 8px; }
+.browse-filters label { display: grid; gap: 4px; font-size: 0.92rem; color: var(--muted); }
+.browse-filters select {
+  font: inherit; font-size: 1rem; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 10px; min-width: 11em;
+}
+.browse-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.browse-item {
+  --pigment: var(--silver); --pigment-deep: var(--ink);
+  width: 100%; text-align: left; font: inherit; color: var(--ink); cursor: pointer;
+  display: grid; grid-template-columns: auto 1fr auto; gap: 4px 12px; align-items: baseline;
+  background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--pigment);
+  border-radius: 0 var(--radius) var(--radius) 0; padding: 10px 14px;
+}
+.browse-item:hover, .browse-item:focus-visible { border-color: var(--pigment); }
+.browse-item.level-beginner { --pigment: var(--beginner); --pigment-deep: var(--beginner-deep); }
+.browse-item.level-moderate { --pigment: var(--moderate); --pigment-deep: var(--moderate-deep); }
+.browse-item.level-philosopher { --pigment: var(--philosopher); --pigment-deep: var(--philosopher-deep); }
+.browse-level { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--pigment-deep); }
+.browse-prompt { font-family: var(--serif); font-size: 1.02rem; line-height: 1.4; }
+.browse-done { font-size: 0.8rem; color: var(--success); font-weight: 700; }
+@media (max-width: 560px) {
+  .browse-item { grid-template-columns: 1fr auto; }
+  .browse-prompt { grid-column: 1 / -1; grid-row: 2; }
+}
+
+/* ───────── Question extras ───────── */
+.question-tools { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
+.question-top { gap: 10px; flex-wrap: wrap; }
+.fathers-block { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 16px; }
+.fathers-block h3 { font-family: var(--display); font-size: 1.2rem; font-weight: 700; margin: 0 0 6px; }
+.fathers-list li { margin: 6px 0; }
+.fathers-list a { color: var(--ink); text-decoration-color: var(--silver); text-underline-offset: 3px; }
+.fathers-list a:hover { text-decoration-color: currentColor; }
+.father-about { display: block; font-size: 0.88rem; color: var(--muted); }
+.print-notes { display: none; }
+
+.term {
+  font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; cursor: help;
+  text-decoration: underline dotted; text-decoration-color: var(--pigment, var(--silver));
+  text-decoration-thickness: 2px; text-underline-offset: 4px;
+}
+.term[aria-expanded="true"] { background: var(--pigment-tint, var(--wash)); border-radius: 3px; }
+.term-pop {
+  position: absolute; z-index: 50;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(10, 14, 30, 0.18);
+  padding: 10px 12px; font-size: 0.95rem; line-height: 1.45;
+}
+.term-pop strong { display: block; font-family: var(--display); font-size: 1.05rem; margin-bottom: 2px; }
+
+.my-answers { margin-bottom: 18px; }
+.answer-history { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.answer-history li { border-left: 3px solid var(--line); padding-left: 12px; }
+.answer-history li.editing { border-left-color: var(--pigment); }
+.answer-entry-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-size: 0.9rem; color: var(--muted); }
+.answer-entry .body { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.answer-entry + .answer-entry { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.shared-tag { font-size: 0.78rem; font-weight: 700; color: var(--success); }
+.share-check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 0.95rem; cursor: pointer; }
+.share-check input { width: 18px; height: 18px; accent-color: var(--pigment, var(--ink)); }
+.group-answers { margin-top: 16px; }
+.group-answers .answers-list { margin-top: 10px; }
+
+/* ───────── Export, delete ───────── */
+.export-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 8px 0 14px; }
+.danger-title { font-family: var(--display); font-size: 1.2rem; font-weight: 700; margin: 22px 0 4px; color: var(--error); }
+.delete-confirm { display: grid; gap: 4px; max-width: 18em; margin-top: 8px; font-size: 0.95rem; }
+.delete-confirm input {
+  font: inherit; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px;
+}
+.btn-danger { background: var(--error); border-color: var(--error); color: #fff; }
+.btn-danger:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ───────── Groups ───────── */
+.notice { background: var(--wash); border-radius: var(--radius); padding: 10px 12px; margin: 0 0 12px; }
+.groups-forms { display: grid; gap: 14px; grid-template-columns: 1fr; margin: 12px 0 6px; }
+@media (min-width: 640px) { .groups-forms { grid-template-columns: 1fr 1fr; } }
+.inline-form { display: flex; gap: 8px; align-items: end; }
+.inline-form label { flex: 1; display: grid; gap: 4px; font-size: 0.95rem; color: var(--muted); }
+.inline-form input {
+  font: inherit; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; width: 100%;
+}
+.groups-list { display: grid; gap: 14px; margin-top: 12px; }
+.group-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+.group-invite { margin: 4px 0 10px; }
+.group-invite code { font-size: 1.05rem; letter-spacing: 0.08em; background: var(--wash); padding: 2px 6px; border-radius: 4px; }
+.group-sub { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 8px 0 4px; }
+.member-list { margin: 0 0 12px; padding-left: 20px; }
+.group-feed { display: grid; gap: 12px; margin-top: 10px; }
+.feed-item { border-top: 1px solid var(--line); padding-top: 10px; }
+.feed-question { font-family: var(--serif); text-align: left; font-size: 1rem; color: var(--ink); }
+.group-actions { display: flex; flex-wrap: wrap; margin-top: 14px; gap: 8px 16px; }
+
+/* ───────── Glossary ───────── */
+.glossary-list { margin: 8px 0 0; display: grid; gap: 2px 0; }
+.glossary-list dt { font-weight: 700; margin-top: 10px; }
+.glossary-list dd { margin: 0; color: var(--muted); max-width: 40em; }
+
+/* ───────── Printing a question for a group ───────── */
+@media print {
+  :root { --bg: #fff; --surface: #fff; --ink: #000; --muted: #333; --line: #999; }
+  body { background: #fff; font-size: 12pt; }
+  .site-header, .site-footer, .question-top .link-button, .answer-card, .verse-toggle, .verse-preview,
+  .print-hide, .term-pop, dialog { display: none !important; }
+  main { max-width: none; padding: 0; }
+  .view:not(#view-question) { display: none !important; }
+  .question-card { border: 0; box-shadow: none; padding: 0; }
+  .question-top { margin-bottom: 6px; }
+  .term { text-decoration: none; }
+  a { color: #000; text-decoration: none; }
+  .helps { grid-template-columns: 1fr 1fr; }
+  .help-wide { grid-column: 1 / -1; }
+  .print-notes { display: block; margin-top: 18px; }
+  .print-notes h3 { font-family: var(--display); margin: 0 0 6px; }
+  .print-lines { height: 3.2in; background: repeating-linear-gradient(to bottom, transparent 0, transparent 0.32in, #bbb 0.32in, #bbb calc(0.32in + 1px)); }
+  .fathers-block, .tradition-block { break-inside: avoid; }
+}

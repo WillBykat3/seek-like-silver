@@ -35,6 +35,7 @@
     <nav class="nav">
       <button class="nav-link" data-nav="home">Study</button>
       <button class="nav-link" data-nav="answers">My answers</button>
+      <button class="nav-link" data-nav="groups">Groups</button>
       <button class="nav-link" data-nav="library">Library</button>
       <button class="nav-link" data-nav="settings">Settings</button>
       <button class="btn btn-small" id="auth-button">Sign in</button>
@@ -74,14 +75,40 @@
           <span class="level-desc">Where have Christians wrestled and disagreed? Weigh what's at stake.</span>
         </button>
       </div>
+
+      <section class="browse" aria-labelledby="browse-title">
+        <h2 class="section-title browse-title" id="browse-title">Or browse by topic or book</h2>
+        <div class="chips" id="topic-chips" role="group" aria-label="Topics"></div>
+        <div class="browse-filters">
+          <label>Bible book
+            <select id="browse-book"><option value="">Any book</option></select>
+          </label>
+          <label>Level
+            <select id="browse-level">
+              <option value="">All levels</option>
+              <option value="beginner">Beginner</option>
+              <option value="moderate">Moderate</option>
+              <option value="philosopher">Philosopher</option>
+            </select>
+          </label>
+          <button class="link-button" type="button" id="browse-all">Show all questions</button>
+        </div>
+        <p class="muted" id="browse-count" role="status"></p>
+        <ul class="browse-list" id="browse-list"></ul>
+      </section>
     </section>
 
     <!-- Question -->
     <section id="view-question" class="view" hidden>
       <div class="question-top">
         <button class="link-button" data-nav="home">← Change level</button>
-        <span class="level-pill" id="q-level"></span>
+        <span class="question-tools">
+          <button class="link-button" type="button" id="copy-link">Copy link</button>
+          <button class="link-button" type="button" id="print-question">Print for a group</button>
+          <span class="level-pill" id="q-level"></span>
+        </span>
       </div>
+      <p class="status print-hide" id="share-status" role="status"></p>
       <article class="question-card">
         <h2 class="question-text" id="q-prompt"></h2>
 
@@ -102,26 +129,55 @@
           </div>
         </div>
 
+        <div class="fathers-block">
+          <h3>What the early church fathers said</h3>
+          <p class="help-hint">Passages where the church's earliest teachers take up this question</p>
+          <ul id="q-fathers" class="reading-list fathers-list"></ul>
+        </div>
+
         <div class="tradition-block">
           <h3>Go deeper in your tradition <span class="muted" id="q-tradition-label"></span></h3>
           <ul id="q-tradition" class="reading-list"></ul>
         </div>
+        <div class="print-notes" aria-hidden="true">
+          <h3>Notes</h3>
+          <div class="print-lines"></div>
+        </div>
       </article>
 
       <div class="answer-card">
-        <label for="answer" class="answer-label">Your answer</label>
+        <div class="my-answers" id="my-answers" hidden>
+          <h3 class="answer-label">Your answers so far</h3>
+          <ol class="answer-history" id="my-answers-list"></ol>
+        </div>
+        <label for="answer" class="answer-label" id="answer-label">Your answer</label>
         <textarea id="answer" rows="9" maxlength="20000" placeholder="Take your time. Write what you find in the text, and why."></textarea>
+        <label class="share-check" id="share-row" hidden>
+          <input type="checkbox" id="answer-shared"> Share this answer with my groups
+        </label>
         <div class="answer-actions">
           <span class="status" id="save-status" role="status"></span>
+          <button class="btn btn-ghost" id="cancel-edit" hidden>Cancel edit</button>
           <button class="btn btn-ghost" id="next-question">New question</button>
           <button class="btn" id="save-answer">Save answer</button>
         </div>
+      </div>
+
+      <div class="answer-card group-answers" id="group-answers" hidden>
+        <h3 class="answer-label">From your groups</h3>
+        <p class="muted" id="group-answers-note"></p>
+        <button class="btn btn-ghost btn-small" type="button" id="show-group-answers">Show their answers</button>
+        <div class="answers-list" id="group-answers-list" hidden></div>
       </div>
     </section>
 
     <!-- My answers -->
     <section id="view-answers" class="view" hidden>
       <h1 class="section-title">My answers</h1>
+      <div class="export-row" id="answers-export" hidden>
+        <button class="btn btn-ghost btn-small" type="button" data-export="text">Download my answers</button>
+        <button class="link-button" type="button" data-export="json">Download as data (JSON)</button>
+      </div>
       <p class="muted" id="answers-empty" hidden>You haven't saved any answers yet. Pick a level and start seeking.</p>
       <p class="muted" id="answers-signed-out" hidden>Sign in to see your saved answers.</p>
       <div id="answers-list" class="answers-list"></div>
@@ -135,6 +191,36 @@
       <ul class="library-list" id="library-free"></ul>
       <h2 class="library-heading">Still in copyright</h2>
       <ul class="library-list" id="library-copyright"></ul>
+      <h2 class="library-heading" id="glossary">Glossary</h2>
+      <p class="library-intro">Words you'll meet in the questions. In a question, tap or hover a dotted word to see its meaning.</p>
+      <dl class="glossary-list" id="glossary-list"></dl>
+    </section>
+
+    <!-- Groups -->
+    <section id="view-groups" class="view" hidden>
+      <h1 class="section-title">Groups</h1>
+      <p class="library-intro">Study together. Create a private group, share the invite code, and answer the same questions. Your answers stay private unless you tick "Share this answer with my groups" when you save one.</p>
+      <p class="muted" id="groups-signed-out" hidden>Sign in to create or join a group.</p>
+      <p class="status err" id="groups-unavailable" hidden>Groups aren't switched on yet. (Site owner: run supabase-migrations/005-answers-groups.sql.)</p>
+      <div id="groups-main" hidden>
+        <p class="notice" id="groups-name-hint" hidden>Add a display name in <a href="#" data-nav="settings">Settings</a> so your group knows who you are.</p>
+        <div class="groups-forms">
+          <form id="create-group-form" class="inline-form">
+            <label>Start a group
+              <input type="text" id="new-group-name" maxlength="60" placeholder="Tuesday night study" required>
+            </label>
+            <button class="btn" type="submit">Create</button>
+          </form>
+          <form id="join-group-form" class="inline-form">
+            <label>Join with a code
+              <input type="text" id="join-code" maxlength="10" placeholder="10-character code" required autocapitalize="characters" autocomplete="off" spellcheck="false">
+            </label>
+            <button class="btn" type="submit">Join</button>
+          </form>
+        </div>
+        <p class="status" id="groups-status" role="status"></p>
+        <div id="groups-list" class="groups-list"></div>
+      </div>
     </section>
 
     <!-- Settings -->
@@ -170,6 +256,24 @@
         </div>
       </section>
 
+      <section class="settings-panel" id="data-panel" hidden>
+        <h2 class="panel-title">Your answers and account</h2>
+        <p class="muted">Download everything you've written, any time.</p>
+        <div class="export-row">
+          <button class="btn btn-ghost btn-small" type="button" data-export="text">Download my answers</button>
+          <button class="link-button" type="button" data-export="json">Download as data (JSON)</button>
+        </div>
+        <h3 class="danger-title">Delete my account</h3>
+        <p class="muted">This permanently deletes your account, every answer you've saved, your sign-in connections, and any groups you started. It can't be undone, so download your answers first if you want to keep them.</p>
+        <label class="delete-confirm">Type DELETE to confirm
+          <input type="text" id="delete-confirm" autocomplete="off" spellcheck="false">
+        </label>
+        <div class="answer-actions">
+          <span class="status" id="delete-status" role="status"></span>
+          <button class="btn btn-danger" type="button" id="delete-account" disabled>Delete my account</button>
+        </div>
+      </section>
+
       <section class="settings-panel" id="mfa-panel" hidden>
         <h2 class="panel-title">Authenticator app</h2>
         <p class="muted" id="mfa-summary"></p>
@@ -198,6 +302,8 @@
     <p>Seek Like Silver is written from the perspective of historic Christianity as summarized in the Nicene Creed.</p>
     <p>Verse links open in YouVersion (the Bible App).</p>
   </footer>
+
+  <div class="term-pop" id="term-pop" role="tooltip" hidden></div>
 
   <!-- Sign-in dialog -->
   <!-- Authenticator code at sign-in -->
@@ -242,6 +348,7 @@
   <script src="config.js"></script>
   <script src="questions.js"></script>
   <script src="library.js"></script>
+  <script src="glossary.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

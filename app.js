@@ -37,9 +37,13 @@ const DEFAULT_TRANSLATION = "NIV"; // signed out, or nothing chosen yet
 const state = {
   user: null,
   profile: { denomination: "general", translation: DEFAULT_TRANSLATION, display_name: "" },
-  answers: new Map(), // question_id -> answer row
+  answers: new Map(), // question_id -> [answer rows], newest first
   level: null,
-  question: null
+  question: null,
+  editing: null,       // the answer row being edited, or null when writing a new one
+  features: { multi: true, groups: true }, // switched off if the database update (005) hasn't been run
+  groups: [],          // [{ id, name, owner_id, invite_code, members: [...] }]
+  names: new Map()     // user_id -> display name, for people in your groups
 };
 
 const $ = (id) => document.getElementById(id);
@@ -335,7 +339,8 @@ async function renderVerseOfTheDay(run) {
 // ─────────────────────────── Views ───────────────────────────
 
 function showView(name) {
-  for (const v of ["home", "question", "answers", "library", "settings"]) {
+  if (name !== "question" && location.hash.startsWith("#q=")) history.replaceState(null, "", location.pathname + location.search);
+  for (const v of ["home", "question", "answers", "groups", "library", "settings"]) {
     $("view-" + v).hidden = v !== name;
   }
   document.querySelectorAll(".nav-link").forEach((b) => {
@@ -344,7 +349,9 @@ function showView(name) {
   });
   if (name === "answers") renderAnswers();
   if (name === "settings") renderSettings();
-  if (name === "library") renderLibrary();
+  if (name === "library") { renderLibrary(); renderGlossaryList(); }
+  if (name === "groups") renderGroups();
+  hideTerm();
   window.scrollTo(0, 0);
 }
 
@@ -369,7 +376,7 @@ function openQuestion(q, level) {
 
   $("q-level").textContent = LEVEL_LABELS[level];
   $("view-question").dataset.level = level; // drives the level color
-  $("q-prompt").textContent = q.prompt;
+  renderWithTerms($("q-prompt"), q.prompt);
 
   renderVerseList($("q-passage"), q.passage);
   renderVerseList($("q-inspiration"), q.inspiration);
@@ -388,13 +395,42 @@ function openQuestion(q, level) {
     readings.append(li);
   }
 
+  renderFathers(q);
   renderTradition();
 
-  const saved = state.answers.get(q.id);
-  $("answer").value = saved ? saved.answer : "";
-  setStatus("save-status", saved ? "You answered this on " + formatDate(saved.updated_at) + "." : "");
+  state.editing = null;
+  $("answer").value = "";
+  $("answer-shared").checked = false;
+  setStatus("save-status", "");
+  setStatus("share-status", "");
+  renderMyAnswers();
+  renderGroupAnswers();
 
   showView("question");
+  history.replaceState(null, "", "#q=" + q.id);
+}
+
+function renderFathers(q) {
+  const list = $("q-fathers");
+  list.replaceChildren();
+  for (const f of q.fathers || []) {
+    const li = document.createElement("li");
+    li.append(document.createTextNode(f.who + ", "));
+    const link = document.createElement("a");
+    link.className = "work";
+    link.href = f.url;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.textContent = f.work;
+    li.append(link);
+    if (f.where) li.append(", " + f.where);
+    const about = document.createElement("span");
+    about.className = "father-about";
+    about.textContent = f.about;
+    li.append(about);
+    list.append(li);
+  }
+  list.closest(".fathers-block").hidden = !list.childElementCount;
 }
 
 // ─────────────────────────── Book links ───────────────────────────
@@ -460,43 +496,106 @@ function renderAnswers() {
   list.replaceChildren();
   $("answers-signed-out").hidden = !!state.user;
   $("answers-empty").hidden = !state.user || state.answers.size > 0;
+  $("answers-export").hidden = !state.user || state.answers.size === 0;
   if (!state.user) return;
 
-  const rows = [...state.answers.values()].sort((a, b) => b.updated_at.localeCompare(a.updated_at));
-  for (const row of rows) {
-    const q = QUESTION_INDEX.get(row.question_id);
+  const latest = (rows) => rows.reduce((m, r) => (r.updated_at > m ? r.updated_at : m), "");
+  const groups = [...state.answers.entries()].sort((x, y) => latest(y[1]).localeCompare(latest(x[1])));
+  for (const [qid, rows] of groups) {
+    const q = QUESTION_INDEX.get(qid);
+    const level = q ? q.level : rows[0].level;
     const card = document.createElement("article");
     card.className = "saved-answer";
 
     const meta = document.createElement("div");
-    meta.className = "meta level-" + row.level;
-    meta.textContent = LEVEL_LABELS[row.level] + " · " + formatDate(row.updated_at);
+    meta.className = "meta level-" + level;
+    meta.textContent = LEVEL_LABELS[level] + " · " + (rows.length === 1 ? "1 answer" : rows.length + " answers");
 
     const title = document.createElement("h3");
     title.textContent = q ? q.prompt : "(This question is no longer in the bank)";
+    card.append(meta, title);
 
-    const body = document.createElement("p");
-    body.className = "body";
-    body.textContent = row.answer;
+    for (const row of rows) card.append(answerEntry(row, { onDelete: () => deleteAnswer(row) }));
 
-    const actions = document.createElement("div");
-    actions.className = "row";
     if (q) {
-      const edit = document.createElement("button");
-      edit.className = "link-button";
-      edit.textContent = "Open";
-      edit.onclick = () => openQuestion(q, q.level);
-      actions.append(edit);
+      const actions = document.createElement("div");
+      actions.className = "row";
+      const open = document.createElement("button");
+      open.className = "link-button";
+      open.textContent = "Open question";
+      open.onclick = () => openQuestion(q, q.level);
+      actions.append(open);
+      card.append(actions);
     }
-    const del = document.createElement("button");
-    del.className = "link-button";
-    del.textContent = "Delete";
-    del.onclick = () => deleteAnswer(row);
-    actions.append(del);
-
-    card.append(meta, title, body, actions);
     list.append(card);
   }
+}
+
+// One saved answer: date, text, and optional actions.
+function answerEntry(row, { onEdit, onDelete, author } = {}) {
+  const wrap = document.createElement("div");
+  wrap.className = "answer-entry";
+  const head = document.createElement("div");
+  head.className = "answer-entry-head";
+  const when = document.createElement("span");
+  when.className = "answer-date";
+  const edited = row.created_at && row.updated_at && row.updated_at.slice(0, 16) !== row.created_at.slice(0, 16);
+  when.textContent = (author ? author + " · " : "") + formatDate(row.created_at || row.updated_at) + (edited ? " (edited " + formatDate(row.updated_at) + ")" : "");
+  head.append(when);
+  if (row.shared && !author) {
+    const tag = document.createElement("span");
+    tag.className = "shared-tag";
+    tag.textContent = "Shared with groups";
+    head.append(tag);
+  }
+  for (const [label, fn] of [["Edit", onEdit], ["Delete", onDelete]]) {
+    if (!fn) continue;
+    const b = document.createElement("button");
+    b.className = "link-button";
+    b.type = "button";
+    b.textContent = label;
+    b.onclick = fn;
+    head.append(b);
+  }
+  const body = document.createElement("p");
+  body.className = "body";
+  body.textContent = row.answer;
+  wrap.append(head, body);
+  return wrap;
+}
+
+function renderMyAnswers() {
+  const q = state.question;
+  const rows = (q && state.answers.get(q.id)) || [];
+  const list = $("my-answers-list");
+  list.replaceChildren();
+  for (const row of rows) {
+    const li = document.createElement("li");
+    li.append(answerEntry(row, { onEdit: () => startEdit(row), onDelete: () => deleteAnswer(row) }));
+    if (state.editing && state.editing.id === row.id) li.classList.add("editing");
+    list.append(li);
+  }
+  $("my-answers").hidden = !rows.length;
+  const canAddMore = state.features.multi || !rows.length;
+  $("answer-label").textContent = state.editing ? "Edit your answer" : rows.length ? (canAddMore ? "Add another answer" : "Your answer") : "Your answer";
+  if (!state.features.multi && rows.length && !state.editing) startEdit(rows[0], true);
+  $("save-answer").textContent = state.editing ? "Save changes" : "Save answer";
+  $("cancel-edit").hidden = !state.editing || !state.features.multi;
+  $("share-row").hidden = !state.user || !state.features.groups || !state.groups.length;
+}
+
+function startEdit(row, quiet) {
+  state.editing = row;
+  $("answer").value = row.answer;
+  $("answer-shared").checked = !!row.shared;
+  if (!quiet) { renderMyAnswers(); $("answer").focus(); }
+}
+
+function cancelEdit() {
+  state.editing = null;
+  $("answer").value = "";
+  $("answer-shared").checked = false;
+  renderMyAnswers();
 }
 
 function renderLibrary() {
@@ -539,11 +638,15 @@ function renderLibrary() {
 function renderSettings() {
   $("settings-signed-out").hidden = !!state.user;
   $("settings-form").hidden = !state.user;
+  $("data-panel").hidden = !state.user;
   if (!state.user) {
     $("methods-panel").hidden = true;
     $("mfa-panel").hidden = true;
     return;
   }
+  $("delete-confirm").value = "";
+  $("delete-account").disabled = true;
+  setStatus("delete-status", "");
 
   const denom = $("set-denomination");
   if (!denom.options.length) {
@@ -566,6 +669,8 @@ function renderSettings() {
 async function loadUserData() {
   if (!state.user) {
     state.answers.clear();
+    state.groups = [];
+    state.names = new Map();
     state.profile = { denomination: "general", translation: DEFAULT_TRANSLATION, display_name: "" };
     return;
   }
@@ -573,15 +678,38 @@ async function loadUserData() {
   // Create the profile row the first time someone signs in (does nothing if it exists).
   await db.from("profiles").upsert({ id: state.user.id, translation: DEFAULT_TRANSLATION }, { onConflict: "id", ignoreDuplicates: true });
 
-  const [{ data: profile, error: pErr }, { data: answers, error: aErr }] = await Promise.all([
+  const [{ data: profile, error: pErr }, answers] = await Promise.all([
     db.from("profiles").select("display_name, denomination, translation").eq("id", state.user.id).maybeSingle(),
-    db.from("answers").select("id, question_id, level, answer, updated_at")
+    loadMyAnswers()
   ]);
 
   if (pErr) console.error("Profile load failed:", pErr);
-  if (aErr) console.error("Answers load failed:", aErr);
   if (profile) state.profile = profile;
-  state.answers = new Map((answers || []).map((r) => [r.question_id, r]));
+  state.answers = new Map();
+  for (const r of answers) {
+    if (!state.answers.has(r.question_id)) state.answers.set(r.question_id, []);
+    state.answers.get(r.question_id).push(r);
+  }
+  await loadGroups();
+}
+
+const ANSWER_COLUMNS = "id, question_id, level, answer, created_at, updated_at, shared";
+
+async function loadMyAnswers() {
+  let { data, error } = await db.from("answers").select(ANSWER_COLUMNS)
+    .eq("user_id", state.user.id).order("created_at", { ascending: false });
+  if (error && /shared/.test(error.message || "")) {
+    // Database update 005 not run yet: no sharing, one answer per question.
+    state.features = { multi: false, groups: false };
+    ({ data, error } = await db.from("answers").select("id, question_id, level, answer, created_at, updated_at")
+      .eq("user_id", state.user.id).order("created_at", { ascending: false }));
+  }
+  if (error) { console.error("Answers load failed:", error); return []; }
+  return data || [];
+}
+
+function myAnswerRows() {
+  return [...state.answers.values()].flat();
 }
 
 async function saveAnswer() {
@@ -595,39 +723,48 @@ async function saveAnswer() {
     return openSignIn();
   }
 
+  const qid = state.question.id;
+  const existing = state.answers.get(qid) || [];
+  // Before database update 005, each question holds one answer: keep updating it.
+  const target = state.editing || (!state.features.multi && existing[0]) || null;
+  const fields = { answer: text, updated_at: new Date().toISOString() };
+  if (state.features.groups) fields.shared = $("answer-shared").checked;
+
   $("save-answer").disabled = true;
   setStatus("save-status", "Saving…");
-  const { data, error } = await db
-    .from("answers")
-    .upsert(
-      {
-        user_id: state.user.id,
-        question_id: state.question.id,
-        level: state.level,
-        answer: text,
-        updated_at: new Date().toISOString()
-      },
-      { onConflict: "user_id,question_id" }
-    )
-    .select("id, question_id, level, answer, updated_at")
-    .single();
+  const cols = state.features.groups ? ANSWER_COLUMNS : "id, question_id, level, answer, created_at, updated_at";
+  const query = target
+    ? db.from("answers").update(fields).eq("id", target.id)
+    : db.from("answers").insert({ ...fields, user_id: state.user.id, question_id: qid, level: state.level });
+  const { data, error } = await query.select(cols).single();
   $("save-answer").disabled = false;
 
   if (error) {
     console.error(error);
     return setStatus("save-status", "Couldn't save: " + error.message, "err");
   }
-  state.answers.set(data.question_id, data);
+  const rows = existing.filter((r) => r.id !== data.id);
+  rows.unshift(data);
+  rows.sort((x, y) => y.created_at.localeCompare(x.created_at));
+  state.answers.set(qid, rows);
   clearDraft();
-  setStatus("save-status", "Saved.", "ok");
+  const wasEditing = !!target;
+  state.editing = null;
+  $("answer").value = "";
+  $("answer-shared").checked = false;
+  renderMyAnswers();
+  setStatus("save-status", wasEditing ? "Saved your changes." : "Saved. You can add another answer any time.", "ok");
 }
 
 async function deleteAnswer(row) {
   if (!confirm("Delete this answer? This can't be undone.")) return;
   const { error } = await db.from("answers").delete().eq("id", row.id);
   if (error) return alert("Couldn't delete: " + error.message);
-  state.answers.delete(row.question_id);
-  renderAnswers();
+  const rows = (state.answers.get(row.question_id) || []).filter((r) => r.id !== row.id);
+  if (rows.length) state.answers.set(row.question_id, rows); else state.answers.delete(row.question_id);
+  if (state.editing && state.editing.id === row.id) cancelEdit();
+  if (!$("view-question").hidden) renderMyAnswers();
+  if (!$("view-answers").hidden) renderAnswers();
 }
 
 async function saveSettings(e) {
@@ -1397,6 +1534,446 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
+// ─────────────────────────── Glossary (hover or tap a dotted word) ───────────────────────────
+
+const GLOSSARY_RES = GLOSSARY.map((g) => ({ ...g, re: new RegExp(g.match, g.cs ? "g" : "gi") }));
+
+// Put text into an element, marking the first use of each glossary word.
+function renderWithTerms(el, text) {
+  const hits = [];
+  for (const g of GLOSSARY_RES) {
+    g.re.lastIndex = 0;
+    const m = g.re.exec(text);
+    if (m) hits.push({ start: m.index, end: m.index + m[0].length, g });
+  }
+  hits.sort((x, y) => x.start - y.start || (y.end - y.start) - (x.end - x.start));
+  const chosen = [];
+  for (const h of hits) if (!chosen.length || h.start >= chosen[chosen.length - 1].end) chosen.push(h);
+  el.replaceChildren();
+  let at = 0;
+  for (const h of chosen) {
+    el.append(text.slice(at, h.start));
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "term";
+    b.textContent = text.slice(h.start, h.end);
+    b.dataset.term = h.g.term;
+    b.setAttribute("aria-describedby", "term-pop");
+    el.append(b);
+    at = h.end;
+  }
+  el.append(text.slice(at));
+}
+
+let termAnchor = null;
+let termHideTimer = null;
+function showTerm(btn) {
+  clearTimeout(termHideTimer);
+  const g = GLOSSARY.find((x) => x.term === btn.dataset.term);
+  if (!g) return;
+  const pop = $("term-pop");
+  pop.replaceChildren(
+    Object.assign(document.createElement("strong"), { textContent: g.term }),
+    Object.assign(document.createElement("span"), { textContent: g.def })
+  );
+  pop.hidden = false;
+  termAnchor = btn;
+  btn.setAttribute("aria-expanded", "true");
+  const r = btn.getBoundingClientRect();
+  const width = Math.min(320, window.innerWidth - 32);
+  pop.style.width = width + "px";
+  const left = Math.max(16, Math.min(r.left + window.scrollX, window.scrollX + window.innerWidth - width - 16));
+  pop.style.left = left + "px";
+  pop.style.top = (r.bottom + window.scrollY + 8) + "px";
+}
+function hideTerm() {
+  const pop = $("term-pop");
+  if (pop) pop.hidden = true;
+  if (termAnchor) termAnchor.setAttribute("aria-expanded", "false");
+  termAnchor = null;
+}
+document.addEventListener("click", (e) => {
+  const t = e.target.closest && e.target.closest(".term");
+  if (t) { e.preventDefault(); return termAnchor === t ? hideTerm() : showTerm(t); }
+  if (!e.target.closest || !e.target.closest("#term-pop")) hideTerm();
+});
+document.addEventListener("mouseover", (e) => { const t = e.target.closest && e.target.closest(".term"); if (t) showTerm(t); });
+document.addEventListener("mouseout", (e) => {
+  const t = e.target.closest && e.target.closest(".term");
+  if (t) termHideTimer = setTimeout(hideTerm, 250);
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideTerm(); });
+window.addEventListener("resize", hideTerm);
+
+function renderGlossaryList() {
+  const dl = $("glossary-list");
+  if (dl.childElementCount) return;
+  for (const g of [...GLOSSARY].sort((x, y) => x.term.localeCompare(y.term))) {
+    dl.append(Object.assign(document.createElement("dt"), { textContent: g.term }),
+              Object.assign(document.createElement("dd"), { textContent: g.def }));
+  }
+}
+
+// ─────────────────────────── Browse by topic or book ───────────────────────────
+
+const BOOK_ORDER = Object.keys(BOOK_CODES);
+const bookOf = (ref) => { const m = ref.trim().match(/^(.+?)\s+\d/); return m ? m[1] : ref; };
+const canonicalBook = (name) => { const k = name.toLowerCase(); return k === "psalms" ? "psalm" : k; };
+const browse = { topic: "", book: "", level: "", all: false };
+
+function setUpBrowse() {
+  const chips = $("topic-chips");
+  for (const [key, label] of Object.entries(TOPICS)) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.textContent = label;
+    b.setAttribute("aria-pressed", "false");
+    b.onclick = () => { browse.topic = browse.topic === key ? "" : key; browse.all = false; renderBrowse(); };
+    b.dataset.topic = key;
+    chips.append(b);
+  }
+  const books = new Map();
+  for (const q of QUESTION_INDEX.values()) for (const ref of q.passage) books.set(canonicalBook(bookOf(ref)), bookOf(ref));
+  const sel = $("browse-book");
+  for (const key of [...books.keys()].sort((x, y) => BOOK_ORDER.indexOf(x) - BOOK_ORDER.indexOf(y))) {
+    sel.add(new Option(books.get(key).replace(/^Psalm$/, "Psalms"), key));
+  }
+  sel.onchange = () => { browse.book = sel.value; browse.all = false; renderBrowse(); };
+  $("browse-level").onchange = () => { browse.level = $("browse-level").value; renderBrowse(); };
+  $("browse-all").onclick = () => { browse.all = true; browse.topic = ""; browse.book = ""; sel.value = ""; renderBrowse(); };
+}
+
+function renderBrowse() {
+  document.querySelectorAll("#topic-chips .chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.topic === browse.topic)));
+  const list = $("browse-list");
+  list.replaceChildren();
+  const active = browse.all || browse.topic || browse.book || browse.level;
+  if (!active) { setStatus("browse-count", ""); return; }
+  const matches = [...QUESTION_INDEX.values()].filter((q) =>
+    (!browse.topic || (q.topics || []).includes(browse.topic)) &&
+    (!browse.book || q.passage.some((r) => canonicalBook(bookOf(r)) === browse.book)) &&
+    (!browse.level || q.level === browse.level));
+  setStatus("browse-count", matches.length === 1 ? "1 question" : matches.length + " questions");
+  for (const q of matches) {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "browse-item level-" + q.level;
+    const pill = Object.assign(document.createElement("span"), { className: "browse-level", textContent: LEVEL_LABELS[q.level] });
+    const text = Object.assign(document.createElement("span"), { className: "browse-prompt", textContent: q.prompt });
+    b.append(pill, text);
+    if (state.answers.has(q.id)) b.append(Object.assign(document.createElement("span"), { className: "browse-done", textContent: "Answered" }));
+    b.onclick = () => openQuestion(q, q.level);
+    li.append(b);
+    list.append(li);
+  }
+}
+
+// ─────────────────────────── Share and print a question ───────────────────────────
+
+async function copyQuestionLink() {
+  if (!state.question) return;
+  const url = location.origin + location.pathname + "#q=" + state.question.id;
+  try {
+    await navigator.clipboard.writeText(url);
+    setStatus("share-status", "Link copied. Anyone with it can open this question.", "ok");
+  } catch (_) {
+    window.prompt("Copy this link:", url);
+  }
+}
+
+// ─────────────────────────── Download my answers ───────────────────────────
+
+function downloadFile(name, type, text) {
+  const blob = new Blob([text], { type });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function exportAnswers(kind) {
+  if (!state.user) return openSignIn();
+  const rows = myAnswerRows().sort((x, y) => (x.created_at || "").localeCompare(y.created_at || ""));
+  const stamp = new Date().toISOString().slice(0, 10);
+  if (kind === "json") {
+    const data = {
+      exported_at: new Date().toISOString(),
+      site: "https://seeklikesilver.com",
+      profile: { display_name: state.profile.display_name || null, denomination: state.profile.denomination, translation: state.profile.translation },
+      answers: rows.map((r) => {
+        const q = QUESTION_INDEX.get(r.question_id);
+        return { question_id: r.question_id, level: r.level, question: q ? q.prompt : null, answer: r.answer,
+                 shared_with_groups: !!r.shared, created_at: r.created_at, updated_at: r.updated_at };
+      })
+    };
+    return downloadFile("seek-like-silver-answers-" + stamp + ".json", "application/json", JSON.stringify(data, null, 2));
+  }
+  const lines = ["Seek Like Silver: my answers", "Downloaded " + formatDate(new Date().toISOString()), ""];
+  const byQ = new Map();
+  for (const r of rows) { if (!byQ.has(r.question_id)) byQ.set(r.question_id, []); byQ.get(r.question_id).push(r); }
+  for (const [qid, list] of byQ) {
+    const q = QUESTION_INDEX.get(qid);
+    lines.push("────────────────────────────────────────");
+    lines.push((LEVEL_LABELS[q ? q.level : list[0].level] || "") + " · " + qid);
+    lines.push(q ? q.prompt : "(This question is no longer in the bank)");
+    if (q) lines.push("In question: " + q.passage.join("; ").replace(/-/g, "–"));
+    lines.push("");
+    for (const r of list) {
+      lines.push(formatDate(r.created_at || r.updated_at) + (r.shared ? " (shared with groups)" : ""));
+      lines.push(r.answer, "");
+    }
+  }
+  downloadFile("seek-like-silver-answers-" + stamp + ".txt", "text/plain;charset=utf-8", lines.join("\n"));
+}
+
+// ─────────────────────────── Delete my account ───────────────────────────
+
+async function deleteAccount() {
+  if ($("delete-confirm").value.trim() !== "DELETE" || !state.user) return;
+  if (!confirm("Last check: permanently delete your account and everything in it?")) return;
+  $("delete-account").disabled = true;
+  setStatus("delete-status", "Deleting…");
+  const { data, error } = await db.functions.invoke(DELETE_FUNCTION, { body: { confirm: "DELETE" } });
+  if (error || !data || !data.deleted) {
+    const status = error && error.context && error.context.status;
+    const reason = error ? await functionErrorReason(error) : "unknown";
+    const msg = reason === "authenticator_required" ? "Enter your authenticator code first (sign out and back in), then try again."
+      : status === 404 || /Failed to send/i.test(String(reason)) ? "Account deletion isn't switched on yet. (Site owner: deploy the delete-account function.)"
+      : "Couldn't delete your account (" + reason + "). Nothing was deleted.";
+    $("delete-account").disabled = false;
+    return setStatus("delete-status", msg, "err");
+  }
+  clearDraft();
+  await db.auth.signOut({ scope: "local" }).catch(() => {});
+  showView("home");
+  alert("Your account and everything in it has been deleted.");
+}
+
+// ─────────────────────────── Groups ───────────────────────────
+
+const GROUP_ERRORS = {
+  bad_code: "That code didn't match a group. Check it and try again.",
+  group_full: "That group is full (50 people).",
+  too_many_groups: "You can start up to 10 groups.",
+  bad_name: "Give the group a name (up to 60 characters).",
+  not_allowed: "Enter your authenticator code first, then try again."
+};
+const groupError = (error) => {
+  const key = Object.keys(GROUP_ERRORS).find((k) => (error.message || "").includes(k));
+  return key ? GROUP_ERRORS[key] : "Something went wrong: " + error.message;
+};
+
+async function loadGroups() {
+  state.groups = [];
+  state.names = new Map();
+  if (!state.user || !state.features.groups) return;
+  const { data, error } = await db.from("study_groups").select("id, name, owner_id, invite_code, created_at").order("created_at");
+  if (error) {
+    if (/study_groups|schema cache|does not exist/i.test(error.message || "")) state.features.groups = false;
+    else console.error("Groups load failed:", error);
+    return;
+  }
+  state.groups = await Promise.all((data || []).map(async (g) => {
+    const { data: members } = await db.rpc("sls_group_members", { p_group: g.id });
+    return { ...g, members: members || [] };
+  }));
+  for (const g of state.groups) for (const m of g.members) state.names.set(m.user_id, m.display_name || "A group member");
+}
+
+function memberName(userId) {
+  if (state.user && userId === state.user.id) return "You";
+  return state.names.get(userId) || "A group member";
+}
+
+async function renderGroupAnswers() {
+  const card = $("group-answers");
+  const q = state.question;
+  card.hidden = true;
+  $("group-answers-list").hidden = true;
+  $("group-answers-list").replaceChildren();
+  if (!q || !state.user || !state.features.groups || !state.groups.length) return;
+  const { data, error } = await db.from("answers").select("id, user_id, answer, created_at, updated_at, question_id")
+    .eq("question_id", q.id).eq("shared", true).neq("user_id", state.user.id).order("created_at", { ascending: false });
+  if (error || !data || !data.length || state.question !== q) return;
+  card.hidden = false;
+  const people = new Set(data.map((r) => r.user_id)).size;
+  $("group-answers-note").textContent = (people === 1 ? "1 person" : people + " people") + " in your groups shared an answer to this question. You might write your own first.";
+  $("show-group-answers").hidden = false;
+  $("show-group-answers").onclick = () => {
+    $("show-group-answers").hidden = true;
+    const list = $("group-answers-list");
+    for (const r of data) list.append(answerEntry(r, { author: memberName(r.user_id) }));
+    list.hidden = false;
+  };
+}
+
+async function renderGroups() {
+  const signedIn = !!state.user;
+  $("groups-signed-out").hidden = signedIn;
+  $("groups-unavailable").hidden = !signedIn || state.features.groups;
+  $("groups-main").hidden = !signedIn || !state.features.groups;
+  if (!signedIn || !state.features.groups) return;
+  $("groups-name-hint").hidden = !!(state.profile.display_name || "").trim();
+  const pending = takePendingJoin();
+  if (pending) {
+    $("join-code").value = pending;
+    setStatus("groups-status", "You were invited to a group. Press Join to join it.", "");
+  }
+  const wrap = $("groups-list");
+  wrap.replaceChildren();
+  if (!state.groups.length) {
+    wrap.append(Object.assign(document.createElement("p"), { className: "muted", textContent: "You're not in any groups yet." }));
+    return;
+  }
+  for (const g of state.groups) wrap.append(groupCard(g));
+}
+
+function groupCard(g) {
+  const isOwner = state.user && g.owner_id === state.user.id;
+  const card = document.createElement("article");
+  card.className = "group-card";
+  const title = Object.assign(document.createElement("h2"), { className: "panel-title", textContent: g.name });
+  card.append(title);
+
+  const invite = document.createElement("p");
+  invite.className = "group-invite";
+  invite.append("Invite code: ");
+  invite.append(Object.assign(document.createElement("code"), { textContent: g.invite_code }));
+  const copy = Object.assign(document.createElement("button"), { type: "button", className: "link-button", textContent: "Copy invite link" });
+  copy.onclick = async () => {
+    const url = location.origin + location.pathname + "#join=" + g.invite_code;
+    try { await navigator.clipboard.writeText(url); copy.textContent = "Copied"; setTimeout(() => (copy.textContent = "Copy invite link"), 2000); }
+    catch (_) { window.prompt("Copy this invite link:", url); }
+  };
+  invite.append(" ", copy);
+  card.append(invite);
+
+  const ul = document.createElement("ul");
+  ul.className = "member-list";
+  for (const m of g.members) {
+    const li = document.createElement("li");
+    li.append((m.user_id === state.user.id ? "You" : (m.display_name || "A group member")) + (m.is_owner ? " (leader)" : ""));
+    if (isOwner && !m.is_owner) {
+      const rm = Object.assign(document.createElement("button"), { type: "button", className: "link-button", textContent: "Remove" });
+      rm.onclick = () => groupAction(() => db.from("study_group_members").delete().eq("group_id", g.id).eq("user_id", m.user_id),
+        "Remove " + (m.display_name || "this person") + " from the group?");
+      li.append(" ", rm);
+    }
+    ul.append(li);
+  }
+  card.append(Object.assign(document.createElement("h3"), { className: "group-sub", textContent: g.members.length === 1 ? "1 member" : g.members.length + " members" }), ul);
+
+  const feed = document.createElement("div");
+  feed.className = "group-feed";
+  const feedBtn = Object.assign(document.createElement("button"), { type: "button", className: "btn btn-ghost btn-small", textContent: "See shared answers" });
+  feedBtn.onclick = () => loadGroupFeed(g, feed, feedBtn);
+  card.append(feedBtn, feed);
+
+  const actions = document.createElement("div");
+  actions.className = "row group-actions";
+  const add = (label, fn, cls) => { const b = Object.assign(document.createElement("button"), { type: "button", className: cls || "link-button", textContent: label }); b.onclick = fn; actions.append(b); };
+  if (isOwner) {
+    add("Rename", () => {
+      const name = (window.prompt("New name for the group:", g.name) || "").trim();
+      if (name && name !== g.name) groupAction(() => db.from("study_groups").update({ name }).eq("id", g.id));
+    });
+    add("New invite code", () => groupAction(() => db.rpc("sls_new_invite_code", { p_group: g.id }), "Make a new code? The old code and links will stop working."));
+    add("Delete group", () => groupAction(() => db.from("study_groups").delete().eq("id", g.id), "Delete \"" + g.name + "\" for everyone? Members keep their own answers."));
+  } else {
+    add("Leave group", () => groupAction(() => db.from("study_group_members").delete().eq("group_id", g.id).eq("user_id", state.user.id), "Leave \"" + g.name + "\"?"));
+  }
+  card.append(actions);
+  return card;
+}
+
+async function loadGroupFeed(g, feed, btn) {
+  btn.disabled = true;
+  const ids = g.members.map((m) => m.user_id);
+  const { data, error } = await db.from("answers").select("id, user_id, question_id, answer, created_at, updated_at")
+    .eq("shared", true).in("user_id", ids).order("created_at", { ascending: false }).limit(30);
+  btn.hidden = true;
+  if (error) return feed.append(Object.assign(document.createElement("p"), { className: "status err", textContent: "Couldn't load answers: " + error.message }));
+  if (!data.length) return feed.append(Object.assign(document.createElement("p"), { className: "muted", textContent: "No one has shared an answer yet. Tick \"Share this answer with my groups\" when you save one." }));
+  for (const r of data) {
+    const q = QUESTION_INDEX.get(r.question_id);
+    const item = document.createElement("div");
+    item.className = "feed-item";
+    if (q) {
+      const open = Object.assign(document.createElement("button"), { type: "button", className: "link-button feed-question", textContent: q.prompt });
+      open.onclick = () => openQuestion(q, q.level);
+      item.append(open);
+    }
+    item.append(answerEntry(r, { author: memberName(r.user_id) }));
+    feed.append(item);
+  }
+}
+
+async function groupAction(run, confirmText) {
+  if (confirmText && !confirm(confirmText)) return;
+  setStatus("groups-status", "Working…");
+  const { error } = await run();
+  if (error) return setStatus("groups-status", groupError(error), "err");
+  await loadGroups();
+  setStatus("groups-status", "Done.", "ok");
+  renderGroups();
+}
+
+async function createGroup(e) {
+  e.preventDefault();
+  const name = $("new-group-name").value.trim();
+  if (!name) return;
+  setStatus("groups-status", "Creating…");
+  const { data, error } = await db.rpc("sls_create_group", { p_name: name });
+  if (error) return setStatus("groups-status", groupError(error), "err");
+  $("new-group-name").value = "";
+  await loadGroups();
+  renderGroups();
+  const g = data && data[0];
+  setStatus("groups-status", g ? "Created \"" + g.name + "\". Share the invite code " + g.invite_code + " with your group." : "Created.", "ok");
+}
+
+async function joinGroup(e) {
+  e.preventDefault();
+  const code = $("join-code").value.trim().toUpperCase();
+  if (!code) return;
+  setStatus("groups-status", "Joining…");
+  const { data, error } = await db.rpc("sls_join_group", { p_code: code });
+  if (error) return setStatus("groups-status", groupError(error), "err");
+  $("join-code").value = "";
+  await loadGroups();
+  renderGroups();
+  const g = data && data[0];
+  setStatus("groups-status", g ? "You joined \"" + g.name + "\"." : "Joined.", "ok");
+}
+
+// Invite links (#join=CODE) survive signing in.
+const JOIN_KEY = "sls-join";
+function stashPendingJoin(code) { try { sessionStorage.setItem(JOIN_KEY, code); } catch (_) { /* ignore */ } }
+function takePendingJoin() {
+  try { const c = sessionStorage.getItem(JOIN_KEY); sessionStorage.removeItem(JOIN_KEY); return c; } catch (_) { return null; }
+}
+
+// ─────────────────────────── Links into the site (#q=b17, #join=CODE) ───────────────────────────
+
+function handleHash() {
+  const h = location.hash;
+  let m;
+  if ((m = h.match(/^#q=([a-z]\d{1,3})$/))) {
+    const q = QUESTION_INDEX.get(m[1]);
+    if (q && (!state.question || state.question.id !== q.id || $("view-question").hidden)) openQuestion(q, q.level);
+  } else if ((m = h.match(/^#join=([A-Fa-f0-9]{10})$/))) {
+    stashPendingJoin(m[1].toUpperCase());
+    history.replaceState(null, "", location.pathname + location.search);
+    showView("groups");
+    if (!state.user) openSignIn();
+  }
+}
+
 // ─────────────────────────── Wire up ───────────────────────────
 
 document.querySelectorAll("[data-nav]").forEach((el) =>
@@ -1416,6 +1993,16 @@ document.querySelectorAll("[data-level]").forEach((el) =>
 
 $("next-question").addEventListener("click", () => openQuestion(pickQuestion(state.level), state.level));
 $("save-answer").addEventListener("click", saveAnswer);
+$("cancel-edit").addEventListener("click", cancelEdit);
+$("copy-link").addEventListener("click", copyQuestionLink);
+$("print-question").addEventListener("click", () => window.print());
+document.querySelectorAll("[data-export]").forEach((b) => b.addEventListener("click", () => exportAnswers(b.dataset.export)));
+$("delete-confirm").addEventListener("input", () => { $("delete-account").disabled = $("delete-confirm").value.trim() !== "DELETE"; });
+$("delete-account").addEventListener("click", deleteAccount);
+$("create-group-form").addEventListener("submit", createGroup);
+$("join-group-form").addEventListener("submit", joinGroup);
+window.addEventListener("hashchange", handleHash);
+setUpBrowse();
 $("auth-button").addEventListener("click", () => (state.user ? signOut() : openSignIn()));
 $("signin-google").addEventListener("click", signInWithGoogle);
 $("signin-youversion").addEventListener("click", () => startYouVersion("signin"));
@@ -1429,6 +2016,7 @@ $("code-back").addEventListener("click", () => {
 });
 $("settings-form").addEventListener("submit", saveSettings);
 
+let refreshedOnce = false;
 async function refreshAfterSignIn() {
   await loadUserData();
   if (!$("view-question").hidden && state.question) {
@@ -1437,7 +2025,9 @@ async function refreshAfterSignIn() {
   }
   if (!$("view-answers").hidden) renderAnswers();
   if (!$("view-settings").hidden) renderSettings();
+  if (!$("view-groups").hidden) renderGroups();
   if (state.user) restoreDraft();
+  if (!refreshedOnce) { refreshedOnce = true; handleHash(); }
   renderHomeVerses();
 }
 
@@ -1449,7 +2039,7 @@ $("mfa-remove").addEventListener("click", removeAuthenticator);
 $("mfa-signout").addEventListener("click", async () => { $("mfa-dialog").close(); await signOut(); });
 $("mfa-dialog").addEventListener("cancel", (e) => e.preventDefault()); // must enter a code or sign out
 
-if (!db) renderHomeVerses(); // otherwise it runs once we know who's signed in
+if (!db) { renderHomeVerses(); handleHash(); } // otherwise these run once we know who's signed in
 
 let lastUserId;
 if (db) db.auth.onAuthStateChange((_event, session) => {

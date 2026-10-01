@@ -6,6 +6,9 @@
 //   passage     – "In question": the Scripture the question is about
 //   inspiration – "Inspiration": other Scripture that helps you answer
 //   readings    – "Look up": theologians, each pointed to a SPECIFIC work, never a paraphrased quote
+//   fathers     – "What the early church fathers said": exact passages (to about AD 750), each
+//                 opened and checked; `about` says what the passage deals with, never a made-up quote
+//   topics      – keys from TOPICS below, for browsing
 // Scripture is given as references only (no translation copyright issues). Keep each
 // reference inside one chapter ("Romans 1:18-32", not "Romans 1:18-2:16") so verse
 // links and previews work.
@@ -18,6 +21,20 @@
 // Add new questions at the end of a level's list with the next ID (b31, m31, p31, ...).
 // Every book in `readings` must also be in library.js.
 
+const TOPICS = {
+  god: "God & the Trinity",
+  christ: "Jesus Christ",
+  spirit: "The Holy Spirit",
+  creation: "Creation & humanity",
+  sin: "Sin, evil & suffering",
+  salvation: "Salvation & grace",
+  covenant: "Covenant & Israel",
+  scripture: "Scripture & knowing God",
+  church: "Church & sacraments",
+  life: "Prayer & Christian living",
+  hope: "Death, resurrection & hope"
+};
+
 const QUESTIONS = {
   beginner: [
     {
@@ -28,7 +45,12 @@ const QUESTIONS = {
       readings: [
         { who: "Athanasius", work: "On the Incarnation" },
         { who: "C.S. Lewis", work: "Mere Christianity, Book 4" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homily 11 on the Gospel of John", where: "on John 1:14", url: "https://www.newadvent.org/fathers/240111.htm", about: "Homily on \"the Word was made flesh, and dwelt among us\"" },
+        { who: "Augustine", work: "Tractate 1 on the Gospel of John", where: "on John 1:1–5", url: "https://www.newadvent.org/fathers/1701001.htm", about: "The eternal Word through whom all things were made" }
+      ],
+      topics: ["christ"]
     },
     {
       id: "b2",
@@ -38,7 +60,12 @@ const QUESTIONS = {
       readings: [
         { who: "Irenaeus of Lyons", work: "Against Heresies, Book 5" },
         { who: "John Calvin", work: "Institutes of the Christian Religion, Book 1, ch. 15" }
-      ]
+      ],
+      fathers: [
+        { who: "Gregory of Nyssa", work: "On the Making of Man", where: "ch. 5", url: "https://www.newadvent.org/fathers/2914.htm", about: "How human nature is a likeness of God" },
+        { who: "Athanasius", work: "On the Incarnation", where: "chs. 11–14", url: "https://www.newadvent.org/fathers/2802.htm", about: "Why only the Word could renew God's image in humanity" }
+      ],
+      topics: ["creation"]
     },
     {
       id: "b3",
@@ -48,7 +75,13 @@ const QUESTIONS = {
       readings: [
         { who: "Henri Nouwen", work: "The Return of the Prodigal Son" },
         { who: "Timothy Keller", work: "The Prodigal God" }
-      ]
+      ],
+      fathers: [
+        { who: "Jerome", work: "Letter 21 (to Pope Damasus)", where: "", url: "https://www.newadvent.org/fathers/3001021.htm", about: "Detailed explanation of the parable of the prodigal son" },
+        { who: "Cyril of Alexandria", work: "Commentary on Luke", where: "Sermon 107 (Luke 15:11–32)", url: "https://www.tertullian.org/fathers/cyril_on_luke_10_sermons_99_109.htm", about: "Sermon on the parable of the prodigal son" },
+        { who: "Tertullian", work: "On Repentance", where: "ch. 8", url: "https://www.newadvent.org/fathers/0320.htm", about: "The prodigal's father as a picture of God receiving penitents" }
+      ],
+      topics: ["salvation", "god"]
     },
     {
       id: "b4",
@@ -58,7 +91,12 @@ const QUESTIONS = {
       readings: [
         { who: "Augustine", work: "On Christian Doctrine, Book 1" },
         { who: "Dietrich Bonhoeffer", work: "Life Together" }
-      ]
+      ],
+      fathers: [
+        { who: "Cyril of Alexandria", work: "Commentary on Luke", where: "Sermon 68 (Luke 10:25–37)", url: "https://www.tertullian.org/fathers/cyril_on_luke_07_sermons_66_80.htm", about: "Sermon on the lawyer's question and the Good Samaritan" },
+        { who: "Clement of Alexandria", work: "Who Is the Rich Man That Shall Be Saved?", where: "chs. 28–29", url: "https://www.newadvent.org/fathers/0207.htm", about: "The two great commandments and \"Who is my neighbor?\"" }
+      ],
+      topics: ["life"]
     },
     {
       id: "b5",
@@ -68,7 +106,12 @@ const QUESTIONS = {
       readings: [
         { who: "Martin Luther", work: "The Freedom of a Christian" },
         { who: "Augustine", work: "On the Spirit and the Letter" }
-      ]
+      ],
+      fathers: [
+        { who: "Clement of Rome", work: "First Epistle to the Corinthians (1 Clement)", where: "chs. 32–33", url: "https://www.newadvent.org/fathers/1010.htm", about: "Justified by faith, not our own works; yet keep doing good works" },
+        { who: "John Chrysostom", work: "Homily 4 on Ephesians", where: "on Eph. 2:1–10", url: "https://www.newadvent.org/fathers/230104.htm", about: "Homily on \"by grace you have been saved through faith\"" }
+      ],
+      topics: ["salvation"]
     },
     {
       id: "b6",
@@ -78,7 +121,13 @@ const QUESTIONS = {
       readings: [
         { who: "Cyprian of Carthage", work: "On the Lord's Prayer" },
         { who: "Martin Luther", work: "A Simple Way to Pray" }
-      ]
+      ],
+      fathers: [
+        { who: "Tertullian", work: "On Prayer", where: "chs. 1–9", url: "https://www.newadvent.org/fathers/0322.htm", about: "Clause-by-clause exposition of the Lord's Prayer" },
+        { who: "Cyril of Jerusalem", work: "Catechetical Lecture 23 (Mystagogical Lecture 5)", where: "sections 11–18", url: "https://www.newadvent.org/fathers/310123.htm", about: "Explaining each petition of the Our Father to the newly baptized" },
+        { who: "John Chrysostom", work: "Homily 19 on Matthew", where: "on Matt. 6:1–15", url: "https://www.newadvent.org/fathers/200119.htm", about: "Homily on secret prayer and the Lord's Prayer" }
+      ],
+      topics: ["life"]
     },
     {
       id: "b7",
@@ -88,7 +137,12 @@ const QUESTIONS = {
       readings: [
         { who: "Charles Spurgeon", work: "The Treasury of David, on Psalm 23" },
         { who: "Augustine", work: "Expositions on the Psalms" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homily 60 on the Gospel of John", where: "on John 10:14–15 ff.", url: "https://www.newadvent.org/fathers/240160.htm", about: "Christ the Good Shepherd who knows his sheep and lays down his life" },
+        { who: "Cyril of Jerusalem", work: "Catechetical Lecture 22 (Mystagogical Lecture 4)", where: "section 7", url: "https://www.newadvent.org/fathers/310122.htm", about: "Reads Psalm 23's prepared table as the Lord's Table" }
+      ],
+      topics: ["god", "life"]
     },
     {
       id: "b8",
@@ -98,7 +152,13 @@ const QUESTIONS = {
       readings: [
         { who: "Athanasius", work: "On the Incarnation" },
         { who: "John Stott", work: "The Cross of Christ" }
-      ]
+      ],
+      fathers: [
+        { who: "Cyril of Jerusalem", work: "Catechetical Lecture 13", where: "esp. sections 1–3, 34", url: "https://www.newadvent.org/fathers/310113.htm", about: "Lecture on \"crucified and buried,\" drawing on Isaiah 53" },
+        { who: "John Chrysostom", work: "Homily 38 on First Corinthians", where: "on 1 Cor. 15:1–11", url: "https://www.newadvent.org/fathers/220138.htm", about: "Homily on \"Christ died for our sins according to the Scriptures\"" },
+        { who: "Gregory of Nazianzus", work: "Oration 45 (Second Oration on Easter)", where: "section 22", url: "https://www.newadvent.org/fathers/310245.htm", about: "To whom was Christ's blood offered, and why was it shed?" }
+      ],
+      topics: ["christ", "salvation"]
     },
     {
       id: "b9",
@@ -108,7 +168,13 @@ const QUESTIONS = {
       readings: [
         { who: "Basil of Caesarea", work: "On the Holy Spirit" },
         { who: "J.I. Packer", work: "Keep in Step with the Spirit" }
-      ]
+      ],
+      fathers: [
+        { who: "Cyril of Jerusalem", work: "Catechetical Lecture 16", where: "", url: "https://www.newadvent.org/fathers/310116.htm", about: "Lecture on the Holy Spirit, the Comforter, who spoke by the prophets" },
+        { who: "John Chrysostom", work: "Homily 75 on the Gospel of John", where: "on John 14:15–31", url: "https://www.newadvent.org/fathers/240175.htm", about: "Homily on Christ's promise of \"another Comforter\"" },
+        { who: "John Chrysostom", work: "Homily 78 on the Gospel of John", where: "on John 16:4–15", url: "https://www.newadvent.org/fathers/240178.htm", about: "The Spirit convicting the world and guiding into all truth" }
+      ],
+      topics: ["spirit"]
     },
     {
       id: "b10",
@@ -118,7 +184,12 @@ const QUESTIONS = {
       readings: [
         { who: "N.T. Wright", work: "Surprised by Hope" },
         { who: "Athanasius", work: "On the Incarnation" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homily 39 on First Corinthians", where: "on 1 Cor. 15:11–28", url: "https://www.newadvent.org/fathers/220139.htm", about: "Homily on \"if Christ has not been raised\" and Christ the firstfruits" },
+        { who: "Cyril of Jerusalem", work: "Catechetical Lecture 14", where: "", url: "https://www.newadvent.org/fathers/310114.htm", about: "Lecture on Christ's resurrection, ascension, and session at God's right hand" }
+      ],
+      topics: ["christ", "hope"]
     },
     {
       id: "b11",
@@ -128,7 +199,13 @@ const QUESTIONS = {
       readings: [
         { who: "Basil of Caesarea", work: "Hexaemeron (Homilies on the Six Days of Creation)" },
         { who: "Augustine", work: "Confessions, Books 11–13" }
-      ]
+      ],
+      fathers: [
+        { who: "Theophilus of Antioch", work: "To Autolycus, Book 2", where: "chs. 10–18", url: "https://www.newadvent.org/fathers/02042.htm", about: "Walk through the six days of creation in Genesis 1" },
+        { who: "Athanasius", work: "On the Incarnation", where: "chs. 2–3", url: "https://www.newadvent.org/fathers/2802.htm", about: "Creation out of nothing through the Word, against rival theories" },
+        { who: "Augustine", work: "City of God, Book 11", where: "chs. 4–8", url: "https://www.newadvent.org/fathers/120111.htm", about: "The world's beginning, the creation days, and God's seventh-day rest" }
+      ],
+      topics: ["creation", "god"]
     },
     {
       id: "b12",
@@ -138,7 +215,13 @@ const QUESTIONS = {
       readings: [
         { who: "Augustine", work: "City of God, Book 14" },
         { who: "C.S. Lewis", work: "The Problem of Pain, ch. 5" }
-      ]
+      ],
+      fathers: [
+        { who: "Irenaeus of Lyons", work: "Against Heresies, Book 3", where: "ch. 23", url: "https://www.newadvent.org/fathers/0103323.htm", about: "Adam's sin, the curse on the serpent, and Adam's salvation in Christ" },
+        { who: "Theophilus of Antioch", work: "To Autolycus, Book 2", where: "chs. 21–26", url: "https://www.newadvent.org/fathers/02042.htm", about: "The fall, the tree of knowledge, and expulsion from paradise" },
+        { who: "Athanasius", work: "On the Incarnation", where: "chs. 4–5", url: "https://www.newadvent.org/fathers/2802.htm", about: "How the transgression brought corruption and death on humanity" }
+      ],
+      topics: ["sin", "creation"]
     },
     {
       id: "b13",
@@ -148,7 +231,12 @@ const QUESTIONS = {
       readings: [
         { who: "Martin Luther", work: "Large Catechism, Part 1 (The Ten Commandments)" },
         { who: "Reformed Churches", work: "Heidelberg Catechism, Q&A 92–115" }
-      ]
+      ],
+      fathers: [
+        { who: "Irenaeus of Lyons", work: "Against Heresies, Book 4", where: "ch. 16", url: "https://www.newadvent.org/fathers/0103416.htm", about: "The Decalogue compared with circumcision and ceremonial law" },
+        { who: "Theophilus of Antioch", work: "To Autolycus, Book 3", where: "ch. 9", url: "https://www.newadvent.org/fathers/02043.htm", about: "The Christian doctrine of God and his law, citing the commandments" }
+      ],
+      topics: ["life", "covenant"]
     },
     {
       id: "b14",
@@ -158,7 +246,12 @@ const QUESTIONS = {
       readings: [
         { who: "Bernard of Clairvaux", work: "On Loving God" },
         { who: "Augustine", work: "On Christian Doctrine, Book 1" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homily 71 on Matthew", where: "on Matt. 22:34–46", url: "https://www.newadvent.org/fathers/200171.htm", about: "Homily on the first and great commandment and the second like it" },
+        { who: "Clement of Alexandria", work: "Who Is the Rich Man That Shall Be Saved?", where: "chs. 28–29", url: "https://www.newadvent.org/fathers/0207.htm", about: "Love of God first, then love of neighbor" }
+      ],
+      topics: ["life"]
     },
     {
       id: "b15",
@@ -168,7 +261,12 @@ const QUESTIONS = {
       readings: [
         { who: "Augustine", work: "Our Lord's Sermon on the Mount, Book 1" },
         { who: "Dietrich Bonhoeffer", work: "Discipleship (The Cost of Discipleship)" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homily 15 on Matthew", where: "on Matt. 5:1–16", url: "https://www.newadvent.org/fathers/200115.htm", about: "Homily going through the Beatitudes one by one" },
+        { who: "Leo the Great", work: "Sermon 95", where: "on Matt. 5:1–9", url: "https://www.newadvent.org/fathers/360395.htm", about: "A homily on the Beatitudes" }
+      ],
+      topics: ["life", "christ"]
     },
     {
       id: "b16",
@@ -178,7 +276,12 @@ const QUESTIONS = {
       readings: [
         { who: "John Chrysostom", work: "Homilies on the Gospel of John" },
         { who: "John Wesley", work: "Sermons on Several Occasions, \"The New Birth\"" }
-      ]
+      ],
+      fathers: [
+        { who: "Augustine", work: "Tractate 11 on the Gospel of John", where: "on John 2:23–3:5", url: "https://www.newadvent.org/fathers/1701011.htm", about: "Nicodemus and being born of water and the Spirit" },
+        { who: "Justin Martyr", work: "First Apology", where: "ch. 61", url: "https://www.ccel.org/ccel/schaff/anf01.viii.ii.lxi.html", about: "Early description of baptism as new birth, citing John 3" }
+      ],
+      topics: ["salvation", "spirit"]
     },
     {
       id: "b17",
@@ -188,7 +291,13 @@ const QUESTIONS = {
       readings: [
         { who: "John Calvin", work: "Institutes of the Christian Religion, Book 3, ch. 2" },
         { who: "Martin Luther", work: "Preface to the Epistle to the Romans" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homily 21 on Hebrews", where: "on Heb. 10:32–11:2", url: "https://www.newadvent.org/fathers/240221.htm", about: "Homily on faith as \"the substance of things hoped for\"" },
+        { who: "Clement of Rome", work: "First Epistle to the Corinthians (1 Clement)", where: "chs. 9–12", url: "https://www.newadvent.org/fathers/1010.htm", about: "Examples of faith: Enoch, Noah, Abraham, Lot, Rahab" },
+        { who: "Augustine", work: "Enchiridion (Handbook on Faith, Hope and Love)", where: "ch. 8", url: "https://www.newadvent.org/fathers/1302.htm", about: "Faith defined from Hebrews 11:1 and distinguished from hope" }
+      ],
+      topics: ["salvation", "life"]
     },
     {
       id: "b18",
@@ -198,7 +307,12 @@ const QUESTIONS = {
       readings: [
         { who: "J.I. Packer", work: "Keep in Step with the Spirit" },
         { who: "Gordon Fee", work: "God's Empowering Presence" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Commentary on Galatians", where: "ch. 5 (on Gal. 5:16–26)", url: "https://www.newadvent.org/fathers/23105.htm", about: "Works of the flesh versus the fruit of the Spirit" },
+        { who: "John Cassian", work: "Conferences, Conference 4 (Abbot Daniel)", where: "chs. 7–11", url: "https://www.newadvent.org/fathers/350804.htm", about: "The flesh lusting against the spirit (Gal. 5:17) explained" }
+      ],
+      topics: ["spirit", "life"]
     },
     {
       id: "b19",
@@ -208,7 +322,13 @@ const QUESTIONS = {
       readings: [
         { who: "Augustine", work: "Homilies on the First Epistle of John" },
         { who: "C.S. Lewis", work: "The Four Loves" }
-      ]
+      ],
+      fathers: [
+        { who: "Clement of Rome", work: "First Epistle to the Corinthians (1 Clement)", where: "chs. 49–50", url: "https://www.newadvent.org/fathers/1010.htm", about: "A hymn in praise of love" },
+        { who: "John Chrysostom", work: "Homily 33 on First Corinthians", where: "on 1 Cor. 13:4–8", url: "https://www.newadvent.org/fathers/220133.htm", about: "Homily on \"love suffers long and is kind\"" },
+        { who: "John Chrysostom", work: "Homily 34 on First Corinthians", where: "on 1 Cor. 13:8–13", url: "https://www.newadvent.org/fathers/220134.htm", about: "Why love is greater than faith and hope" }
+      ],
+      topics: ["life"]
     },
     {
       id: "b20",
@@ -218,7 +338,12 @@ const QUESTIONS = {
       readings: [
         { who: "Augustine", work: "Expositions on the Psalms, on Psalm 51 (his Psalm 50)" },
         { who: "Dietrich Bonhoeffer", work: "Life Together, ch. 5 (Confession and Communion)" }
-      ]
+      ],
+      fathers: [
+        { who: "Clement of Rome", work: "First Epistle to the Corinthians (1 Clement)", where: "ch. 18", url: "https://www.newadvent.org/fathers/1010.htm", about: "David's humility, quoting Psalm 51 at length" },
+        { who: "Cyril of Jerusalem", work: "Catechetical Lecture 2 (On Repentance)", where: "sections 11–12", url: "https://www.newadvent.org/fathers/310102.htm", about: "David's sin, Nathan's rebuke, and David's repentance" }
+      ],
+      topics: ["sin", "salvation"]
     },
     {
       id: "b21",
@@ -228,7 +353,12 @@ const QUESTIONS = {
       readings: [
         { who: "Augustine", work: "Our Lord's Sermon on the Mount, Book 2" },
         { who: "Jean-Pierre de Caussade", work: "Abandonment to Divine Providence" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homily 21 on Matthew", where: "on Matt. 6:24 ff.", url: "https://www.newadvent.org/fathers/200121.htm", about: "Serving two masters, and the birds of the air" },
+        { who: "John Chrysostom", work: "Homily 22 on Matthew", where: "on Matt. 6:28–34", url: "https://www.newadvent.org/fathers/200122.htm", about: "The lilies, seeking first the kingdom, and tomorrow's worries" }
+      ],
+      topics: ["life", "god"]
     },
     {
       id: "b22",
@@ -238,7 +368,12 @@ const QUESTIONS = {
       readings: [
         { who: "John Stott", work: "Christian Mission in the Modern World" },
         { who: "Lesslie Newbigin", work: "The Open Secret" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homily 90 on Matthew", where: "on Matt. 28:11–20", url: "https://www.newadvent.org/fathers/200190.htm", about: "Homily on the command to disciple the nations and \"I am with you\"" },
+        { who: "Basil of Caesarea", work: "On the Holy Spirit", where: "ch. 10", url: "https://www.newadvent.org/fathers/3203.htm", about: "The baptismal command of Matt. 28:19 and the Spirit's rank" }
+      ],
+      topics: ["church"]
     },
     {
       id: "b23",
@@ -248,7 +383,13 @@ const QUESTIONS = {
       readings: [
         { who: "Tertullian", work: "On Baptism" },
         { who: "Cyril of Jerusalem", work: "Catechetical Lectures, Mystagogical Lectures 1–2 (Lectures 19–20)" }
-      ]
+      ],
+      fathers: [
+        { who: "Cyril of Jerusalem", work: "Catechetical Lecture 3 (On Baptism)", where: "", url: "https://www.newadvent.org/fathers/310103.htm", about: "Lecture on baptism, with Romans 6:3–4 as its text" },
+        { who: "John Chrysostom", work: "Homily 10 on Romans", where: "on Rom. 5:12–6:4", url: "https://www.newadvent.org/fathers/210210.htm", about: "Homily ending on baptism into Christ's death" },
+        { who: "Basil of Caesarea", work: "On the Holy Spirit", where: "ch. 15", url: "https://www.ccel.org/ccel/schaff/npnf208.vii.xvi.html", about: "Baptism as a figure of burial with Christ and new life by the Spirit" }
+      ],
+      topics: ["church", "salvation"]
     },
     {
       id: "b24",
@@ -258,7 +399,13 @@ const QUESTIONS = {
       readings: [
         { who: "Early Church", work: "The Didache, chs. 9–10 and 14" },
         { who: "Justin Martyr", work: "First Apology, chs. 65–67" }
-      ]
+      ],
+      fathers: [
+        { who: "Cyril of Jerusalem", work: "Catechetical Lecture 22 (Mystagogical Lecture 4)", where: "", url: "https://www.newadvent.org/fathers/310122.htm", about: "Lecture on the Body and Blood of Christ, on 1 Cor. 11:23" },
+        { who: "John Chrysostom", work: "Homily 27 on First Corinthians", where: "on 1 Cor. 11:17–27", url: "https://www.newadvent.org/fathers/220127.htm", about: "The Lord's Supper and the Corinthians' divided meals" },
+        { who: "Irenaeus of Lyons", work: "Against Heresies, Book 4", where: "ch. 18", url: "https://www.newadvent.org/fathers/0103418.htm", about: "The Church's offering of the bread and cup" }
+      ],
+      topics: ["church"]
     },
     {
       id: "b25",
@@ -268,7 +415,13 @@ const QUESTIONS = {
       readings: [
         { who: "Clement of Rome", work: "First Epistle to the Corinthians (1 Clement), chs. 37–38" },
         { who: "Dietrich Bonhoeffer", work: "Life Together" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homily 30 on First Corinthians", where: "on 1 Cor. 12:12–20", url: "https://www.newadvent.org/fathers/220130.htm", about: "One body, many members, baptized by one Spirit" },
+        { who: "John Chrysostom", work: "Homily 31 on First Corinthians", where: "on 1 Cor. 12:21–26", url: "https://www.newadvent.org/fathers/220131.htm", about: "Weaker members, and suffering and rejoicing together" },
+        { who: "Origen", work: "Against Celsus, Book 6", where: "ch. 48", url: "https://www.ccel.org/ccel/schaff/anf04.vi.ix.vi.xlviii.html", about: "The whole Church as the body of Christ" }
+      ],
+      topics: ["church"]
     },
     {
       id: "b26",
@@ -278,7 +431,13 @@ const QUESTIONS = {
       readings: [
         { who: "William Gurnall", work: "The Christian in Complete Armour" },
         { who: "C.S. Lewis", work: "The Screwtape Letters" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homily 22 on Ephesians", where: "on Eph. 6:5–13", url: "https://www.newadvent.org/fathers/230122.htm", about: "Wrestling not against flesh and blood; putting on God's armor" },
+        { who: "John Chrysostom", work: "Homily 24 on Ephesians", where: "on Eph. 6:14–17 ff.", url: "https://www.newadvent.org/fathers/230124.htm", about: "Breastplate, shield, helmet, sword, and prayer explained" },
+        { who: "Ignatius of Antioch", work: "Epistle to Polycarp", where: "ch. 6", url: "https://www.newadvent.org/fathers/0110.htm", about: "Baptism, faith, love, and patience pictured as a soldier's armor" }
+      ],
+      topics: ["life", "sin"]
     },
     {
       id: "b27",
@@ -288,7 +447,12 @@ const QUESTIONS = {
       readings: [
         { who: "Timothy Keller", work: "The Prodigal Prophet" },
         { who: "John Calvin", work: "Commentaries on the Twelve Minor Prophets, on Jonah" }
-      ]
+      ],
+      fathers: [
+        { who: "Tertullian", work: "Against Marcion, Book 2", where: "ch. 24", url: "https://www.ccel.org/ccel/schaff/anf03.v.iv.iii.xxiv.html", about: "What God's \"repenting\" over Nineveh means" },
+        { who: "Augustine", work: "Letter 102 (to Deogratias)", where: "Question 6, sections 30–37", url: "https://www.newadvent.org/fathers/1102102.htm", about: "Questions on Jonah: the great fish, the gourd, and the worm" }
+      ],
+      topics: ["god", "salvation"]
     },
     {
       id: "b28",
@@ -298,7 +462,12 @@ const QUESTIONS = {
       readings: [
         { who: "Richard Bauckham", work: "Jesus and the God of Israel" },
         { who: "C.S. Lewis", work: "Miracles" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homily 28 on Matthew", where: "on Matt. 8:23 ff.", url: "https://www.newadvent.org/fathers/200128.htm", about: "Homily on the calming of the storm (parallel to Mark 4)" },
+        { who: "Augustine", work: "Sermon 13 on New Testament Lessons (Ben. 63)", where: "on Matt. 8:23", url: "https://www.newadvent.org/fathers/160313.htm", about: "Christ asleep in the boat during the storm" }
+      ],
+      topics: ["christ"]
     },
     {
       id: "b29",
@@ -308,7 +477,13 @@ const QUESTIONS = {
       readings: [
         { who: "Augustine", work: "Tractates on the Gospel of John, 55–59" },
         { who: "Andrew Murray", work: "Humility" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homily 70 on the Gospel of John", where: "on John 13:1–2 ff.", url: "https://www.newadvent.org/fathers/240170.htm", about: "Homily on Jesus washing the disciples' feet" },
+        { who: "John Chrysostom", work: "Homily 71 on the Gospel of John", where: "on John 13:1–18", url: "https://www.newadvent.org/fathers/240171.htm", about: "\"You also ought to wash one another's feet\"" },
+        { who: "Ambrose", work: "On the Mysteries", where: "ch. 6", url: "https://www.newadvent.org/fathers/3405.htm", about: "Foot-washing after baptism, read in light of John 13" }
+      ],
+      topics: ["christ", "life"]
     },
     {
       id: "b30",
@@ -318,7 +493,13 @@ const QUESTIONS = {
       readings: [
         { who: "N.T. Wright", work: "Surprised by Hope" },
         { who: "Augustine", work: "City of God, Book 22" }
-      ]
+      ],
+      fathers: [
+        { who: "Irenaeus of Lyons", work: "Against Heresies, Book 5", where: "ch. 35", url: "https://www.newadvent.org/fathers/0103535.htm", about: "The new heaven, new earth, and new Jerusalem of Revelation 21" },
+        { who: "Irenaeus of Lyons", work: "Against Heresies, Book 5", where: "ch. 36", url: "https://www.newadvent.org/fathers/0103536.htm", about: "Creation renewed after the present world passes away" },
+        { who: "Cyril of Jerusalem", work: "Catechetical Lecture 15", where: "sections 3–4", url: "https://www.newadvent.org/fathers/310115.htm", about: "The present world passing away and being renewed" }
+      ],
+      topics: ["hope"]
     }
   ],
 
@@ -331,7 +512,13 @@ const QUESTIONS = {
       readings: [
         { who: "Melito of Sardis", work: "On Pascha" },
         { who: "Brant Pitre", work: "Jesus and the Jewish Roots of the Eucharist" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homilies on Matthew", where: "Homily 82 (Matt 26:26-28)", url: "https://www.newadvent.org/fathers/200182.htm", about: "Homily on the Last Supper, instituted at Passover; the type giving way to the truth" },
+        { who: "Gregory of Nazianzus", work: "Oration 45 (Second Oration on Easter)", where: "Sections 11-16", url: "https://www.newadvent.org/fathers/310245.htm", about: "Easter sermon reading the Passover lamb and its rites as pointing to Christ" },
+        { who: "Justin Martyr", work: "Dialogue with Trypho", where: "Chapter 40", url: "https://www.newadvent.org/fathers/01283.htm", about: "The roasted Passover lamb as a figure of Christ's cross" }
+      ],
+      topics: ["christ", "covenant", "church"]
     },
     {
       id: "m2",
@@ -342,7 +529,13 @@ const QUESTIONS = {
         { who: "Martin Luther", work: "Preface to the Epistle to the Romans" },
         { who: "Council of Trent", work: "Session 6, Decree on Justification" },
         { who: "John Calvin", work: "Institutes of the Christian Religion, Book 3, ch. 17" }
-      ]
+      ],
+      fathers: [
+        { who: "Clement of Rome", work: "First Epistle to the Corinthians (1 Clement)", where: "Chapters 32-33", url: "https://www.newadvent.org/fathers/1010.htm", about: "Justified by faith, not our own works; yet good works must not be abandoned" },
+        { who: "Augustine", work: "On Grace and Free Will", where: "Chapter 18", url: "https://www.newadvent.org/fathers/1510.htm", about: "Reconciling Paul and James: the faith that works by love" },
+        { who: "John Chrysostom", work: "Homilies on Romans", where: "Homily 7 (Rom 3:9-31)", url: "https://www.newadvent.org/fathers/210207.htm", about: "Homily on God's righteousness apart from the Law, received through faith" }
+      ],
+      topics: ["salvation"]
     },
     {
       id: "m3",
@@ -352,7 +545,13 @@ const QUESTIONS = {
       readings: [
         { who: "O. Palmer Robertson", work: "The Christ of the Covenants" },
         { who: "Scott Hahn", work: "Kinship by Covenant" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homilies on Galatians", where: "Homily 3 (Galatians 3)", url: "https://www.newadvent.org/fathers/23103.htm", about: "Homily on Abraham's faith, the promised seed, and the Law's temporary role" },
+        { who: "Irenaeus of Lyons", work: "Against Heresies", where: "Book 4, Chapter 21", url: "https://www.newadvent.org/fathers/0103421.htm", about: "Abraham's faith as identical with Christian faith; patriarchs prefiguring the Church" },
+        { who: "Justin Martyr", work: "Dialogue with Trypho", where: "Chapters 119-120", url: "https://www.newadvent.org/fathers/01288.htm", about: "Believers from the nations as the people promised to Abraham" }
+      ],
+      topics: ["covenant", "salvation"]
     },
     {
       id: "m4",
@@ -362,7 +561,12 @@ const QUESTIONS = {
       readings: [
         { who: "G.K. Beale", work: "The Temple and the Church's Mission" },
         { who: "Yves Congar", work: "The Mystery of the Temple" }
-      ]
+      ],
+      fathers: [
+        { who: "Barnabas (attributed)", work: "Epistle of Barnabas", where: "Chapter 16", url: "https://www.newadvent.org/fathers/0124.htm", about: "The true, spiritual temple of God built in believers' hearts" },
+        { who: "John Chrysostom", work: "Homilies on the Gospel of John", where: "Homily 11 (John 1:14)", url: "https://www.newadvent.org/fathers/240111.htm", about: "Homily on 'the Word was made flesh and dwelt among us'" }
+      ],
+      topics: ["god", "church", "covenant"]
     },
     {
       id: "m5",
@@ -372,7 +576,13 @@ const QUESTIONS = {
       readings: [
         { who: "N.T. Wright", work: "Jesus and the Victory of God" },
         { who: "Richard Bauckham", work: "Jesus and the God of Israel" }
-      ]
+      ],
+      fathers: [
+        { who: "Justin Martyr", work: "Dialogue with Trypho", where: "Chapter 31", url: "https://www.newadvent.org/fathers/01283.htm", about: "Quotes Daniel 7's Son of Man vision of Christ's glorious coming" },
+        { who: "John Chrysostom", work: "Homilies on Matthew", where: "Homily 84 (Matt 26:51-66)", url: "https://www.newadvent.org/fathers/200184.htm", about: "Homily on Jesus' answer to the high priest and the blasphemy charge" },
+        { who: "Cyril of Jerusalem", work: "Catechetical Lectures", where: "Lecture 15", url: "https://www.newadvent.org/fathers/310115.htm", about: "Lecture on Christ's coming in glory, drawing on Daniel 7" }
+      ],
+      topics: ["christ"]
     },
     {
       id: "m6",
@@ -382,7 +592,12 @@ const QUESTIONS = {
       readings: [
         { who: "Gregory the Great", work: "Moralia in Job" },
         { who: "D.A. Carson", work: "How Long, O Lord?" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homilies on the Gospel of John", where: "Homily 56 (John 9:1-2)", url: "https://www.newadvent.org/fathers/240156.htm", about: "Homily on whether the man's blindness came from his or his parents' sin" },
+        { who: "Augustine", work: "Tractates on the Gospel of John", where: "Tractate 44 (John 9)", url: "https://www.newadvent.org/fathers/1701044.htm", about: "Sermon on the man born blind 'that the works of God be manifest'" }
+      ],
+      topics: ["sin"]
     },
     {
       id: "m7",
@@ -392,7 +607,13 @@ const QUESTIONS = {
       readings: [
         { who: "John Chrysostom", work: "Homilies on Hebrews" },
         { who: "John Owen", work: "An Exposition of the Epistle to the Hebrews" }
-      ]
+      ],
+      fathers: [
+        { who: "Barnabas (attributed)", work: "Epistle of Barnabas", where: "Chapter 7", url: "https://www.newadvent.org/fathers/0124.htm", about: "The Day of Atonement fast and the goats as types of Christ" },
+        { who: "John Chrysostom", work: "Homilies on Hebrews", where: "Homily 15 (Heb 9:1-14)", url: "https://www.newadvent.org/fathers/240215.htm", about: "Homily contrasting the yearly high-priestly entry with Christ's once-for-all entry" },
+        { who: "Justin Martyr", work: "Dialogue with Trypho", where: "Chapter 40", url: "https://www.newadvent.org/fathers/01283.htm", about: "The two goats of the fast as figures of Christ's two comings" }
+      ],
+      topics: ["christ", "salvation", "covenant"]
     },
     {
       id: "m8",
@@ -402,7 +623,12 @@ const QUESTIONS = {
       readings: [
         { who: "Irenaeus of Lyons", work: "Against Heresies, Book 3" },
         { who: "Augustine", work: "City of God, Book 13" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homilies on Romans", where: "Homily 10 (Rom 5:12-21)", url: "https://www.newadvent.org/fathers/210210.htm", about: "Homily on Adam's disobedience and Christ's obedience and abounding grace" },
+        { who: "Irenaeus of Lyons", work: "Against Heresies", where: "Book 5, Chapter 21", url: "https://www.newadvent.org/fathers/0103521.htm", about: "Christ recapitulating Adam, conquering the enemy who conquered humanity" }
+      ],
+      topics: ["sin", "salvation", "christ"]
     },
     {
       id: "m9",
@@ -412,7 +638,13 @@ const QUESTIONS = {
       readings: [
         { who: "Cyril of Jerusalem", work: "Catechetical Lectures 16–17" },
         { who: "Sinclair Ferguson", work: "The Holy Spirit" }
-      ]
+      ],
+      fathers: [
+        { who: "Gregory of Nazianzus", work: "Oration 41 (On Pentecost)", where: "Sections 13, 16", url: "https://www.newadvent.org/fathers/310241.htm", about: "Pentecost sermon contrasting the tongues with Babel's confusion; cites Joel" },
+        { who: "John Chrysostom", work: "Homilies on the Acts of the Apostles", where: "Homily 4 (Acts 2:1ff.)", url: "https://www.newadvent.org/fathers/210104.htm", about: "Homily on the Spirit's coming at Pentecost and the gift of tongues" },
+        { who: "John Chrysostom", work: "Homilies on the Acts of the Apostles", where: "Homily 5 (Acts 2:14-20)", url: "https://www.newadvent.org/fathers/210105.htm", about: "Homily on Peter's sermon quoting Joel's prophecy" }
+      ],
+      topics: ["spirit", "church"]
     },
     {
       id: "m10",
@@ -422,7 +654,12 @@ const QUESTIONS = {
       readings: [
         { who: "Augustine", work: "Our Lord's Sermon on the Mount" },
         { who: "Dietrich Bonhoeffer", work: "Discipleship (The Cost of Discipleship)" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homilies on Matthew", where: "Homily 16 (Matt 5:17-20)", url: "https://www.newadvent.org/fathers/200116.htm", about: "Homily on 'I came not to destroy the Law but to fulfil'" },
+        { who: "Irenaeus of Lyons", work: "Against Heresies", where: "Book 4, Chapter 13", url: "https://www.newadvent.org/fathers/0103413.htm", about: "Christ extending and fulfilling, not abolishing, the Law's natural precepts" }
+      ],
+      topics: ["covenant", "christ"]
     },
     {
       id: "m11",
@@ -432,7 +669,13 @@ const QUESTIONS = {
       readings: [
         { who: "John Chrysostom", work: "Homilies on Hebrews" },
         { who: "John Owen", work: "An Exposition of the Epistle to the Hebrews" }
-      ]
+      ],
+      fathers: [
+        { who: "Cyprian of Carthage", work: "Epistle 62 (to Caecilius)", where: "Sections 4-5", url: "https://www.newadvent.org/fathers/050662.htm", about: "Melchizedek's bread and wine as a figure of Christ's priesthood" },
+        { who: "Augustine", work: "City of God", where: "Book 16, Chapter 22", url: "https://www.newadvent.org/fathers/120116.htm", about: "Melchizedek blessing Abraham; priest forever after his order" },
+        { who: "Ambrose", work: "On the Mysteries", where: "Chapter 8", url: "https://www.newadvent.org/fathers/3405.htm", about: "Melchizedek's offering compared with the Christian sacrament" }
+      ],
+      topics: ["christ", "covenant"]
     },
     {
       id: "m12",
@@ -442,7 +685,13 @@ const QUESTIONS = {
       readings: [
         { who: "Justin Martyr", work: "Dialogue with Trypho, ch. 13" },
         { who: "John Stott", work: "The Cross of Christ" }
-      ]
+      ],
+      fathers: [
+        { who: "Clement of Rome", work: "First Epistle to the Corinthians (1 Clement)", where: "Chapter 16", url: "https://www.newadvent.org/fathers/1010.htm", about: "Quotes Isaiah 53 at length of Christ as example of humility" },
+        { who: "John Chrysostom", work: "Homilies on the Acts of the Apostles", where: "Homily 19 (Acts 8:26-40)", url: "https://www.newadvent.org/fathers/210119.htm", about: "Homily on Philip and the Ethiopian reading Isaiah 53" },
+        { who: "Augustine", work: "City of God", where: "Book 18, Chapter 29", url: "https://www.newadvent.org/fathers/120118.htm", about: "Isaiah's predictions of Christ and the Church, from Isaiah 52:13" }
+      ],
+      topics: ["christ", "salvation"]
     },
     {
       id: "m13",
@@ -452,7 +701,13 @@ const QUESTIONS = {
       readings: [
         { who: "Melito of Sardis", work: "On Pascha" },
         { who: "Gregory of Nyssa", work: "The Life of Moses" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homilies on First Corinthians", where: "Homily 23 (1 Cor 9:24-10:12)", url: "https://www.newadvent.org/fathers/220123.htm", about: "Homily on the sea crossing as type of baptism; the Rock was Christ" },
+        { who: "Ambrose", work: "On the Mysteries", where: "Chapter 3", url: "https://www.newadvent.org/fathers/3405.htm", about: "The Red Sea crossing as a figure of baptism" },
+        { who: "Tertullian", work: "On Baptism", where: "Chapter 9", url: "https://www.newadvent.org/fathers/0321.htm", about: "Types of baptism in the Red Sea and water from the rock" }
+      ],
+      topics: ["salvation", "covenant"]
     },
     {
       id: "m14",
@@ -462,7 +717,12 @@ const QUESTIONS = {
       readings: [
         { who: "Augustine", work: "City of God, Book 17" },
         { who: "O. Palmer Robertson", work: "The Christ of the Covenants" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homilies on the Acts of the Apostles", where: "Homily 6 (Acts 2:22-36)", url: "https://www.newadvent.org/fathers/210106.htm", about: "Homily on Peter's argument from God's oath to David" },
+        { who: "Lactantius", work: "Divine Institutes", where: "Book 4, Chapter 13", url: "https://www.newadvent.org/fathers/07014.htm", about: "The promise of David's everlasting throne applied to Christ, not Solomon" }
+      ],
+      topics: ["christ", "covenant"]
     },
     {
       id: "m15",
@@ -472,7 +732,13 @@ const QUESTIONS = {
       readings: [
         { who: "Athanasius", work: "On the Incarnation, chs. 11–14" },
         { who: "Gregory of Nyssa", work: "On the Making of Man" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homilies on Second Corinthians", where: "Homily 7 (2 Cor 3:7-18)", url: "https://www.newadvent.org/fathers/220207.htm", about: "Homily on being transformed into the same image from glory to glory" },
+        { who: "Irenaeus of Lyons", work: "Against Heresies", where: "Book 5, Chapter 16", url: "https://www.newadvent.org/fathers/0103516.htm", about: "The incarnate Word showing the true image and restoring the likeness" },
+        { who: "Augustine", work: "On the Trinity", where: "Book 14, Chapter 17", url: "https://www.newadvent.org/fathers/130114.htm", about: "How the image of God in us is renewed day by day" }
+      ],
+      topics: ["creation", "christ"]
     },
     {
       id: "m16",
@@ -482,7 +748,12 @@ const QUESTIONS = {
       readings: [
         { who: "George Eldon Ladd", work: "The Gospel of the Kingdom" },
         { who: "N.T. Wright", work: "Jesus and the Victory of God" }
-      ]
+      ],
+      fathers: [
+        { who: "Cyprian of Carthage", work: "On the Lord's Prayer (Treatise 4)", where: "Section 13", url: "https://www.newadvent.org/fathers/050704.htm", about: "On 'Thy kingdom come'; Christ himself as the kingdom of God" },
+        { who: "Tertullian", work: "On Prayer", where: "Chapter 5", url: "https://www.newadvent.org/fathers/0322.htm", about: "On the petition 'Thy kingdom come' and longing for its arrival" }
+      ],
+      topics: ["christ", "hope"]
     },
     {
       id: "m17",
@@ -492,7 +763,13 @@ const QUESTIONS = {
       readings: [
         { who: "John Calvin", work: "Institutes of the Christian Religion, Book 2, ch. 7" },
         { who: "Martin Luther", work: "Commentary on Galatians" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homilies on Galatians", where: "Homily 3 (Galatians 3)", url: "https://www.newadvent.org/fathers/23103.htm", about: "Homily on why the Law was added and its role as tutor until Christ" },
+        { who: "Irenaeus of Lyons", work: "Against Heresies", where: "Book 4, Chapter 16", url: "https://www.newadvent.org/fathers/0103416.htm", about: "Why the Law was given; patriarchs righteous without it; Decalogue's abiding place" },
+        { who: "John Chrysostom", work: "Homilies on Romans", where: "Homily 12 (Rom 6:19-7:13)", url: "https://www.newadvent.org/fathers/210212.htm", about: "Homily on the Law revealing sin, yet holy, just and good" }
+      ],
+      topics: ["covenant", "salvation"]
     },
     {
       id: "m18",
@@ -502,7 +779,12 @@ const QUESTIONS = {
       readings: [
         { who: "Athanasius", work: "Four Discourses Against the Arians, Discourse 2" },
         { who: "Augustine", work: "On the Trinity" }
-      ]
+      ],
+      fathers: [
+        { who: "Justin Martyr", work: "Dialogue with Trypho", where: "Chapter 61", url: "https://www.newadvent.org/fathers/01285.htm", about: "Quotes Proverbs 8: Wisdom begotten of the Father, identified as Christ" },
+        { who: "Origen", work: "De Principiis (On First Principles)", where: "Book 1, Chapter 2", url: "https://www.newadvent.org/fathers/04121.htm", about: "Christ as the Wisdom of God, citing Proverbs 8" }
+      ],
+      topics: ["christ", "god"]
     },
     {
       id: "m19",
@@ -512,7 +794,13 @@ const QUESTIONS = {
       readings: [
         { who: "Ignatius of Antioch", work: "Letter to the Magnesians, ch. 9" },
         { who: "Justin Martyr", work: "First Apology, ch. 67" }
-      ]
+      ],
+      fathers: [
+        { who: "Barnabas (attributed)", work: "Epistle of Barnabas", where: "Chapter 15", url: "https://www.newadvent.org/fathers/0124.htm", about: "The false and true Sabbath; Christians keep the eighth day of resurrection" },
+        { who: "John Chrysostom", work: "Homilies on Matthew", where: "Homily 39 (Matt 12:1-8)", url: "https://www.newadvent.org/fathers/200139.htm", about: "Homily on plucking grain on the Sabbath; Son of Man Lord of the Sabbath" },
+        { who: "Justin Martyr", work: "Dialogue with Trypho", where: "Chapter 21", url: "https://www.newadvent.org/fathers/01282.htm", about: "Why the Sabbath was instituted for Israel" }
+      ],
+      topics: ["life", "covenant"]
     },
     {
       id: "m20",
@@ -522,7 +810,12 @@ const QUESTIONS = {
       readings: [
         { who: "John Calvin", work: "Institutes of the Christian Religion, Book 2, chs. 10–11" },
         { who: "Justin Martyr", work: "Dialogue with Trypho" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homilies on Romans", where: "Homily 19 (Rom 11:7-34)", url: "https://www.newadvent.org/fathers/210219.htm", about: "Homily on the olive tree, grafted branches, and 'all Israel shall be saved'" },
+        { who: "John Chrysostom", work: "Homilies on Ephesians", where: "Homily 5 (Eph 2:11-16)", url: "https://www.newadvent.org/fathers/230105.htm", about: "Homily on Jew and Gentile made one new man in Christ" }
+      ],
+      topics: ["covenant", "church"]
     },
     {
       id: "m21",
@@ -532,7 +825,12 @@ const QUESTIONS = {
       readings: [
         { who: "Augustine", work: "Tractates on the Gospel of John, 25–26" },
         { who: "Brant Pitre", work: "Jesus and the Jewish Roots of the Eucharist" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homilies on the Gospel of John", where: "Homily 45 (John 6:28-40)", url: "https://www.newadvent.org/fathers/240145.htm", about: "Homily contrasting the manna with Christ the bread of life" },
+        { who: "Ambrose", work: "On the Mysteries", where: "Chapter 8", url: "https://www.newadvent.org/fathers/3405.htm", about: "The manna compared with the living bread from heaven" }
+      ],
+      topics: ["christ", "church"]
     },
     {
       id: "m22",
@@ -542,7 +840,13 @@ const QUESTIONS = {
       readings: [
         { who: "Athenagoras", work: "On the Resurrection of the Dead" },
         { who: "N.T. Wright", work: "The Resurrection of the Son of God" }
-      ]
+      ],
+      fathers: [
+        { who: "Cyril of Jerusalem", work: "Catechetical Lectures", where: "Lecture 18, section 15", url: "https://www.newadvent.org/fathers/310118.htm", about: "Old Testament witnesses to resurrection: Ezekiel 37, Daniel 12, Isaiah 26" },
+        { who: "Irenaeus of Lyons", work: "Against Heresies", where: "Book 5, Chapter 15", url: "https://www.newadvent.org/fathers/0103515.htm", about: "Isaiah 26:19 and Ezekiel's dry bones as prophecies of bodily resurrection" },
+        { who: "John Chrysostom", work: "Homilies on Matthew", where: "Homily 70 (Matt 22:15-33)", url: "https://www.newadvent.org/fathers/200170.htm", about: "Homily on the Sadducees and 'the God of Abraham... of the living'" }
+      ],
+      topics: ["hope"]
     },
     {
       id: "m23",
@@ -552,7 +856,13 @@ const QUESTIONS = {
       readings: [
         { who: "John Calvin", work: "Institutes of the Christian Religion, Book 1, chs. 16–18" },
         { who: "Westminster Assembly", work: "Westminster Confession of Faith, ch. 5 (Of Providence)" }
-      ]
+      ],
+      fathers: [
+        { who: "Tertullian", work: "An Answer to the Jews", where: "Chapter 10", url: "https://www.newadvent.org/fathers/0308.htm", about: "Joseph, persecuted and sold by his brothers, as a figure of Christ's passion" },
+        { who: "John Chrysostom", work: "Homilies on Romans", where: "Homily 15 (Rom 8:28-39)", url: "https://www.newadvent.org/fathers/210215.htm", about: "Homily on 'all things work together for good to them that love God'" },
+        { who: "Augustine", work: "Enchiridion", where: "Chapter 11", url: "https://www.newadvent.org/fathers/1302.htm", about: "God, being good and almighty, able to bring good even out of evil" }
+      ],
+      topics: ["god", "sin"]
     },
     {
       id: "m24",
@@ -562,7 +872,13 @@ const QUESTIONS = {
       readings: [
         { who: "John Chrysostom", work: "Homilies on the Gospel of Matthew" },
         { who: "N.T. Wright", work: "Jesus and the Victory of God" }
-      ]
+      ],
+      fathers: [
+        { who: "Augustine", work: "Tractates on the Gospel of John", where: "Tractate 4 (John 1:19-33)", url: "https://www.newadvent.org/fathers/1701004.htm", about: "How John could deny being Elijah while Christ calls him Elijah" },
+        { who: "Justin Martyr", work: "Dialogue with Trypho", where: "Chapters 49-51", url: "https://www.newadvent.org/fathers/01284.htm", about: "Elijah's coming and John as forerunner of Christ's first advent" },
+        { who: "John Chrysostom", work: "Homilies on Matthew", where: "Homily 37 (Matt 11:7ff.)", url: "https://www.newadvent.org/fathers/200137.htm", about: "Homily on 'if ye will receive it, this is Elias'" }
+      ],
+      topics: ["christ", "covenant"]
     },
     {
       id: "m25",
@@ -572,7 +888,12 @@ const QUESTIONS = {
       readings: [
         { who: "Augustine", work: "On the Spirit and the Letter" },
         { who: "O. Palmer Robertson", work: "The Christ of the Covenants" }
-      ]
+      ],
+      fathers: [
+        { who: "Justin Martyr", work: "Dialogue with Trypho", where: "Chapter 11", url: "https://www.newadvent.org/fathers/01282.htm", about: "The new covenant promised by God, citing Jeremiah" },
+        { who: "John Chrysostom", work: "Homilies on Hebrews", where: "Homily 14 (Heb 8:1-13)", url: "https://www.newadvent.org/fathers/240214.htm", about: "Homily on Jeremiah's new covenant and laws written on hearts" }
+      ],
+      topics: ["covenant", "spirit"]
     },
     {
       id: "m26",
@@ -582,7 +903,12 @@ const QUESTIONS = {
       readings: [
         { who: "Augustine", work: "Expositions on the Psalms, on Psalm 22 (his Psalm 21)" },
         { who: "Charles Spurgeon", work: "The Treasury of David, on Psalm 22" }
-      ]
+      ],
+      fathers: [
+        { who: "Justin Martyr", work: "Dialogue with Trypho", where: "Chapters 98-106", url: "https://www.newadvent.org/fathers/01287.htm", about: "Verse-by-verse reading of Psalm 22 as predicting Christ's passion and resurrection" },
+        { who: "John Chrysostom", work: "Homilies on Matthew", where: "Homily 88 (Matt 27:45-48)", url: "https://www.newadvent.org/fathers/200188.htm", about: "Homily on Jesus' cry 'Eli, Eli, lama sabachthani'" }
+      ],
+      topics: ["christ", "salvation"]
     },
     {
       id: "m27",
@@ -592,7 +918,13 @@ const QUESTIONS = {
       readings: [
         { who: "Augustine", work: "Tractates on the Gospel of John, 80–83" },
         { who: "Andrew Murray", work: "Abide in Christ" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homilies on the Gospel of John", where: "Homily 76 (John 14:31-15:10)", url: "https://www.newadvent.org/fathers/240176.htm", about: "Homily on the true vine, the branches, and abiding in Christ" },
+        { who: "Cyril of Alexandria", work: "Commentary on John", where: "Book 10 (John 15:1ff.)", url: "https://www.tertullian.org/fathers/cyril_on_john_10_book10.htm", about: "Commentary on 'I am the true Vine' and the Father as husbandman" },
+        { who: "Irenaeus of Lyons", work: "Against Heresies", where: "Book 4, Chapter 36", url: "https://www.newadvent.org/fathers/0103436.htm", about: "The parable of God's vineyard across the Mosaic and Christian dispensations" }
+      ],
+      topics: ["christ", "life"]
     },
     {
       id: "m28",
@@ -602,7 +934,12 @@ const QUESTIONS = {
       readings: [
         { who: "Augustine", work: "On the Good of Marriage" },
         { who: "Bernard of Clairvaux", work: "Sermons on the Song of Songs" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homilies on Ephesians", where: "Homily 20 (Eph 5:22-33)", url: "https://www.newadvent.org/fathers/230120.htm", about: "Homily on marriage and the 'great mystery' of Christ and the Church" },
+        { who: "Methodius of Olympus", work: "Banquet of the Ten Virgins", where: "Discourse 3, Chapters 1 and 8", url: "https://www.newadvent.org/fathers/062303.htm", about: "Adam and Eve read with Ephesians 5 as Christ and the Church" }
+      ],
+      topics: ["church", "covenant"]
     },
     {
       id: "m29",
@@ -612,7 +949,13 @@ const QUESTIONS = {
       readings: [
         { who: "Augustine", work: "City of God, Book 20" },
         { who: "N.T. Wright", work: "Surprised by Hope" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homilies on First Thessalonians", where: "Homily 9 (1 Thess 5:1-11)", url: "https://www.newadvent.org/fathers/230409.htm", about: "Homily on the day of the Lord as a thief; watchfulness and sobriety" },
+        { who: "Cyril of Jerusalem", work: "Catechetical Lectures", where: "Lecture 15", url: "https://www.newadvent.org/fathers/310115.htm", about: "Lecture on Christ's coming in glory to judge, citing 1 Thessalonians 4" },
+        { who: "Early Church", work: "The Didache (Teaching of the Twelve Apostles)", where: "Chapter 16", url: "https://www.newadvent.org/fathers/0714.htm", about: "Watchfulness and readiness for the Lord's coming" }
+      ],
+      topics: ["hope"]
     },
     {
       id: "m30",
@@ -622,7 +965,12 @@ const QUESTIONS = {
       readings: [
         { who: "J.C. Ryle", work: "Holiness" },
         { who: "John Wesley", work: "A Plain Account of Christian Perfection" }
-      ]
+      ],
+      fathers: [
+        { who: "Cyprian of Carthage", work: "On the Lord's Prayer (Treatise 4)", where: "Section 12", url: "https://www.newadvent.org/fathers/050704.htm", about: "On 'Hallowed be thy name' and daily sanctification; cites 'Be holy'" },
+        { who: "Clement of Rome", work: "First Epistle to the Corinthians (1 Clement)", where: "Chapter 30", url: "https://www.newadvent.org/fathers/1010.htm", about: "As the portion of the Holy One, do all that pertains to holiness" }
+      ],
+      topics: ["life", "god"]
     }
   ],
 
@@ -637,7 +985,13 @@ const QUESTIONS = {
         { who: "Boethius", work: "The Consolation of Philosophy, Book 5" },
         { who: "Luis de Molina", work: "On Divine Foreknowledge (Part IV of the Concordia)" },
         { who: "Jonathan Edwards", work: "Freedom of the Will" }
-      ]
+      ],
+      fathers: [
+        { who: "Origen", work: "Against Celsus", where: "Book 2, ch. 20", url: "https://www.newadvent.org/fathers/04162.htm", about: "Whether God's foreknowledge of Judas's betrayal causes it; foreknowledge versus necessity" },
+        { who: "Augustine", work: "City of God", where: "Book 5, chs. 9–10", url: "https://www.newadvent.org/fathers/120105.htm", about: "Answers Cicero's claim that divine foreknowledge rules out free will" },
+        { who: "Justin Martyr", work: "First Apology", where: "ch. 43", url: "https://www.newadvent.org/fathers/0126.htm", about: "Prophecy and foreknowledge set alongside human responsibility and free choice" }
+      ],
+      topics: ["god"]
     },
     {
       id: "p2",
@@ -648,7 +1002,13 @@ const QUESTIONS = {
         { who: "Augustine", work: "Enchiridion, chs. 10–14" },
         { who: "Thomas Aquinas", work: "Summa Theologiae, Part I, Questions 48–49" },
         { who: "Alvin Plantinga", work: "God, Freedom, and Evil" }
-      ]
+      ],
+      fathers: [
+        { who: "Athanasius", work: "Against the Heathen", where: "chs. 6–7", url: "https://www.newadvent.org/fathers/2801.htm", about: "Rejects evil as a substance; locates its origin in the soul's perverted choice" },
+        { who: "Gregory of Nyssa", work: "The Great Catechism", where: "chs. 5–6", url: "https://www.newadvent.org/fathers/2908.htm", about: "Evil arising from free will, described as absence of good rather than a thing" },
+        { who: "Augustine", work: "Confessions", where: "Book 7, chs. 12–16", url: "https://www.newadvent.org/fathers/110107.htm", about: "His search for where evil comes from; evil not a substance but perverted will" }
+      ],
+      topics: ["sin", "god"]
     },
     {
       id: "p3",
@@ -659,7 +1019,13 @@ const QUESTIONS = {
         { who: "Gregory of Nazianzus", work: "Theological Orations (Orations 27–31)" },
         { who: "Augustine", work: "On the Trinity" },
         { who: "Thomas Aquinas", work: "Summa Theologiae, Part I, Questions 27–43" }
-      ]
+      ],
+      fathers: [
+        { who: "Gregory of Nyssa", work: "On \"Not Three Gods\" (to Ablabius)", where: "", url: "https://www.newadvent.org/fathers/2905.htm", about: "Why three divine Persons sharing one nature are not called three Gods" },
+        { who: "Basil of Caesarea", work: "Letter 38 (to his brother Gregory)", where: "", url: "https://www.newadvent.org/fathers/3202038.htm", about: "Distinguishes ousia (common essence) from hypostasis (Person) in the Trinity" },
+        { who: "Tertullian", work: "Against Praxeas", where: "chs. 2–3", url: "https://www.newadvent.org/fathers/0317.htm", about: "Against modalism: one God in three Persons without destroying the divine monarchy" }
+      ],
+      topics: ["god"]
     },
     {
       id: "p4",
@@ -670,7 +1036,13 @@ const QUESTIONS = {
         { who: "Thomas Aquinas", work: "Summa Theologiae, Part I, Question 9" },
         { who: "Thomas Weinandy", work: "Does God Suffer?" },
         { who: "Jürgen Moltmann", work: "The Crucified God" }
-      ]
+      ],
+      fathers: [
+        { who: "Augustine", work: "City of God", where: "Book 15, ch. 25", url: "https://www.ccel.org/ccel/schaff/npnf102.iv.XV.25.html", about: "How Scripture's language of God's anger and repenting fits an unchanging God" },
+        { who: "Novatian", work: "On the Trinity", where: "ch. 5", url: "https://www.newadvent.org/fathers/0511.htm", about: "How to read God's anger and hatred in Scripture without ascribing human vices" },
+        { who: "Lactantius", work: "On the Anger of God", where: "", url: "https://www.newadvent.org/fathers/0703.htm", about: "Argues against philosophers that God is truly angry with wickedness" }
+      ],
+      topics: ["god"]
     },
     {
       id: "p5",
@@ -681,7 +1053,13 @@ const QUESTIONS = {
         { who: "Leo the Great", work: "The Tome of Leo" },
         { who: "Cyril of Alexandria", work: "On the Unity of Christ" },
         { who: "Council of Chalcedon", work: "The Chalcedonian Definition (451)" }
-      ]
+      ],
+      fathers: [
+        { who: "Irenaeus of Lyons", work: "Against Heresies", where: "Book 3, ch. 18", url: "https://www.newadvent.org/fathers/0103318.htm", about: "Why the Mediator had to be both truly God and truly man to save" },
+        { who: "Gregory of Nazianzus", work: "Letter 101 (to Cledonius)", where: "", url: "https://www.newadvent.org/fathers/3103a.htm", about: "Against Apollinarius: Christ assumed a full human mind; the unassumed is unhealed" },
+        { who: "Athanasius", work: "Letter 59 (to Epictetus)", where: "", url: "https://www.newadvent.org/fathers/2806059.htm", about: "Defends the true humanity of Christ's body from Mary, not changed into Godhead" }
+      ],
+      topics: ["christ"]
     },
     {
       id: "p6",
@@ -693,7 +1071,13 @@ const QUESTIONS = {
         { who: "John of Damascus", work: "An Exact Exposition of the Orthodox Faith, Book 4, ch. 13" },
         { who: "Martin Luther", work: "The Babylonian Captivity of the Church" },
         { who: "John Calvin", work: "Institutes of the Christian Religion, Book 4, ch. 17" }
-      ]
+      ],
+      fathers: [
+        { who: "Justin Martyr", work: "First Apology", where: "ch. 66", url: "https://www.ccel.org/ccel/schaff/anf01.viii.ii.lxvi.html", about: "Early description of the Eucharist received as Christ's flesh and blood" },
+        { who: "Cyril of Jerusalem", work: "Catechetical Lecture 22 (Mystagogical 4)", where: "", url: "https://www.newadvent.org/fathers/310122.htm", about: "Teaching new believers that the bread and wine are Christ's body and blood" },
+        { who: "Augustine", work: "Tractates on the Gospel of John", where: "Tractate 26", url: "https://www.newadvent.org/fathers/1701026.htm", about: "On John 6: the sacrament versus its virtue; eating Christ's flesh by faith" }
+      ],
+      topics: ["church"]
     },
     {
       id: "p7",
@@ -703,7 +1087,13 @@ const QUESTIONS = {
       readings: [
         { who: "Pseudo-Dionysius", work: "The Divine Names and The Mystical Theology" },
         { who: "Thomas Aquinas", work: "Summa Theologiae, Part I, Question 13" }
-      ]
+      ],
+      fathers: [
+        { who: "Basil of Caesarea", work: "Letter 234", where: "", url: "https://www.newadvent.org/fathers/3202234.htm", about: "Whether we know God's essence or know him through his operations" },
+        { who: "Augustine", work: "On Christian Doctrine", where: "Book 1, chs. 6–7", url: "https://www.newadvent.org/fathers/12021.htm", about: "In what sense God is unspeakable, yet still rightly spoken of" },
+        { who: "John of Damascus", work: "An Exact Exposition of the Orthodox Faith", where: "Book 1, ch. 4", url: "https://www.newadvent.org/fathers/33041.htm", about: "That the divine nature is incomprehensible; what our names for God signify" }
+      ],
+      topics: ["god", "scripture"]
     },
     {
       id: "p8",
@@ -715,7 +1105,13 @@ const QUESTIONS = {
         { who: "Thomas Aquinas", work: "Summa Contra Gentiles, Book 1, chs. 3–8" },
         { who: "Blaise Pascal", work: "Pensées" },
         { who: "Søren Kierkegaard", work: "Fear and Trembling" }
-      ]
+      ],
+      fathers: [
+        { who: "Augustine", work: "Tractates on the Gospel of John", where: "Tractate 29", url: "https://www.newadvent.org/fathers/1701029.htm", about: "On John 7:17 and Isaiah 7:9: believing in order to understand" },
+        { who: "Tertullian", work: "The Prescription Against Heretics", where: "ch. 7", url: "https://www.newadvent.org/fathers/0311.htm", about: "\"What has Athens to do with Jerusalem?\": suspicion of philosophy as a source of heresy" },
+        { who: "Clement of Alexandria", work: "Stromata", where: "Book 1, ch. 5", url: "https://www.newadvent.org/fathers/02101.htm", about: "Philosophy as a preparation leading the Greeks toward Christ" }
+      ],
+      topics: ["scripture"]
     },
     {
       id: "p9",
@@ -726,7 +1122,13 @@ const QUESTIONS = {
         { who: "Anselm of Canterbury", work: "Why God Became Man (Cur Deus Homo)" },
         { who: "Gustaf Aulén", work: "Christus Victor" },
         { who: "Athanasius", work: "On the Incarnation" }
-      ]
+      ],
+      fathers: [
+        { who: "Gregory of Nyssa", work: "The Great Catechism", where: "chs. 21–26", url: "https://www.newadvent.org/fathers/2908.htm", about: "The ransom given for humanity and the outwitting of the devil" },
+        { who: "Gregory of Nazianzus", work: "Oration 45 (Second Oration on Easter)", where: "sec. 22", url: "https://www.newadvent.org/fathers/310245.htm", about: "Asks to whom Christ's blood was paid, rejecting both devil and Father as payee" },
+        { who: "Augustine", work: "Reply to Faustus the Manichaean", where: "Book 14", url: "https://www.newadvent.org/fathers/140614.htm", about: "Christ bearing the curse and our punishment though himself without guilt" }
+      ],
+      topics: ["christ", "salvation"]
     },
     {
       id: "p10",
@@ -736,7 +1138,12 @@ const QUESTIONS = {
       readings: [
         { who: "Augustine", work: "Confessions, Book 11" },
         { who: "Boethius", work: "The Consolation of Philosophy, Book 5" }
-      ]
+      ],
+      fathers: [
+        { who: "Augustine", work: "City of God", where: "Book 11, chs. 6 and 21", url: "https://www.newadvent.org/fathers/120111.htm", about: "World and time begun together; God's eternal, unchanging knowledge and will" },
+        { who: "John of Damascus", work: "An Exact Exposition of the Orthodox Faith", where: "Book 2, ch. 1", url: "https://www.newadvent.org/fathers/33042.htm", about: "On aeon/age and time, and God as existing before and making the ages" }
+      ],
+      topics: ["god"]
     },
     {
       id: "p11",
@@ -747,7 +1154,13 @@ const QUESTIONS = {
         { who: "Augustine", work: "On the Predestination of the Saints" },
         { who: "John Calvin", work: "Institutes of the Christian Religion, Book 3, chs. 21–24" },
         { who: "Jacobus Arminius", work: "Declaration of Sentiments" }
-      ]
+      ],
+      fathers: [
+        { who: "Origen", work: "On First Principles (De Principiis)", where: "Book 3, ch. 1", url: "https://www.newadvent.org/fathers/04123.htm", about: "Defends free will; reads Pharaoh's hardening and Romans 9's potter and vessels" },
+        { who: "John Chrysostom", work: "Homilies on Romans", where: "Homily 15 (Rom 8:28–39)", url: "https://www.newadvent.org/fathers/210215.htm", about: "\"Called according to his purpose\": calling, foreknowledge, and the hearer's response" },
+        { who: "John Cassian", work: "Conferences", where: "Conference 13 (Abbot Chaeremon), chs. 8–18", url: "https://www.newadvent.org/fathers/350813.htm", about: "Whether God's grace precedes or follows the beginning of a good will" }
+      ],
+      topics: ["salvation", "god"]
     },
     {
       id: "p12",
@@ -758,7 +1171,12 @@ const QUESTIONS = {
         { who: "Westminster Assembly", work: "Westminster Confession of Faith, ch. 17 (Of the Perseverance of the Saints)" },
         { who: "Council of Trent", work: "Session 6, Decree on Justification, chs. 13–15" },
         { who: "Jacobus Arminius", work: "Declaration of Sentiments" }
-      ]
+      ],
+      fathers: [
+        { who: "Augustine", work: "On Rebuke and Grace", where: "chs. 10–16, 20", url: "https://www.newadvent.org/fathers/1513.htm", about: "Perseverance as God's gift; those who fall away versus the elect" },
+        { who: "John Chrysostom", work: "Homilies on Hebrews", where: "Homily 9 (Heb 6:1–6)", url: "https://www.newadvent.org/fathers/240209.htm", about: "Reads Hebrews 6:4–6 as ruling out a second baptism, not repentance" }
+      ],
+      topics: ["salvation"]
     },
     {
       id: "p13",
@@ -769,7 +1187,13 @@ const QUESTIONS = {
         { who: "Augustine", work: "City of God, Book 21" },
         { who: "C.S. Lewis", work: "The Problem of Pain, ch. 8" },
         { who: "David L. Edwards and John Stott", work: "Evangelical Essentials" }
-      ]
+      ],
+      fathers: [
+        { who: "Justin Martyr", work: "First Apology", where: "ch. 8", url: "https://www.ccel.org/ccel/schaff/anf01.viii.ii.viii.html", about: "Everlasting punishment of the wicked, contrasted with Plato's thousand-year period" },
+        { who: "Arnobius", work: "Against the Heathen", where: "Book 2, ch. 14", url: "https://www.newadvent.org/fathers/06312.htm", about: "Souls not immortal by nature; the wicked pass into final destruction" },
+        { who: "Gregory of Nyssa", work: "The Great Catechism", where: "ch. 26", url: "https://www.newadvent.org/fathers/2908.htm", about: "Hope that evil is finally purged, even from the adversary himself" }
+      ],
+      topics: ["hope", "god"]
     },
     {
       id: "p14",
@@ -780,7 +1204,12 @@ const QUESTIONS = {
         { who: "Augustine", work: "Letter 82 (to Jerome)" },
         { who: "Second Vatican Council", work: "Dei Verbum (Dogmatic Constitution on Divine Revelation)" },
         { who: "B.B. Warfield", work: "Revelation and Inspiration" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homilies on Matthew", where: "Homily 1, secs. 5–6", url: "https://www.newadvent.org/fathers/200101.htm", about: "Why four Gospels, and how minor differences between them attest their truth" },
+        { who: "Origen", work: "On First Principles (De Principiis)", where: "Book 4", url: "https://www.newadvent.org/fathers/04124.htm", about: "Inspiration of Scripture and the purpose of its difficulties and impossibilities" }
+      ],
+      topics: ["scripture"]
     },
     {
       id: "p15",
@@ -793,7 +1222,13 @@ const QUESTIONS = {
         { who: "Basil of Caesarea", work: "On the Holy Spirit, ch. 27" },
         { who: "Westminster Assembly", work: "Westminster Confession of Faith, ch. 1 (Of the Holy Scripture)" },
         { who: "Second Vatican Council", work: "Dei Verbum (Dogmatic Constitution on Divine Revelation)" }
-      ]
+      ],
+      fathers: [
+        { who: "Cyril of Jerusalem", work: "Catechetical Lecture 4", where: "sec. 17", url: "https://www.newadvent.org/fathers/310104.htm", about: "Tells hearers to accept his teaching only with proof from the Scriptures" },
+        { who: "Tertullian", work: "The Prescription Against Heretics", where: "chs. 19–21", url: "https://www.newadvent.org/fathers/0311.htm", about: "Rule of faith and apostolic churches as the test, rather than arguing from Scripture alone" },
+        { who: "Athanasius", work: "Letter 39 (Festal Letter, AD 367)", where: "", url: "https://www.newadvent.org/fathers/2806039.htm", about: "Lists the canonical books as sufficient \"fountains of salvation\"" }
+      ],
+      topics: ["scripture", "church"]
     },
     {
       id: "p16",
@@ -805,7 +1240,13 @@ const QUESTIONS = {
         { who: "Martin Luther", work: "Large Catechism, Part 4 (Baptism)" },
         { who: "Westminster Assembly", work: "Westminster Confession of Faith, ch. 28 (Of Baptism)" },
         { who: "Particular Baptists", work: "Second London Baptist Confession (1689), ch. 29 (Of Baptism)" }
-      ]
+      ],
+      fathers: [
+        { who: "Cyprian of Carthage", work: "Letter 58 (to Fidus)", where: "", url: "https://www.newadvent.org/fathers/050658.htm", about: "African bishops reject waiting until the eighth day to baptize infants" },
+        { who: "Gregory of Nazianzus", work: "Oration 40 (On Holy Baptism)", where: "sec. 28", url: "https://www.newadvent.org/fathers/310240.htm", about: "Whether to baptize infants: at once if in danger, otherwise around age three" },
+        { who: "Irenaeus of Lyons", work: "Against Heresies", where: "Book 2, ch. 22, sec. 4", url: "https://www.newadvent.org/fathers/0103222.htm", about: "Christ came to save all ages born again to God, infants included" }
+      ],
+      topics: ["church"]
     },
     {
       id: "p17",
@@ -817,7 +1258,13 @@ const QUESTIONS = {
         { who: "Second Council of Nicaea", work: "Decree of the Second Council of Nicaea (787)" },
         { who: "Reformed Churches", work: "Heidelberg Catechism, Q&A 96–98" },
         { who: "John Calvin", work: "Institutes of the Christian Religion, Book 1, ch. 11" }
-      ]
+      ],
+      fathers: [
+        { who: "Epiphanius of Salamis", work: "Letter to John of Jerusalem (Jerome, Letter 51)", where: "sec. 9", url: "https://www.newadvent.org/fathers/3001051.htm", about: "Tears down a church curtain bearing an image of Christ or a saint" },
+        { who: "Basil of Caesarea", work: "On the Holy Spirit", where: "ch. 18, sec. 45", url: "https://www.ccel.org/ccel/schaff/npnf208.vii.xix.html", about: "Honor paid to an image passes to its prototype (a Trinitarian argument later cited for icons)" },
+        { who: "Gregory the Great", work: "Letter to Serenus of Marseilles", where: "Book 11, Letter 13", url: "https://www.newadvent.org/fathers/360211013.htm", about: "Rebukes a bishop for smashing images: pictures teach the unlettered, not to be adored" }
+      ],
+      topics: ["church"]
     },
     {
       id: "p18",
@@ -827,7 +1274,13 @@ const QUESTIONS = {
       readings: [
         { who: "Cyril of Alexandria", work: "Third Letter to Nestorius" },
         { who: "Cyril of Alexandria", work: "On the Unity of Christ" }
-      ]
+      ],
+      fathers: [
+        { who: "John Cassian", work: "On the Incarnation of the Lord, Against Nestorius", where: "Book 2, ch. 2", url: "https://orthodoxchurchfathers.com/fathers/npnf211/npnf2189.html", about: "Argues Mary is Theotokos, not only Christotokos, because Christ is truly God" },
+        { who: "Athanasius", work: "Discourses Against the Arians", where: "Discourse 3, sec. 29", url: "https://www.newadvent.org/fathers/28163.htm", about: "Calls Mary \"Bearer of God\" when summarizing the Word taking flesh" },
+        { who: "Gregory of Nazianzus", work: "Letter 101 (to Cledonius)", where: "", url: "https://www.newadvent.org/fathers/3103a.htm", about: "Makes confessing Mary as Mother of God a test of true faith in Christ" }
+      ],
+      topics: ["christ"]
     },
     {
       id: "p19",
@@ -838,7 +1291,13 @@ const QUESTIONS = {
         { who: "Augustine", work: "City of God, Book 21, chs. 5–8" },
         { who: "Thomas Aquinas", work: "Summa Contra Gentiles, Book 3, chs. 98–103" },
         { who: "C.S. Lewis", work: "Miracles" }
-      ]
+      ],
+      fathers: [
+        { who: "Augustine", work: "Tractates on the Gospel of John", where: "Tractate 24, sec. 1", url: "https://www.newadvent.org/fathers/1701024.htm", about: "Daily governance of the world as a greater wonder than miracles, which are rare" },
+        { who: "Augustine", work: "Reply to Faustus the Manichaean", where: "Book 26, sec. 3", url: "https://www.newadvent.org/fathers/140626.htm", about: "Miracles are not against nature, only against nature as known to us" },
+        { who: "Origen", work: "Against Celsus", where: "Book 2, ch. 48", url: "https://www.ccel.org/ccel/schaff/anf04.vi.ix.ii.xlviii.html", about: "Answers Celsus's charge that Jesus' miracles were sorcery" }
+      ],
+      topics: ["god", "scripture"]
     },
     {
       id: "p20",
@@ -850,7 +1309,12 @@ const QUESTIONS = {
         { who: "John Calvin", work: "Institutes of the Christian Religion, Book 1, chs. 3–5" },
         { who: "C.S. Lewis", work: "Mere Christianity, Book 1" },
         { who: "Emil Brunner and Karl Barth", work: "Natural Theology (Nature and Grace / No!)" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homilies on the Statues", where: "Homily 12, secs. 9–14", url: "https://www.newadvent.org/fathers/190112.htm", about: "Natural law and conscience implanted in all; Romans 2:14–15" },
+        { who: "Justin Martyr", work: "Second Apology", where: "ch. 13", url: "https://www.newadvent.org/fathers/0127.htm", about: "The seed of the Word in all people; truth found among pagans belongs to Christians" }
+      ],
+      topics: ["scripture", "creation"]
     },
     {
       id: "p21",
@@ -861,7 +1325,12 @@ const QUESTIONS = {
         { who: "Augustine", work: "On the Merits and Forgiveness of Sins, and on the Baptism of Infants" },
         { who: "Council of Trent", work: "Session 5, Decree on Original Sin" },
         { who: "Timothy (Kallistos) Ware", work: "The Orthodox Church" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homilies on Romans", where: "Homily 10 (Rom 5:12–6:2)", url: "https://www.newadvent.org/fathers/210210.htm", about: "What \"made sinners\" through Adam means: liable to punishment and death" },
+        { who: "Cyprian of Carthage", work: "Letter 58 (to Fidus)", where: "sec. 5", url: "https://www.newadvent.org/fathers/050658.htm", about: "Infants contract the contagion of the ancient death from Adam at birth" }
+      ],
+      topics: ["sin"]
     },
     {
       id: "p22",
@@ -872,7 +1341,12 @@ const QUESTIONS = {
         { who: "Augustine", work: "Against Two Letters of the Pelagians, Book 1" },
         { who: "John Wesley", work: "A Plain Account of Christian Perfection" },
         { who: "John Owen", work: "Of the Mortification of Sin in Believers" }
-      ]
+      ],
+      fathers: [
+        { who: "John Chrysostom", work: "Homilies on Romans", where: "Homily 13 (Rom 7:14–8:11)", url: "https://www.newadvent.org/fathers/210213.htm", about: "Reads Romans 7 as the person under the law before grace" },
+        { who: "Augustine", work: "On Man's Perfection in Righteousness", where: "", url: "https://www.newadvent.org/fathers/1504.htm", about: "Answers Caelestius on whether a person can live without sin in this life" }
+      ],
+      topics: ["life", "sin"]
     },
     {
       id: "p23",
@@ -883,7 +1357,13 @@ const QUESTIONS = {
         { who: "Thomas Aquinas", work: "Summa Theologiae, Part II-II, Question 83" },
         { who: "Blaise Pascal", work: "Pensées" },
         { who: "Tertullian", work: "On Prayer" }
-      ]
+      ],
+      fathers: [
+        { who: "Augustine", work: "Letter 130 (to Proba)", where: "ch. 8", url: "https://www.newadvent.org/fathers/1102130.htm", about: "Why ask if God already knows our needs; prayer enlarging our desire" },
+        { who: "Origen", work: "On Prayer", where: "secs. 3–4 (Curtis translation)", url: "https://www.tertullian.org/fathers/origen_on_prayer_02_text.htm", about: "Objection that prayer is superfluous given foreknowledge; his reply" },
+        { who: "Gregory the Great", work: "Dialogues", where: "Book 1, ch. 8", url: "https://www.tertullian.org/fathers/gregory_01_dialogues_book1.htm", about: "Whether prayer can obtain what is predestined" }
+      ],
+      topics: ["life", "god"]
     },
     {
       id: "p24",
@@ -894,7 +1374,13 @@ const QUESTIONS = {
         { who: "Thomas Aquinas", work: "Summa Theologiae, Part I, Question 3" },
         { who: "Anselm of Canterbury", work: "Proslogion, chs. 18–22" },
         { who: "Alvin Plantinga", work: "Does God Have a Nature?" }
-      ]
+      ],
+      fathers: [
+        { who: "Irenaeus of Lyons", work: "Against Heresies", where: "Book 2, ch. 13, sec. 3", url: "https://www.newadvent.org/fathers/0103213.htm", about: "God as simple and uncompounded, wholly mind, without parts" },
+        { who: "Augustine", work: "City of God", where: "Book 11, ch. 10", url: "https://www.newadvent.org/fathers/120111.htm", about: "The simple Trinity, in whom substance and quality are identical" },
+        { who: "John of Damascus", work: "An Exact Exposition of the Orthodox Faith", where: "Book 1, ch. 9", url: "https://www.newadvent.org/fathers/33041.htm", about: "What our affirmations about God signify, given that he is simple" }
+      ],
+      topics: ["god"]
     },
     {
       id: "p25",
@@ -905,7 +1391,13 @@ const QUESTIONS = {
         { who: "Augustine", work: "City of God, Book 19, ch. 7" },
         { who: "Thomas Aquinas", work: "Summa Theologiae, Part II-II, Question 40" },
         { who: "Stanley Hauerwas", work: "The Peaceable Kingdom" }
-      ]
+      ],
+      fathers: [
+        { who: "Tertullian", work: "The Chaplet (De Corona)", where: "ch. 11", url: "https://www.newadvent.org/fathers/0304.htm", about: "Whether military service is lawful for Christians at all" },
+        { who: "Origen", work: "Against Celsus", where: "Book 8, ch. 73", url: "https://www.ccel.org/ccel/schaff/anf04.vi.ix.viii.lxxiii.html", about: "Answers the demand that Christians fight: they aid rulers by prayer" },
+        { who: "Augustine", work: "Letter 189 (to Boniface)", where: "secs. 4–6", url: "https://www.newadvent.org/fathers/1102189.htm", about: "Counsels a Christian soldier; war waged for the sake of peace" }
+      ],
+      topics: ["life"]
     },
     {
       id: "p26",
@@ -916,7 +1408,13 @@ const QUESTIONS = {
         { who: "Catholic Church", work: "Catechism of the Catholic Church, paragraphs 846–848" },
         { who: "Westminster Assembly", work: "Westminster Confession of Faith, ch. 10 (Of Effectual Calling)" },
         { who: "C.S. Lewis", work: "Mere Christianity, Book 2, ch. 5" }
-      ]
+      ],
+      fathers: [
+        { who: "Justin Martyr", work: "First Apology", where: "ch. 46", url: "https://www.ccel.org/ccel/schaff/anf01.viii.ii.xlvi.html", about: "Those before Christ who lived by the Word (Logos)" },
+        { who: "Augustine", work: "Letter 102 (to Deogratias)", where: "Question 2, secs. 8–15", url: "https://www.newadvent.org/fathers/1102102.htm", about: "Porphyry's objection: what of people who lived before Christ came?" },
+        { who: "Clement of Alexandria", work: "Stromata", where: "Book 6, ch. 6", url: "https://www.newadvent.org/fathers/02106.htm", about: "The gospel preached to Jews and Gentiles in Hades" }
+      ],
+      topics: ["salvation"]
     },
     {
       id: "p27",
@@ -927,7 +1425,13 @@ const QUESTIONS = {
         { who: "Basil of Caesarea", work: "Hexaemeron (Homilies on the Six Days of Creation)" },
         { who: "Augustine", work: "The Literal Meaning of Genesis" },
         { who: "John Calvin", work: "Commentary on Genesis" }
-      ]
+      ],
+      fathers: [
+        { who: "Augustine", work: "City of God", where: "Book 11, chs. 6–7", url: "https://www.newadvent.org/fathers/120111.htm", about: "What kind of days had morning and evening before the sun existed" },
+        { who: "Origen", work: "On First Principles (De Principiis)", where: "Book 4, sec. 16", url: "https://www.newadvent.org/fathers/04124.htm", about: "Cites days without sun, moon, and stars as signs of a non-literal sense" },
+        { who: "Theophilus of Antioch", work: "To Autolycus", where: "Book 2, chs. 11–12", url: "https://www.newadvent.org/fathers/02042.htm", about: "Recounts the six days' work and marvels at its greatness" }
+      ],
+      topics: ["creation", "scripture"]
     },
     {
       id: "p28",
@@ -938,7 +1442,13 @@ const QUESTIONS = {
         { who: "Thomas Aquinas", work: "Summa Theologiae, Part I, Questions 75–76" },
         { who: "Tertullian", work: "A Treatise on the Soul" },
         { who: "N.T. Wright", work: "Surprised by Hope" }
-      ]
+      ],
+      fathers: [
+        { who: "Irenaeus of Lyons", work: "Against Heresies", where: "Book 5, ch. 31", url: "https://www.newadvent.org/fathers/0103531.htm", about: "Souls await the resurrection in an invisible place, not straight to heaven" },
+        { who: "Athenagoras", work: "On the Resurrection of the Dead", where: "ch. 15", url: "https://www.newadvent.org/fathers/0206.htm", about: "Human nature as soul and body together, requiring resurrection" },
+        { who: "Augustine", work: "Enchiridion", where: "ch. 109", url: "https://www.ccel.org/ccel/schaff/npnf103.iv.ii.cxi.html", about: "The state of the soul between death and the resurrection" }
+      ],
+      topics: ["creation", "hope"]
     },
     {
       id: "p29",
@@ -949,7 +1459,13 @@ const QUESTIONS = {
         { who: "Cyprian of Carthage", work: "On the Unity of the Church" },
         { who: "John Calvin", work: "Institutes of the Christian Religion, Book 4, chs. 1–2" },
         { who: "Timothy (Kallistos) Ware", work: "The Orthodox Church" }
-      ]
+      ],
+      fathers: [
+        { who: "Ignatius of Antioch", work: "Letter to the Smyrnaeans", where: "ch. 8", url: "https://www.newadvent.org/fathers/0109.htm", about: "Unity around the bishop as the mark of the true Church and Eucharist" },
+        { who: "Irenaeus of Lyons", work: "Against Heresies", where: "Book 1, ch. 10, sec. 2", url: "https://www.newadvent.org/fathers/0103110.htm", about: "The scattered Church keeping one faith as if in one house" },
+        { who: "Cyril of Jerusalem", work: "Catechetical Lecture 18", where: "secs. 23–26", url: "https://www.newadvent.org/fathers/310118.htm", about: "Why the Church is called catholic, and how to tell it from rival assemblies" }
+      ],
+      topics: ["church"]
     },
     {
       id: "p30",
@@ -959,7 +1475,12 @@ const QUESTIONS = {
       readings: [
         { who: "Blaise Pascal", work: "Pensées" },
         { who: "Søren Kierkegaard", work: "Philosophical Fragments" }
-      ]
+      ],
+      fathers: [
+        { who: "Theophilus of Antioch", work: "To Autolycus", where: "Book 1, chs. 2–5", url: "https://www.newadvent.org/fathers/02041.htm", about: "\"Show me your God\": why God is unseen, and seen by the purified soul" },
+        { who: "Minucius Felix", work: "Octavius", where: "ch. 18", url: "https://www.newadvent.org/fathers/0410.htm", about: "God beyond sight and comprehension, yet evident through creation's order" }
+      ],
+      topics: ["god", "scripture"]
     }
   ]
 };
