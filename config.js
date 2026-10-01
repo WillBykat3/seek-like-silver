@@ -12,5 +12,5 @@ const OTP_LENGTH = 6;
 // YouVersion sign-in. The App Key is public (it identifies the site to YouVersion).
 // Leave it empty to show the button as "coming soon".
 // The redirect URL must EXACTLY match the one registered at platform.youversion.com.
-const YOUVERSION_APP_KEY = "";
+const YOUVERSION_APP_KEY = "AisS92WgjEzhGeTiAqOmFem9YoEtGY8GEMT1f9jUc8jDzd1A";
 const YOUVERSION_REDIRECT_URI = "https://seeklikesilver.com/";
