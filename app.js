@@ -32,10 +32,11 @@ if (!db) console.error("Supabase library didn't load; sign-in and saving are una
 
 const LEVEL_LABELS = { beginner: "Beginner", moderate: "Moderate", philosopher: "Philosopher" };
 const DRAFT_KEY = "sls-draft"; // keeps an unsaved answer through the Google sign-in redirect
+const DEFAULT_TRANSLATION = "NIV"; // signed out, or nothing chosen yet
 
 const state = {
   user: null,
-  profile: { denomination: "general", translation: "ESV", display_name: "" },
+  profile: { denomination: "general", translation: DEFAULT_TRANSLATION, display_name: "" },
   answers: new Map(), // question_id -> answer row
   level: null,
   question: null
@@ -93,7 +94,7 @@ function usfmFor(ref) {
 }
 
 function verseLink(ref) {
-  const [id, abbr] = YV_VERSIONS[state.profile.translation] || YV_VERSIONS.ESV;
+  const [id, abbr] = YV_VERSIONS[state.profile.translation] || YV_VERSIONS[DEFAULT_TRANSLATION];
   const usfm = usfmFor(ref);
   if (!usfm) return "https://www.bible.com/search/bible?q=" + encodeURIComponent(ref);
   return "https://www.bible.com/bible/" + id + "/" + usfm + "." + abbr;
@@ -158,6 +159,23 @@ function fetchCopyright(id) {
   return copyrightCache.get(id);
 }
 
+// The reader's translation; NIV when signed out. If the license doesn't cover
+// their translation, NIV instead (callers label it).
+function readerTranslation() {
+  return state.profile.translation in YV_VERSIONS ? state.profile.translation : DEFAULT_TRANSLATION;
+}
+
+async function fetchInReaderTranslation(usfm) {
+  const wanted = readerTranslation();
+  let code = wanted;
+  let passage = await fetchPassage(YV_VERSIONS[code][0], usfm);
+  if (!passage && wanted !== PREVIEW_FALLBACK) {
+    code = PREVIEW_FALLBACK;
+    passage = await fetchPassage(YV_VERSIONS[code][0], usfm);
+  }
+  return { wanted, code, passage, id: YV_VERSIONS[code][0] };
+}
+
 function attachVersePreview(li, link, ref) {
   const usfm = usfmFor(ref);
   if (!usfm || !YOUVERSION_APP_KEY) return;
@@ -206,14 +224,8 @@ async function fillPreview(panel, ref, usfm) {
   status.textContent = "Loading…";
   panel.append(status);
 
-  const wanted = state.profile.translation in YV_VERSIONS ? state.profile.translation : "ESV";
   try {
-    let code = wanted;
-    let passage = await fetchPassage(YV_VERSIONS[code][0], usfm);
-    if (!passage && wanted !== PREVIEW_FALLBACK) {
-      code = PREVIEW_FALLBACK;
-      passage = await fetchPassage(YV_VERSIONS[code][0], usfm);
-    }
+    const { wanted, code, passage } = await fetchInReaderTranslation(usfm);
     if (!passage) {
       status.textContent = "Text preview isn't available for this passage. Open the link to read it.";
       return;
@@ -236,6 +248,87 @@ async function fillPreview(panel, ref, usfm) {
   } catch (err) {
     console.error("Verse preview:", err);
     status.textContent = "Couldn't load the text right now. Open the link to read it.";
+  }
+}
+
+// ─────────────────────────── Home page verses ───────────────────────────
+// Proverbs 2:4–5 at the top and YouVersion's Verse of the Day, both in the
+// reader's translation (NIV when signed out; NIV when the license doesn't
+// cover theirs, labeled). If YouVersion can't be reached, the top verse stays
+// the public-domain KJV already in the page and the Verse of the Day stays hidden.
+
+const HERO_USFM = "PRO.2.4-5";
+const votdCache = new Map(); // day -> Promise<passage_id | null>
+let homeVersesRun = 0;
+
+// Day of the year in the reader's own time zone, 1 = January 1 (as YouVersion counts).
+// Built from calendar dates so daylight-saving changes can't shift it.
+function dayOfYear(date = new Date()) {
+  return Math.round((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - Date.UTC(date.getFullYear(), 0, 1)) / 86400000) + 1;
+}
+
+function fetchVotdPassageId(day) {
+  if (!votdCache.has(day)) {
+    const p = yvGet("/verse_of_the_days/" + day).then((d) => {
+      const id = d && typeof d.passage_id === "string" ? d.passage_id.trim() : "";
+      return /^[1-3]?[A-Z]{2,3}\.\d{1,3}(\.\d{1,3}(-\d{1,3})?)?$/.test(id) ? id : null;
+    });
+    p.catch(() => votdCache.delete(day));
+    votdCache.set(day, p);
+  }
+  return votdCache.get(day);
+}
+
+function bibleComLink(code, usfm) {
+  const [id, abbr] = YV_VERSIONS[code];
+  return "https://www.bible.com/bible/" + id + "/" + usfm + "." + abbr;
+}
+
+function fallbackNote(wanted, code) {
+  return code === wanted ? "" : wanted + " isn't available to show here, so this is the " + code + ".";
+}
+
+async function renderHomeVerses() {
+  if (!YOUVERSION_APP_KEY) return;
+  const run = ++homeVersesRun; // ignore results from an older run (e.g., translation changed meanwhile)
+  await Promise.all([renderHeroVerse(run), renderVerseOfTheDay(run)]);
+}
+
+async function renderHeroVerse(run) {
+  try {
+    const { wanted, code, passage, id } = await fetchInReaderTranslation(HERO_USFM);
+    if (run !== homeVersesRun || !passage) return;
+    const copyright = await fetchCopyright(id);
+    if (run !== homeVersesRun) return;
+    $("hero-verse").textContent = "“" + passage.text + "”";
+    const link = $("hero-link");
+    link.href = bibleComLink(code, HERO_USFM);
+    link.textContent = "Proverbs 2:4–5 (" + code + ")";
+    $("hero-note").textContent = [fallbackNote(wanted, code), copyright].filter(Boolean).join(" ");
+  } catch (err) {
+    console.error("Top verse:", err); // keep the KJV already shown
+  }
+}
+
+async function renderVerseOfTheDay(run) {
+  const card = $("votd");
+  try {
+    const usfm = await fetchVotdPassageId(dayOfYear());
+    if (!usfm) { if (run === homeVersesRun) card.hidden = true; return; }
+    const { wanted, code, passage, id } = await fetchInReaderTranslation(usfm);
+    if (run !== homeVersesRun) return;
+    if (!passage) { card.hidden = true; return; }
+    const copyright = await fetchCopyright(id);
+    if (run !== homeVersesRun) return;
+    $("votd-text").textContent = passage.text;
+    const link = $("votd-link");
+    link.href = bibleComLink(code, usfm);
+    link.textContent = (passage.reference || usfm) + " (" + code + ")";
+    $("votd-note").textContent = [fallbackNote(wanted, code), copyright].filter(Boolean).join(" ");
+    card.hidden = false;
+  } catch (err) {
+    console.error("Verse of the Day:", err);
+    if (run === homeVersesRun) card.hidden = true;
   }
 }
 
@@ -282,10 +375,12 @@ function openQuestion(q, level) {
   for (const r of q.readings) {
     const li = document.createElement("li");
     li.append(document.createTextNode(r.who + ", "));
-    const w = document.createElement("span");
-    w.className = "work";
-    w.textContent = r.work;
-    li.append(w);
+    const book = findLibraryBook(r.who, r.work);
+    const link = bookLink(r.who, r.work, book);
+    link.className = "work";
+    link.textContent = r.work;
+    li.append(link);
+    if (book && !book.free) li.append(" ", Object.assign(document.createElement("span"), { className: "book-note", textContent: "(find a copy)" }));
     readings.append(li);
   }
 
@@ -298,6 +393,47 @@ function openQuestion(q, level) {
   showView("question");
 }
 
+// ─────────────────────────── Book links ───────────────────────────
+// Turn a cited book into a link: its free copy (via the Library list) or,
+// for books still in copyright, a library search.
+
+const normTitle = (s) => s.toLowerCase()
+  .replace(/\(.*?\)/g, " ")
+  .replace(/,?\s*(book|books|part|session|chs?\.|chapter|question|questions|orations|lectures|on psalm)\s.*$/, " ")
+  .replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+
+function findLibraryBook(who, work) {
+  const full = who ? who + ", " + work : work;
+  const exact = LIBRARY.find((b) => (b.cites || []).some((c) => c === work || c === full));
+  if (exact) return exact;
+  const w = normTitle(work);
+  const sameAuthor = (b) => !who || b.who === who;
+  return LIBRARY.find((b) => sameAuthor(b) && normTitle(b.work) === w) ||
+    LIBRARY.find((b) => sameAuthor(b) && (normTitle(b.work).includes(w) || w.includes(normTitle(b.work)))) ||
+    null;
+}
+
+function bookLink(who, work, book) {
+  const a = document.createElement("a");
+  a.target = "_blank";
+  a.rel = "noopener";
+  if (book && book.free) {
+    a.href = book.url;
+    a.title = "Read free at " + book.source;
+  } else {
+    a.href = "https://search.worldcat.org/search?q=" + encodeURIComponent(((book && book.work) || work) + " " + ((book && book.who) || who || ""));
+    a.title = "Still in copyright: find a copy at a library";
+  }
+  return a;
+}
+
+// "Author, Work" strings (tradition sources) → [who, work]
+function splitSource(s) {
+  const i = s.indexOf(", ");
+  if (i > 0 && LIBRARY.some((b) => b.who === s.slice(0, i) || b.who.startsWith(s.slice(0, i)))) return [s.slice(0, i), s.slice(i + 2)];
+  return ["", s];
+}
+
 function renderTradition() {
   const t = TRADITIONS[state.profile.denomination] || TRADITIONS.general;
   $("q-tradition-label").textContent = "(" + t.label + ")";
@@ -305,7 +441,12 @@ function renderTradition() {
   list.replaceChildren();
   for (const s of t.sources) {
     const li = document.createElement("li");
-    li.textContent = s;
+    const [who, work] = splitSource(s);
+    const book = findLibraryBook(who, work) || findLibraryBook("", s);
+    const link = bookLink(who, work, book);
+    link.textContent = s;
+    li.append(link);
+    if (book && !book.free) li.append(" ", Object.assign(document.createElement("span"), { className: "book-note", textContent: "(find a copy)" }));
     list.append(li);
   }
 }
@@ -421,12 +562,12 @@ function renderSettings() {
 async function loadUserData() {
   if (!state.user) {
     state.answers.clear();
-    state.profile = { denomination: "general", translation: "ESV", display_name: "" };
+    state.profile = { denomination: "general", translation: DEFAULT_TRANSLATION, display_name: "" };
     return;
   }
 
   // Create the profile row the first time someone signs in (does nothing if it exists).
-  await db.from("profiles").upsert({ id: state.user.id }, { onConflict: "id", ignoreDuplicates: true });
+  await db.from("profiles").upsert({ id: state.user.id, translation: DEFAULT_TRANSLATION }, { onConflict: "id", ignoreDuplicates: true });
 
   const [{ data: profile, error: pErr }, { data: answers, error: aErr }] = await Promise.all([
     db.from("profiles").select("display_name, denomination, translation").eq("id", state.user.id).maybeSingle(),
@@ -497,6 +638,7 @@ async function saveSettings(e) {
   if (error) return setStatus("settings-status", "Couldn't save: " + error.message, "err");
   state.profile = { ...state.profile, ...update };
   setStatus("settings-status", "Saved.", "ok");
+  renderHomeVerses();
 }
 
 // ─────────────────────────── Sign in ───────────────────────────
@@ -1292,6 +1434,7 @@ async function refreshAfterSignIn() {
   if (!$("view-answers").hidden) renderAnswers();
   if (!$("view-settings").hidden) renderSettings();
   if (state.user) restoreDraft();
+  renderHomeVerses();
 }
 
 $("merge-google").addEventListener("click", mergeGoogleAccount);
@@ -1301,6 +1444,8 @@ $("mfa-cancel").addEventListener("click", cancelAuthenticatorSetup);
 $("mfa-remove").addEventListener("click", removeAuthenticator);
 $("mfa-signout").addEventListener("click", async () => { $("mfa-dialog").close(); await signOut(); });
 $("mfa-dialog").addEventListener("cancel", (e) => e.preventDefault()); // must enter a code or sign out
+
+if (!db) renderHomeVerses(); // otherwise it runs once we know who's signed in
 
 let lastUserId;
 if (db) db.auth.onAuthStateChange((_event, session) => {

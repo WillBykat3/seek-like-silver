@@ -16,7 +16,7 @@ create table if not exists public.profiles (
     'general', 'catholic', 'orthodox', 'anglican', 'lutheran',
     'reformed', 'methodist', 'baptist', 'pentecostal'
   )),
-  translation  text not null default 'ESV' check (translation in (
+  translation  text not null default 'NIV' check (translation in (
     'ESV', 'NIV', 'NLT', 'KJV', 'NKJV', 'CSB', 'NASB', 'NASB1995', 'LSB', 'AMP',
     'NET', 'NRSVUE', 'RSV', 'NABRE', 'CEB', 'MSG', 'NIRV', 'ASV'
   )),

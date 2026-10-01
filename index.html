@@ -45,9 +45,17 @@
     <!-- Home: pick a level -->
     <section id="view-home" class="view">
       <div class="hero">
-        <p class="hero-verse">“If thou seekest her as silver, and searchest for her as for hid treasures; then shalt thou understand the fear of the LORD, and find the knowledge of God.”</p>
-        <p class="hero-ref">Proverbs 2:4–5 (KJV)</p>
+        <p class="hero-verse" id="hero-verse">“If thou seekest her as silver, and searchest for her as for hid treasures; then shalt thou understand the fear of the LORD, and find the knowledge of God.”</p>
+        <p class="hero-ref"><a id="hero-link" href="https://www.bible.com/bible/1/PRO.2.4-5.KJV" target="_blank" rel="noopener">Proverbs 2:4–5 (KJV)</a></p>
+        <p class="hero-note" id="hero-note"></p>
       </div>
+      <aside class="votd" id="votd" aria-labelledby="votd-title" hidden>
+        <h2 class="votd-title" id="votd-title">Verse of the Day</h2>
+        <p class="votd-text" id="votd-text"></p>
+        <p class="votd-ref"><a id="votd-link" href="#" target="_blank" rel="noopener"></a></p>
+        <p class="votd-note" id="votd-note"></p>
+        <p class="votd-credit">Chosen by YouVersion (the Bible App).</p>
+      </aside>
       <h1 class="section-title home-title">Choose your level</h1>
       <div class="levels">
         <button class="level-card level-beginner" data-level="beginner">

@@ -4,10 +4,11 @@
 // directly; only if the browser blocks that (CORS) does it come here, and this
 // function makes the same request server-side with the site's App Key.
 //
-// It only forwards two kinds of read-only requests, for the site's own
+// It only forwards three kinds of read-only requests, for the site's own
 // translations, from the site's own pages:
 //   /bibles/{id}/passages/{BOOK.CH[.V[-V]]}?format=text
 //   /bibles/{id}
+//   /verse_of_the_days/{day}        (day of the year, 1–366)
 //
 // Setup (Supabase dashboard): uses the same YOUVERSION_APP_KEY secret as
 // youversion-signin; turn OFF "Verify JWT" (visitors may not be signed in).
@@ -18,6 +19,7 @@ const ALLOWED_ORIGINS = new Set(["https://seeklikesilver.com", "https://www.seek
 const ALLOWED_BIBLES = new Set([59, 111, 116, 1, 114, 1713, 2692, 100, 3345, 1588, 107, 3523, 2020, 463, 37, 97, 110, 12]);
 const PASSAGE = /^\/bibles\/(\d+)\/passages\/([1-3]?[A-Z]{2,3})\.(\d{1,3})(?:\.(\d{1,3})(?:-(\d{1,3}))?)?\?format=text$/;
 const BIBLE = /^\/bibles\/(\d+)$/;
+const VOTD = /^\/verse_of_the_days\/([1-9]\d{0,2})$/;
 
 Deno.serve(async (req) => {
   const origin = req.headers.get("Origin") ?? "";
@@ -45,8 +47,13 @@ Deno.serve(async (req) => {
   if (typeof path !== "string" || path.length > 120) return reply(400, { error: "bad_request" });
 
   const decoded = path.replace(/%2E/gi, ".");
-  const match = decoded.match(PASSAGE) ?? decoded.match(BIBLE);
-  if (!match || !ALLOWED_BIBLES.has(Number(match[1]))) return reply(400, { error: "path_not_allowed" });
+  const votd = decoded.match(VOTD);
+  if (votd) {
+    if (Number(votd[1]) > 366) return reply(400, { error: "path_not_allowed" });
+  } else {
+    const match = decoded.match(PASSAGE) ?? decoded.match(BIBLE);
+    if (!match || !ALLOWED_BIBLES.has(Number(match[1]))) return reply(400, { error: "path_not_allowed" });
+  }
 
   const upstream = await fetch(API + decoded, { headers: { "X-YVP-App-Key": appKey } });
   const body = await upstream.text();

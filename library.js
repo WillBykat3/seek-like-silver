@@ -7,6 +7,7 @@
 //                  "Find a copy" searches libraries (WorldCat).
 //
 // When you add a question that cites a new book, add the book here too.
+// `cites` lists other wordings used in questions.js, so those link here as well.
 
 const LIBRARY = [
   // ───── Free to read ─────
@@ -23,11 +24,11 @@ const LIBRARY = [
   { who: "Basil of Caesarea", work: "On the Holy Spirit", free: true, source: "New Advent", url: "https://www.newadvent.org/fathers/3203.htm" },
   { who: "Blaise Pascal", work: "Pensées", free: true, source: "Project Gutenberg", url: "https://www.gutenberg.org/ebooks/18269" },
   { who: "Boethius", work: "The Consolation of Philosophy", free: true, source: "Project Gutenberg", url: "https://www.gutenberg.org/ebooks/14328" },
-  { who: "Charles Spurgeon", work: "The Treasury of David, Volume I (Psalms 1–26)", free: true, source: "CCEL", url: "https://www.ccel.org/ccel/spurgeon/treasury1.html" },
-  { who: "Charles Spurgeon", work: "Sermons", free: true, source: "The Spurgeon Library", url: "https://www.spurgeon.org/resource-library/sermons/" },
+  { who: "Charles Spurgeon", work: "The Treasury of David, Volume I (Psalms 1–26)", cites: ["The Treasury of David, on Psalm 23"], free: true, source: "CCEL", url: "https://www.ccel.org/ccel/spurgeon/treasury1.html" },
+  { who: "Charles Spurgeon", work: "Sermons", cites: ["Charles Spurgeon's sermons"], free: true, source: "The Spurgeon Library", url: "https://www.spurgeon.org/resource-library/sermons/" },
   { who: "Council of Chalcedon", work: "The Chalcedonian Definition (451)", free: true, source: "New Advent", url: "https://www.newadvent.org/fathers/3811.htm" },
-  { who: "Council of Constantinople", work: "The Nicene Creed (381)", free: true, source: "New Advent", url: "https://www.newadvent.org/fathers/3808.htm" },
-  { who: "Council of Trent", work: "Decree on Justification (Session 6)", free: true, source: "Papal Encyclicals Online", url: "https://www.papalencyclicals.net/councils/trent/sixth-session.htm" },
+  { who: "Council of Constantinople", work: "The Nicene Creed (381)", cites: ["The Nicene Creed (381)"], free: true, source: "New Advent", url: "https://www.newadvent.org/fathers/3808.htm" },
+  { who: "Council of Trent", work: "Decree on Justification (Session 6)", cites: ["Session 6, Decree on Justification"], free: true, source: "Papal Encyclicals Online", url: "https://www.papalencyclicals.net/councils/trent/sixth-session.htm" },
   { who: "Cyprian of Carthage", work: "On the Lord's Prayer", free: true, source: "New Advent", url: "https://www.newadvent.org/fathers/050704.htm" },
   { who: "Cyril of Jerusalem", work: "Catechetical Lectures", free: true, source: "New Advent", url: "https://www.newadvent.org/fathers/3101.htm" },
   { who: "Gregory of Nazianzus", work: "Theological Orations (Orations 27–31)", free: true, source: "New Advent", url: "https://www.newadvent.org/fathers/3102.htm" },
@@ -52,7 +53,7 @@ const LIBRARY = [
   { who: "Catholic Church", work: "Catechism of the Catholic Church", free: true, source: "The Vatican", url: "https://www.vatican.va/archive/ENG0015/_INDEX.HTM" },
   { who: "Church of England", work: "The Book of Common Prayer (1662)", free: true, source: "Church of England", url: "https://www.churchofengland.org/prayer-and-worship/worship-texts-and-resources/book-common-prayer" },
   { who: "Church of England", work: "The Thirty-Nine Articles", free: true, source: "Church of England", url: "https://www.churchofengland.org/prayer-and-worship/worship-texts-and-resources/book-common-prayer/articles-religion" },
-  { who: "Lutheran Church", work: "The Book of Concord (Augsburg Confession, Small and Large Catechisms)", free: true, source: "BookOfConcord.org", url: "https://bookofconcord.org/" },
+  { who: "Lutheran Church", work: "The Book of Concord (Augsburg Confession, Small and Large Catechisms)", cites: ["The Book of Concord (including the Augsburg Confession)", "Martin Luther, Small and Large Catechisms"], free: true, source: "BookOfConcord.org", url: "https://bookofconcord.org/" },
   { who: "Reformed Churches", work: "Heidelberg Catechism", free: true, source: "Christian Reformed Church", url: "https://www.crcna.org/welcome/beliefs/confessions/heidelberg-catechism" },
   { who: "Southern Baptist Convention", work: "The Baptist Faith and Message (2000)", free: true, source: "SBC", url: "https://bfm.sbc.net/bfm2000/" },
   { who: "Particular Baptists", work: "Second London Baptist Confession (1689)", free: true, source: "the1689confession.com", url: "https://www.the1689confession.com/" },
