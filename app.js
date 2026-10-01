@@ -777,7 +777,10 @@ async function sendCode(e) {
 // and the code submits by itself once every box is filled.
 // Used for the email code and for authenticator-app codes.
 
-function createCodeBoxes(wrap, length, onComplete) {
+// `allowAutofill`: let the browser/phone fill the code (useful for emailed codes).
+// Authenticator boxes turn it off so password managers (Dashlane, 1Password,
+// LastPass…) don't insert a stored code that may be out of date.
+function createCodeBoxes(wrap, length, onComplete, allowAutofill = true) {
   const boxes = [];
   const value = () => boxes.map((b) => b.value).join("");
   const complete = () => {
@@ -795,7 +798,14 @@ function createCodeBoxes(wrap, length, onComplete) {
     box.type = "text";
     box.inputMode = "numeric";
     box.maxLength = length; // lets autofill/paste land the whole code in one box; we spread it out
-    box.autocomplete = i === 0 ? "one-time-code" : "off";
+    box.autocomplete = allowAutofill && i === 0 ? "one-time-code" : "off";
+    if (!allowAutofill) {
+      box.name = "sls-authenticator-" + i; // no login-like name for managers to match
+      box.setAttribute("data-form-type", "other");   // Dashlane
+      box.setAttribute("data-lpignore", "true");     // LastPass
+      box.setAttribute("data-1p-ignore", "");        // 1Password
+      box.setAttribute("data-bwignore", "");         // Bitwarden
+    }
     box.setAttribute("aria-label", "Digit " + (i + 1) + " of " + length);
     box.addEventListener("input", () => {
       const digits = box.value.replace(/\D/g, "");
@@ -1130,7 +1140,7 @@ const mfaLoginCode = createCodeBoxes($("mfa-login-code"), 6, async (code) => {
   }
   $("mfa-dialog").close();
   await refreshAfterSignIn();
-});
+}, false);
 
 function promptForAuthenticator() {
   setStatus("mfa-login-status", "");
@@ -1153,7 +1163,7 @@ const mfaEnrollCode = createCodeBoxes($("mfa-enroll-code"), 6, async (code) => {
   $("mfa-enroll").hidden = true;
   setStatus("mfa-status", "Authenticator is on. You'll enter a code from it each time you sign in.", "ok");
   renderMfaPanel(true);
-});
+}, false);
 
 async function renderMfaPanel(keepStatus) {
   const panel = $("mfa-panel");

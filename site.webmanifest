@@ -1,0 +1,12 @@
+{
+  "name": "Seek Like Silver",
+  "short_name": "Seek Like Silver",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#ECEEF1",
+  "background_color": "#ECEEF1",
+  "display": "standalone",
+  "start_url": "/"
+}

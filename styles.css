@@ -98,7 +98,7 @@ a { color: inherit; }
   color: var(--ink);
   text-decoration: none;
 }
-.brand-mark { color: var(--silver); font-size: 1.1rem; }
+.brand-logo { width: 34px; height: 34px; flex: none; }
 .nav { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
 .nav-link {
   background: none;
