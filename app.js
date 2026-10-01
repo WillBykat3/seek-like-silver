@@ -696,7 +696,7 @@ async function makeNonce() {
 
 // Render Google's button into `holder`. `onCredential(idToken, rawNonce)` runs
 // after the person picks an account. Returns false if Google's script isn't available.
-async function renderGoogleButton(holder, onCredential, text) {
+async function renderGoogleButton(holder, onCredential, text, width) {
   const gsi = window.google && window.google.accounts && window.google.accounts.id;
   if (!db || !gsi || !window.crypto || !crypto.subtle) return false;
   // A fresh nonce each time: Google gets the hashed one, Supabase checks the raw one.
@@ -717,7 +717,7 @@ async function renderGoogleButton(holder, onCredential, text) {
     text: text || "continue_with",
     shape: "rectangular",
     logo_alignment: "center",
-    width: Math.min(400, Math.max(200, holder.clientWidth || 320))
+    width: width || Math.min(400, Math.max(200, holder.clientWidth || 320))
   });
   return true;
 }
@@ -952,10 +952,14 @@ async function renderMethods() {
     const canRemove = identities.length >= 2;
     list.append(methodRow("Google", gEmail, "Connected", canRemove ? [["Disconnect", () => disconnectGoogle(google), true]] : []));
   } else if (!yvOnly) {
-    list.append(methodRow("Google", "Sign in with your Google account", null, []));
-    googleHolder.hidden = false;
-    const ok = await renderGoogleButton(googleHolder, connectGoogle, "continue_with");
-    if (!ok) googleHolder.hidden = true;
+    const row = methodRow("Google", "Sign in with your Google account", null, []);
+    list.append(row);
+    // Google draws its own button; put it in this row's action spot.
+    const holder = document.createElement("div");
+    holder.className = "google-btn-inline";
+    row.querySelector(".method-actions").append(holder);
+    const ok = await renderGoogleButton(holder, connectGoogle, "signin_with", 240);
+    if (!ok) holder.remove();
   }
 
   // Email code
