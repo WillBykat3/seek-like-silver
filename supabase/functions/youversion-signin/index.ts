@@ -19,8 +19,11 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { createRemoteJWKSet, jwtVerify } from "npm:jose@5";
 
-const ISSUER = "https://api.youversion.com";
-const JWKS = createRemoteJWKSet(new URL(ISSUER + "/.well-known/jwks.json"));
+// YouVersion's written docs give the issuer as "https://api.youversion.com", but
+// their discovery document (/.well-known/openid-configuration) says
+// "https://api.youversion.com/auth/token", which is what real tokens use. Accept both.
+const ISSUERS = ["https://api.youversion.com/auth/token", "https://api.youversion.com"];
+const JWKS = createRemoteJWKSet(new URL("https://api.youversion.com/.well-known/jwks.json"));
 const ALLOWED_ORIGINS = new Set(["https://seeklikesilver.com", "https://www.seeklikesilver.com"]);
 // Accounts get an address on a subdomain we own that never receives mail.
 // No email is ever sent to it (generateLink below does not send email).
@@ -75,9 +78,9 @@ Deno.serve(async (req) => {
   // 1. Verify the token.
   let payload: Record<string, unknown>;
   try {
+    // Signature and expiry are checked here; issuer and audience are checked just
+    // below so a mismatch can report the token's actual (non-secret) value.
     ({ payload } = await jwtVerify(idToken, JWKS, {
-      issuer: ISSUER,
-      audience: appKey,
       algorithms: ["RS256", "ES256"],
       clockTolerance: 30
     }));
@@ -87,6 +90,15 @@ Deno.serve(async (req) => {
     const detail = [e.code, e.claim].filter(Boolean).join(" ");
     console.error("YouVersion token rejected:", detail || String(err));
     return reply(401, { error: "invalid_token", detail });
+  }
+  if (typeof payload.iss !== "string" || !ISSUERS.includes(payload.iss)) {
+    console.error("YouVersion token rejected: unexpected issuer", payload.iss);
+    return reply(401, { error: "invalid_token", detail: "issuer is " + String(payload.iss) });
+  }
+  const audiences = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
+  if (!audiences.includes(appKey)) {
+    console.error("YouVersion token rejected: audience", payload.aud, "does not match YOUVERSION_APP_KEY");
+    return reply(401, { error: "invalid_token", detail: "token is for app " + audiences.join(",") + ", not the YOUVERSION_APP_KEY secret" });
   }
   if (payload.nonce !== nonce) {
     console.error("YouVersion token rejected: nonce mismatch (token has nonce: " + (typeof payload.nonce === "string") + ")");
