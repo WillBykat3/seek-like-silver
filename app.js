@@ -99,6 +99,146 @@ function verseLink(ref) {
   return "https://www.bible.com/bible/" + id + "/" + usfm + "." + abbr;
 }
 
+// ─────────────────────────── Verse preview (YouVersion licensed text) ───────────────────────────
+// Hovering a verse link for PREVIEW_DELAY_MS (or tapping the small "Show text"
+// button, for phones and keyboards) shows the passage right under the link.
+// Text comes from YouVersion's API under the site's license. Translations the
+// license doesn't cover fall back to PREVIEW_FALLBACK, clearly labeled.
+
+const PREVIEW_DELAY_MS = 1500;
+const PREVIEW_FALLBACK = "NIV";
+const YV_BIBLE_API = "https://api.youversion.com/v1";
+const passageCache = new Map();   // "id|usfm" -> Promise<{text, reference} | null>
+const copyrightCache = new Map(); // id -> Promise<string>
+let directApiBlocked = false;     // set if the browser blocks direct calls (CORS); then use our proxy
+
+async function yvGet(path) {
+  if (!YOUVERSION_APP_KEY) throw new Error("no_app_key");
+  if (!directApiBlocked) {
+    try {
+      const resp = await fetch(YV_BIBLE_API + path, { headers: { "X-YVP-App-Key": YOUVERSION_APP_KEY } });
+      if (resp.ok) return await resp.json();
+      if (resp.status === 401 || resp.status === 403 || resp.status === 404) return null; // not licensed / not found
+      throw new Error("http_" + resp.status);
+    } catch (err) {
+      if (!(err instanceof TypeError)) throw err;
+      directApiBlocked = true; // network/CORS block; try our proxy from now on
+    }
+  }
+  if (!db) throw new Error("unavailable");
+  const { data, error } = await db.functions.invoke("bible-passage", { body: { path } });
+  if (error) {
+    const status = error.context && error.context.status;
+    if (status === 404 || status === 403) return null;
+    throw error;
+  }
+  return data;
+}
+
+function fetchPassage(id, usfm) {
+  const key = id + "|" + usfm;
+  if (!passageCache.has(key)) {
+    const p = yvGet("/bibles/" + id + "/passages/" + encodeURIComponent(usfm) + "?format=text")
+      .then((d) => (d && typeof d.content === "string" && d.content.trim() ? { text: d.content.trim(), reference: d.reference || "" } : null));
+    p.catch(() => passageCache.delete(key)); // let a later hover retry after a network error
+    passageCache.set(key, p);
+  }
+  return passageCache.get(key);
+}
+
+function fetchCopyright(id) {
+  if (!copyrightCache.has(id)) {
+    const p = yvGet("/bibles/" + id).then((d) => {
+      const raw = (d && (d.copyright || d.copyright_short || d.promotional_content)) || "";
+      // Copyright may contain HTML; keep only its text.
+      return new DOMParser().parseFromString(String(raw), "text/html").body.textContent.trim();
+    }).catch(() => "");
+    copyrightCache.set(id, p);
+  }
+  return copyrightCache.get(id);
+}
+
+function attachVersePreview(li, link, ref) {
+  const usfm = usfmFor(ref);
+  if (!usfm || !YOUVERSION_APP_KEY) return;
+
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "verse-toggle";
+  toggle.textContent = "Show text";
+  toggle.setAttribute("aria-expanded", "false");
+
+  const panel = document.createElement("div");
+  panel.className = "verse-preview";
+  panel.hidden = true;
+  panel.setAttribute("role", "region");
+  panel.setAttribute("aria-label", ref + " text");
+  toggle.setAttribute("aria-controls", (panel.id = "vp-" + usfm.replace(/[^A-Za-z0-9]/g, "-")));
+
+  li.append(" ", toggle, panel);
+
+  let timer = null;
+  let loaded = false;
+  const open = async () => {
+    panel.hidden = false;
+    toggle.setAttribute("aria-expanded", "true");
+    toggle.textContent = "Hide text";
+    if (!loaded) {
+      loaded = true;
+      await fillPreview(panel, ref, usfm);
+    }
+  };
+  const close = () => {
+    panel.hidden = true;
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.textContent = "Show text";
+  };
+
+  link.addEventListener("mouseenter", () => { timer = setTimeout(open, PREVIEW_DELAY_MS); });
+  link.addEventListener("mouseleave", () => clearTimeout(timer));
+  toggle.addEventListener("click", () => (panel.hidden ? open() : close()));
+}
+
+async function fillPreview(panel, ref, usfm) {
+  panel.replaceChildren();
+  const status = document.createElement("p");
+  status.className = "verse-preview-status";
+  status.textContent = "Loading…";
+  panel.append(status);
+
+  const wanted = state.profile.translation in YV_VERSIONS ? state.profile.translation : "ESV";
+  try {
+    let code = wanted;
+    let passage = await fetchPassage(YV_VERSIONS[code][0], usfm);
+    if (!passage && wanted !== PREVIEW_FALLBACK) {
+      code = PREVIEW_FALLBACK;
+      passage = await fetchPassage(YV_VERSIONS[code][0], usfm);
+    }
+    if (!passage) {
+      status.textContent = "Text preview isn't available for this passage. Open the link to read it.";
+      return;
+    }
+    const id = YV_VERSIONS[code][0];
+    const text = document.createElement("p");
+    text.className = "verse-preview-text";
+    text.textContent = passage.text;
+
+    const source = document.createElement("p");
+    source.className = "verse-preview-source";
+    source.textContent = (passage.reference || ref.replace(/-/g, "–")) + " (" + code + ")" +
+      (code !== wanted ? ". " + wanted + " isn't available for preview, so this is shown in " + code + "." : "");
+
+    const copyright = document.createElement("p");
+    copyright.className = "verse-preview-copyright";
+    panel.replaceChildren(text, source, copyright);
+    copyright.textContent = await fetchCopyright(id);
+    if (!copyright.textContent) copyright.remove();
+  } catch (err) {
+    console.error("Verse preview:", err);
+    status.textContent = "Couldn't load the text right now. Open the link to read it.";
+  }
+}
+
 // ─────────────────────────── Views ───────────────────────────
 
 function showView(name) {
@@ -132,6 +272,7 @@ function openQuestion(q, level) {
     a.rel = "noopener";
     a.textContent = ref.replace(/-/g, "–");
     li.append(a);
+    attachVersePreview(li, a, ref);
     verses.append(li);
   }
 

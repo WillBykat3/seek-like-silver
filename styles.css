@@ -256,6 +256,32 @@ a { color: inherit; }
 .verse-list li::marker { color: var(--pigment); }
 .reading-list li::marker { color: var(--silver); }
 .verse-list a { color: var(--ink); text-decoration-color: var(--pigment); text-underline-offset: 3px; }
+.verse-toggle {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--muted);
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.verse-toggle:hover { color: var(--ink); }
+.verse-preview {
+  margin: 8px 0 12px;
+  padding: 12px 14px;
+  background: var(--pigment-tint, var(--wash));
+  border-left: 3px solid var(--pigment, var(--silver));
+  border-radius: 0 var(--radius) var(--radius) 0;
+  max-height: 18em;
+  overflow-y: auto;
+}
+.verse-preview p { margin: 0; }
+.verse-preview-text { font-family: var(--serif); font-size: 1.02rem; line-height: 1.6; white-space: pre-line; }
+.verse-preview-source { margin-top: 8px !important; font-size: 0.88rem; font-weight: 700; color: var(--pigment-deep, var(--muted)); }
+.verse-preview-copyright { margin-top: 4px !important; font-size: 0.78rem; color: var(--muted); }
+.verse-preview-status { font-size: 0.92rem; color: var(--muted); }
 .reading-list .work { font-family: var(--serif); font-style: italic; }
 .tradition-block { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 16px; }
 .tradition-block h3 .muted { font-family: var(--sans); font-size: 0.95rem; font-weight: 400; }
