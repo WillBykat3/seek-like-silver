@@ -1,6 +1,30 @@
 // Seek Like Silver — app logic
 // All user-written text is inserted with textContent (never innerHTML) so it can't inject code.
 
+// YouVersion sends people back to this page with ?state=… (and later &code=…).
+// Grab those parameters and clean the address bar before anything else reads the URL.
+const YV_API = "https://api.youversion.com";
+const YV_STORE = { state: "sls-yv-state", verifier: "sls-yv-verifier", nonce: "sls-yv-nonce" };
+const yvReturn = (() => {
+  try {
+    const expected = sessionStorage.getItem(YV_STORE.state);
+    if (!expected) return null;
+    const p = new URLSearchParams(window.location.search);
+    if (!p.has("state") && !p.has("error")) return null;
+    const ret = {
+      expected,
+      state: p.get("state"),
+      code: p.get("code"),
+      error: p.get("error"),
+      errorDescription: p.get("error_description")
+    };
+    history.replaceState(null, "", window.location.pathname + window.location.hash);
+    return ret;
+  } catch (_) {
+    return null;
+  }
+})();
+
 // If the Supabase library fails to load (ad blocker, network), questions still work;
 // only sign-in and saving are unavailable.
 const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY) : null;
@@ -267,8 +291,135 @@ function openSignIn() {
   $("email-form").hidden = false;
   $("code-form").hidden = true;
   setStatus("signin-status", db ? "" : "Sign-in couldn't load. Check your connection or ad blocker, then refresh.", db ? "" : "err");
-  $("signin-dialog").showModal();
+  if (!$("signin-dialog").open) $("signin-dialog").showModal();
   setUpGoogleButton();
+  setUpYouVersionButton();
+}
+
+// ─────────────────────────── YouVersion sign-in ───────────────────────────
+// YouVersion's documented flow: (1) send the person to /auth/authorize;
+// (2) they come back with only ?state, and we send them to /auth/callback;
+// (3) they come back with ?code, which we exchange for an ID token.
+// Our Supabase function "youversion-signin" verifies that token and returns a
+// one-time key we trade for a normal session.
+
+function randomUrlSafe(byteCount) {
+  const bytes = crypto.getRandomValues(new Uint8Array(byteCount));
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+async function pkceChallenge(verifier) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+  return btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function clearYouVersionStore() {
+  for (const k of Object.values(YV_STORE)) {
+    try { sessionStorage.removeItem(k); } catch (_) { /* ignore */ }
+  }
+}
+
+function setUpYouVersionButton() {
+  const btn = $("signin-youversion");
+  const ready = !!(YOUVERSION_APP_KEY && db && window.crypto && crypto.subtle);
+  btn.disabled = !ready;
+  btn.textContent = ready ? "Continue with YouVersion" : "Continue with YouVersion (coming soon)";
+  btn.title = ready ? "" : "Coming soon";
+}
+
+async function startYouVersion() {
+  if (!YOUVERSION_APP_KEY || !db) return;
+  // The return trip must land on the same address this starts from (browser storage is per-address).
+  if (window.location.origin !== new URL(YOUVERSION_REDIRECT_URI).origin) {
+    window.location.assign(YOUVERSION_REDIRECT_URI);
+    return;
+  }
+  const verifier = randomUrlSafe(32);
+  const stateValue = randomUrlSafe(16);
+  const nonce = randomUrlSafe(16);
+  try {
+    sessionStorage.setItem(YV_STORE.verifier, verifier);
+    sessionStorage.setItem(YV_STORE.state, stateValue);
+    sessionStorage.setItem(YV_STORE.nonce, nonce);
+  } catch (_) {
+    return setStatus("signin-status", "Your browser blocked the storage YouVersion sign-in needs. Try Google or email instead.", "err");
+  }
+  const params = new URLSearchParams({
+    response_type: "code",
+    client_id: YOUVERSION_APP_KEY,
+    redirect_uri: YOUVERSION_REDIRECT_URI,
+    scope: "openid profile email",
+    nonce,
+    state: stateValue,
+    code_challenge: await pkceChallenge(verifier),
+    code_challenge_method: "S256"
+  });
+  setStatus("signin-status", "Opening YouVersion…");
+  window.location.assign(YV_API + "/auth/authorize?" + params.toString());
+}
+
+async function finishYouVersion(ret) {
+  const fail = (message) => {
+    clearYouVersionStore();
+    openSignIn();
+    setStatus("signin-status", message, "err");
+  };
+
+  if (!ret.state || ret.state !== ret.expected) {
+    return fail("YouVersion sign-in didn't match this browser session. Please try again.");
+  }
+  if (ret.error) {
+    return fail("YouVersion sign-in was cancelled or failed (" + (ret.errorDescription || ret.error) + ").");
+  }
+  if (!ret.code) {
+    // Step 2: hand the state back to YouVersion; it redirects here again with a code.
+    window.location.assign(YV_API + "/auth/callback?state=" + encodeURIComponent(ret.state));
+    return;
+  }
+
+  let verifier, nonce;
+  try {
+    verifier = sessionStorage.getItem(YV_STORE.verifier);
+    nonce = sessionStorage.getItem(YV_STORE.nonce);
+  } catch (_) { /* handled below */ }
+  if (!db || !verifier || !nonce) return fail("YouVersion sign-in lost its place. Please try again.");
+
+  openSignIn();
+  setStatus("signin-status", "Finishing YouVersion sign-in…");
+  try {
+    // Step 3: trade the code for YouVersion's signed ID token.
+    const tokenResp = await fetch(YV_API + "/auth/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        code: ret.code,
+        redirect_uri: YOUVERSION_REDIRECT_URI,
+        client_id: YOUVERSION_APP_KEY,
+        code_verifier: verifier
+      })
+    });
+    if (!tokenResp.ok) return fail("YouVersion sign-in failed (token step, " + tokenResp.status + "). Please try again.");
+    const tokens = await tokenResp.json();
+    if (!tokens.id_token) return fail("YouVersion didn't return a sign-in token. Please try again.");
+
+    // Our server function checks the token and returns a one-time sign-in key.
+    const { data, error } = await db.functions.invoke("youversion-signin", {
+      body: { id_token: tokens.id_token, nonce }
+    });
+    if (error || !data || !data.token_hash) {
+      console.error("youversion-signin:", error);
+      return fail("Couldn't finish YouVersion sign-in on our side. Please try again, or use Google or email.");
+    }
+    const { error: verifyError } = await db.auth.verifyOtp({ token_hash: data.token_hash, type: "email" });
+    if (verifyError) return fail("Couldn't finish YouVersion sign-in (" + verifyError.message + ").");
+  } catch (err) {
+    console.error(err);
+    return fail("YouVersion sign-in hit a network problem. Please try again.");
+  }
+
+  clearYouVersionStore();
+  $("signin-dialog").close();
 }
 
 // ─────────────────────────── Google button ───────────────────────────
@@ -521,6 +672,8 @@ $("next-question").addEventListener("click", () => openQuestion(pickQuestion(sta
 $("save-answer").addEventListener("click", saveAnswer);
 $("auth-button").addEventListener("click", () => (state.user ? signOut() : openSignIn()));
 $("signin-google").addEventListener("click", signInWithGoogle);
+$("signin-youversion").addEventListener("click", startYouVersion);
+if (yvReturn) finishYouVersion(yvReturn);
 $("email-form").addEventListener("submit", sendCode);
 buildOtp();
 $("code-form").addEventListener("submit", verifyCode);
