@@ -94,9 +94,11 @@ Google's menus get renamed from time to time; if a label doesn't match, look for
 **Database updates** (SQL Editor → New query → paste → Run; each is safe to re-run):
 - `supabase-migrations/002-more-translations.sql`: allows the 18 translations in Settings.
 - `supabase-migrations/003-account-linking-and-mfa.sql`: YouVersion account connections, plus the rule that locks an account's answers behind its authenticator code once that's turned on.
+- `supabase-migrations/004-merge-accounts.sql`: lets the merge-accounts function find which account owns a Google login.
 
 **Server functions** (Edge Functions → Deploy a new function → Via Editor; paste the file; Deploy; then turn **Verify JWT off** for each). Both use the secret `YOUVERSION_APP_KEY` (Edge Functions → Secrets).
 - `youversion-signin` ← `supabase/functions/youversion-signin/index.ts` (YouVersion sign-in, connect, disconnect)
+- `merge-accounts` ← `supabase/functions/merge-accounts/index.ts` (merges a separate Google-sign-in account into the signed-in one; no secret needed)
 - `bible-passage` ← `supabase/functions/bible-passage/index.ts` (only needed if verse previews say "Couldn't load the text")
 
 Editing a function's file on GitHub does **not** update it in Supabase. Paste the new code and deploy again.

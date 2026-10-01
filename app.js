@@ -993,7 +993,8 @@ async function connectGoogle(idToken, rawNonce) {
     const code = error.code || "";
     let msg = "Couldn't connect Google (" + error.message + ").";
     if (code === "identity_already_exists" || /already/i.test(error.message)) {
-      msg = "That Google account already has its own Seek Like Silver account, so it can't be added here. Sign in with it to use it.";
+      setStatus("methods-status", "");
+      return offerGoogleMerge(idToken, rawNonce);
     } else if (code === "manual_linking_disabled" || /manual linking/i.test(error.message)) {
       msg = "Connecting accounts is switched off in Supabase. Turn on \"Allow manual linking\" under Authentication → Sign In / Providers.";
     }
@@ -1001,6 +1002,63 @@ async function connectGoogle(idToken, rawNonce) {
     return renderMethods();
   }
   setStatus("methods-status", "Google is connected.", "ok");
+  renderMethods();
+}
+
+// ── Merging a separate Google account into this one ──
+let pendingGoogleMerge = null;
+
+function emailFromIdToken(idToken) {
+  try {
+    const part = idToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(atob(part)).email || "";
+  } catch (_) { return ""; }
+}
+
+function offerGoogleMerge(idToken, rawNonce) {
+  pendingGoogleMerge = { idToken, rawNonce, email: emailFromIdToken(idToken) };
+  const who = pendingGoogleMerge.email ? "Your Google account (" + pendingGoogleMerge.email + ")" : "That Google account";
+  $("merge-offer-text").textContent = who + " already has its own Seek Like Silver account. " +
+    "You can merge it into this one: its saved answers move here (if both have an answer to the same question, the newer one is kept), " +
+    "this account keeps its own settings, and the Google-only account is then deleted so Google can be connected here.";
+  $("merge-offer").hidden = false;
+  renderMethods();
+}
+
+function closeMergeOffer() {
+  pendingGoogleMerge = null;
+  $("merge-offer").hidden = true;
+}
+
+async function mergeGoogleAccount() {
+  const pending = pendingGoogleMerge;
+  if (!pending) return;
+  if (!confirm("Merge the Google account into this one? Its answers move here and the Google-only account is deleted. This can't be undone.")) return;
+  $("merge-google").disabled = true;
+  setStatus("methods-status", "Merging…");
+  const { data, error } = await db.functions.invoke("merge-accounts", {
+    body: { provider: "google", id_token: pending.idToken, nonce: pending.rawNonce }
+  });
+  $("merge-google").disabled = false;
+  if (error || !data || (!data.merged && !data.already_same_account)) {
+    const reason = await functionErrorReason(error);
+    const friendly = {
+      authenticator_required: "Enter your authenticator code first: sign out and back in, then try again.",
+      nonce_mismatch: "That Google sign-in expired. Click the Google button again, then choose Merge.",
+      invalid_google_token: "That Google sign-in expired. Click the Google button again, then choose Merge.",
+      no_other_account: "There's no separate Google account to merge anymore. Click the Google button to connect it."
+    }[reason.split(":")[0]];
+    closeMergeOffer();
+    setStatus("methods-status", friendly || "Couldn't merge (" + reason + ").", "err");
+    return renderMethods();
+  }
+  closeMergeOffer();
+  // The Google login is free now; attach it to this account.
+  const { error: linkError } = await db.auth.linkIdentity({ provider: "google", token: pending.idToken, nonce: pending.rawNonce });
+  await loadUserData();
+  setStatus("methods-status", linkError
+    ? "Merged. Your Google account's answers are here now. Click the Google button once more to finish connecting it."
+    : "Merged and connected. Your Google account's answers are here now, and Google signs you in to this account.", "ok");
   renderMethods();
 }
 
@@ -1214,6 +1272,8 @@ async function refreshAfterSignIn() {
   if (state.user) restoreDraft();
 }
 
+$("merge-google").addEventListener("click", mergeGoogleAccount);
+$("merge-cancel").addEventListener("click", closeMergeOffer);
 $("mfa-setup").addEventListener("click", startAuthenticatorSetup);
 $("mfa-cancel").addEventListener("click", cancelAuthenticatorSetup);
 $("mfa-remove").addEventListener("click", removeAuthenticator);
