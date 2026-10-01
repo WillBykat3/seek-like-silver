@@ -64,38 +64,36 @@ grant execute on function public.sls_merge_answers(uuid, uuid) to service_role;
 -- 3. Authenticator app: once someone turns it on, their data is only
 --    readable after they enter an authenticator code (Supabase's "aal2").
 --    People without an authenticator are unaffected.
---    (Pattern from Supabase's MFA docs; restrictive policies add to, never
---    loosen, the existing "own rows only" rules.)
+--    Supabase doesn't let signed-in users read auth.mfa_factors directly,
+--    so this helper (which only answers for the person asking) does the check.
 -- ─────────────────────────────────────────────
+create or replace function public.sls_has_verified_factor()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from auth.mfa_factors
+    where user_id = (select auth.uid()) and status = 'verified'
+  );
+$$;
+
+revoke all on function public.sls_has_verified_factor() from public, anon;
+grant execute on function public.sls_has_verified_factor() to authenticated, service_role;
+
 drop policy if exists "require authenticator if enabled" on public.profiles;
 create policy "require authenticator if enabled" on public.profiles
   as restrictive for all to authenticated
-  using (
-    array[(select auth.jwt()->>'aal')] <@ (
-      select case when count(id) > 0 then array['aal2'] else array['aal1', 'aal2'] end
-      from auth.mfa_factors
-      where (select auth.uid()) = user_id and status = 'verified'
-    )
-  );
+  using ((select auth.jwt()->>'aal') = 'aal2' or not (select public.sls_has_verified_factor()));
 
 drop policy if exists "require authenticator if enabled" on public.answers;
 create policy "require authenticator if enabled" on public.answers
   as restrictive for all to authenticated
-  using (
-    array[(select auth.jwt()->>'aal')] <@ (
-      select case when count(id) > 0 then array['aal2'] else array['aal1', 'aal2'] end
-      from auth.mfa_factors
-      where (select auth.uid()) = user_id and status = 'verified'
-    )
-  );
+  using ((select auth.jwt()->>'aal') = 'aal2' or not (select public.sls_has_verified_factor()));
 
 drop policy if exists "require authenticator if enabled" on public.youversion_links;
 create policy "require authenticator if enabled" on public.youversion_links
   as restrictive for all to authenticated
-  using (
-    array[(select auth.jwt()->>'aal')] <@ (
-      select case when count(id) > 0 then array['aal2'] else array['aal1', 'aal2'] end
-      from auth.mfa_factors
-      where (select auth.uid()) = user_id and status = 'verified'
-    )
-  );
+  using ((select auth.jwt()->>'aal') = 'aal2' or not (select public.sls_has_verified_factor()));
