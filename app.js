@@ -242,7 +242,7 @@ async function fillPreview(panel, ref, usfm) {
 // ─────────────────────────── Views ───────────────────────────
 
 function showView(name) {
-  for (const v of ["home", "question", "answers", "settings"]) {
+  for (const v of ["home", "question", "answers", "library", "settings"]) {
     $("view-" + v).hidden = v !== name;
   }
   document.querySelectorAll(".nav-link").forEach((b) => {
@@ -251,6 +251,7 @@ function showView(name) {
   });
   if (name === "answers") renderAnswers();
   if (name === "settings") renderSettings();
+  if (name === "library") renderLibrary();
   window.scrollTo(0, 0);
 }
 
@@ -350,6 +351,43 @@ function renderAnswers() {
 
     card.append(meta, title, body, actions);
     list.append(card);
+  }
+}
+
+function renderLibrary() {
+  const freeList = $("library-free");
+  if (freeList.childElementCount) return; // already built
+  const copyList = $("library-copyright");
+  const byAuthor = (x, y) => x.who.localeCompare(y.who) || x.work.localeCompare(y.work);
+  for (const book of [...LIBRARY].sort(byAuthor)) {
+    const li = document.createElement("li");
+    li.className = "library-item";
+    const title = document.createElement("span");
+    title.className = "library-work";
+    title.textContent = book.work;
+    const author = document.createElement("span");
+    author.className = "library-who";
+    author.textContent = book.who;
+
+    const a = document.createElement("a");
+    a.className = "library-link";
+    a.target = "_blank";
+    a.rel = "noopener";
+    if (book.free) {
+      a.href = book.url;
+      a.textContent = "Read free at " + book.source;
+    } else {
+      a.href = "https://search.worldcat.org/search?q=" + encodeURIComponent(book.work + " " + book.who);
+      a.textContent = "Find a copy";
+    }
+    li.append(title, author, a);
+    if (book.note) {
+      const note = document.createElement("span");
+      note.className = "library-note";
+      note.textContent = book.note;
+      li.append(note);
+    }
+    (book.free ? freeList : copyList).append(li);
   }
 }
 

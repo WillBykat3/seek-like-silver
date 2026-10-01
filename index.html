@@ -21,6 +21,7 @@
     <nav class="nav">
       <button class="nav-link" data-nav="home">Study</button>
       <button class="nav-link" data-nav="answers">My answers</button>
+      <button class="nav-link" data-nav="library">Library</button>
       <button class="nav-link" data-nav="settings">Settings</button>
       <button class="btn btn-small" id="auth-button">Sign in</button>
     </nav>
@@ -98,6 +99,16 @@
       <div id="answers-list" class="answers-list"></div>
     </section>
 
+    <!-- Library -->
+    <section id="view-library" class="view" hidden>
+      <h1 class="section-title">Library</h1>
+      <p class="library-intro">Every book the questions point to. Older works are free to read online; newer ones are still in copyright, so we help you find a copy at a library or bookstore.</p>
+      <h2 class="library-heading">Free to read</h2>
+      <ul class="library-list" id="library-free"></ul>
+      <h2 class="library-heading">Still in copyright</h2>
+      <ul class="library-list" id="library-copyright"></ul>
+    </section>
+
     <!-- Settings -->
     <section id="view-settings" class="view" hidden>
       <h1 class="section-title">Settings</h1>
@@ -158,6 +169,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="questions.js"></script>
+  <script src="library.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
