@@ -348,17 +348,9 @@ function showView(name) {
   window.scrollTo(0, 0);
 }
 
-function openQuestion(q, level) {
-  state.level = level;
-  state.question = q;
-
-  $("q-level").textContent = LEVEL_LABELS[level];
-  $("view-question").dataset.level = level; // drives the level color
-  $("q-prompt").textContent = q.prompt;
-
-  const verses = $("q-verses");
-  verses.replaceChildren();
-  for (const ref of q.verses) {
+function renderVerseList(list, refs) {
+  list.replaceChildren();
+  for (const ref of refs || []) {
     const li = document.createElement("li");
     const a = document.createElement("a");
     a.href = verseLink(ref);
@@ -367,8 +359,20 @@ function openQuestion(q, level) {
     a.textContent = ref.replace(/-/g, "–");
     li.append(a);
     attachVersePreview(li, a, ref);
-    verses.append(li);
+    list.append(li);
   }
+}
+
+function openQuestion(q, level) {
+  state.level = level;
+  state.question = q;
+
+  $("q-level").textContent = LEVEL_LABELS[level];
+  $("view-question").dataset.level = level; // drives the level color
+  $("q-prompt").textContent = q.prompt;
+
+  renderVerseList($("q-passage"), q.passage);
+  renderVerseList($("q-inspiration"), q.inspiration);
 
   const readings = $("q-readings");
   readings.replaceChildren();

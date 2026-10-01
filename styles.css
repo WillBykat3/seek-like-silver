@@ -273,6 +273,8 @@ a { color: inherit; }
 }
 .helps { display: grid; gap: 18px; grid-template-columns: 1fr; }
 @media (min-width: 640px) { .helps { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 640px) { .help-wide { grid-column: 1 / -1; } }
+.help-hint { margin: -4px 0 6px; font-size: 0.82rem; color: var(--muted); }
 .help-block h3, .tradition-block h3 {
   font-family: var(--display);
   font-size: 1.2rem;
