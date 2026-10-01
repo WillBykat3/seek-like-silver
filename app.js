@@ -127,6 +127,7 @@ function openQuestion(q, level) {
   state.question = q;
 
   $("q-level").textContent = LEVEL_LABELS[level];
+  $("view-question").dataset.level = level; // drives the level color
   $("q-prompt").textContent = q.prompt;
 
   const verses = $("q-verses");
@@ -189,7 +190,7 @@ function renderAnswers() {
     card.className = "saved-answer";
 
     const meta = document.createElement("div");
-    meta.className = "meta";
+    meta.className = "meta level-" + row.level;
     meta.textContent = LEVEL_LABELS[row.level] + " · " + formatDate(row.updated_at);
 
     const title = document.createElement("h3");
