@@ -4,7 +4,7 @@
 // YouVersion sends people back to this page with ?state=… (and later &code=…).
 // Grab those parameters and clean the address bar before anything else reads the URL.
 const YV_API = "https://api.youversion.com";
-const YV_STORE = { state: "sls-yv-state", verifier: "sls-yv-verifier", nonce: "sls-yv-nonce" };
+const YV_STORE = { state: "sls-yv-state", verifier: "sls-yv-verifier", nonce: "sls-yv-nonce", mode: "sls-yv-mode" };
 const yvReturn = (() => {
   try {
     const expected = sessionStorage.getItem(YV_STORE.state);
@@ -394,7 +394,11 @@ function renderLibrary() {
 function renderSettings() {
   $("settings-signed-out").hidden = !!state.user;
   $("settings-form").hidden = !state.user;
-  if (!state.user) return;
+  if (!state.user) {
+    $("methods-panel").hidden = true;
+    $("mfa-panel").hidden = true;
+    return;
+  }
 
   const denom = $("set-denomination");
   if (!denom.options.length) {
@@ -408,6 +412,8 @@ function renderSettings() {
   denom.value = state.profile.denomination;
   trans.value = state.profile.translation;
   setStatus("settings-status", "");
+  renderMethods();
+  renderMfaPanel();
 }
 
 // ─────────────────────────── Data ───────────────────────────
@@ -543,8 +549,10 @@ function setUpYouVersionButton() {
   btn.title = ready ? "" : "Coming soon";
 }
 
-async function startYouVersion() {
+// mode "signin" signs in; mode "link" connects YouVersion to the signed-in account.
+async function startYouVersion(mode) {
   if (!YOUVERSION_APP_KEY || !db) return;
+  mode = mode === "link" ? "link" : "signin";
   // The return trip must land on the same address this starts from (browser storage is per-address).
   if (window.location.origin !== new URL(YOUVERSION_REDIRECT_URI).origin) {
     window.location.assign(YOUVERSION_REDIRECT_URI);
@@ -557,6 +565,7 @@ async function startYouVersion() {
     sessionStorage.setItem(YV_STORE.verifier, verifier);
     sessionStorage.setItem(YV_STORE.state, stateValue);
     sessionStorage.setItem(YV_STORE.nonce, nonce);
+    sessionStorage.setItem(YV_STORE.mode, mode);
   } catch (_) {
     return setStatus("signin-status", "Your browser blocked the storage YouVersion sign-in needs. Try Google or email instead.", "err");
   }
@@ -575,10 +584,18 @@ async function startYouVersion() {
 }
 
 async function finishYouVersion(ret) {
+  let mode = "signin";
+  try { mode = sessionStorage.getItem(YV_STORE.mode) === "link" ? "link" : "signin"; } catch (_) { /* default */ }
+  const linking = mode === "link";
   const fail = (message) => {
     clearYouVersionStore();
-    openSignIn();
-    setStatus("signin-status", message, "err");
+    if (linking) {
+      showView("settings");
+      setStatus("methods-status", message.replace("YouVersion sign-in", "Connecting YouVersion"), "err");
+    } else {
+      openSignIn();
+      setStatus("signin-status", message, "err");
+    }
   };
 
   if (!ret.state || ret.state !== ret.expected) {
@@ -600,8 +617,13 @@ async function finishYouVersion(ret) {
   } catch (_) { /* handled below */ }
   if (!db || !verifier || !nonce) return fail("YouVersion sign-in lost its place. Please try again.");
 
-  openSignIn();
-  setStatus("signin-status", "Finishing YouVersion sign-in…");
+  if (linking) {
+    showView("settings");
+    setStatus("methods-status", "Connecting YouVersion…");
+  } else {
+    openSignIn();
+    setStatus("signin-status", "Finishing YouVersion sign-in…");
+  }
   try {
     // Step 3: trade the code for YouVersion's signed ID token.
     const tokenResp = await fetch(YV_API + "/auth/token", {
@@ -619,20 +641,30 @@ async function finishYouVersion(ret) {
     const tokens = await tokenResp.json();
     if (!tokens.id_token) return fail("YouVersion didn't return a sign-in token. Please try again.");
 
+    if (linking) {
+      // Our server function checks the token and attaches YouVersion to this account.
+      const { data, error } = await db.functions.invoke("youversion-signin", {
+        body: { mode: "link", id_token: tokens.id_token, nonce }
+      });
+      if (error || !data || !data.linked) {
+        const reason = await functionErrorReason(error);
+        return fail(LINK_ERRORS[reason] || "Couldn't connect YouVersion (" + reason + "). Please try again.");
+      }
+      clearYouVersionStore();
+      await loadUserData(); // answers may have moved over
+      showView("settings");
+      setStatus("methods-status", data.merged
+        ? "YouVersion is connected. Answers from your earlier YouVersion sign-in moved to this account."
+        : "YouVersion is connected.", "ok");
+      return;
+    }
+
     // Our server function checks the token and returns a one-time sign-in key.
     const { data, error } = await db.functions.invoke("youversion-signin", {
       body: { id_token: tokens.id_token, nonce }
     });
     if (error || !data || !data.token_hash) {
-      // Show the server's reason code so problems can be diagnosed.
-      let reason = error ? error.message : "no sign-in key returned";
-      try {
-        const ctx = error && error.context;
-        if (ctx && typeof ctx.json === "function") {
-          const body = await ctx.json();
-          reason = [body.error, body.detail].filter(Boolean).join(": ") || reason;
-        }
-      } catch (_) { /* keep the generic reason */ }
+      const reason = await functionErrorReason(error);
       console.error("youversion-signin:", reason);
       return fail("Couldn't finish YouVersion sign-in on our side (" + reason + "). Please try again, or use Google or email.");
     }
@@ -662,23 +694,18 @@ async function makeNonce() {
   return { raw, hashed };
 }
 
-async function setUpGoogleButton() {
-  const holder = $("google-btn");
+// Render Google's button into `holder`. `onCredential(idToken, rawNonce)` runs
+// after the person picks an account. Returns false if Google's script isn't available.
+async function renderGoogleButton(holder, onCredential, text) {
   const gsi = window.google && window.google.accounts && window.google.accounts.id;
-  if (!db || !gsi || !window.crypto || !crypto.subtle) {
-    holder.hidden = true;
-    $("signin-google").hidden = false;
-    return;
-  }
-  holder.hidden = false;
-  $("signin-google").hidden = true;
-
+  if (!db || !gsi || !window.crypto || !crypto.subtle) return false;
   // A fresh nonce each time: Google gets the hashed one, Supabase checks the raw one.
   googleNonce = await makeNonce();
+  const nonce = googleNonce;
   gsi.initialize({
     client_id: GOOGLE_CLIENT_ID,
-    callback: handleGoogleCredential,
-    nonce: googleNonce.hashed,
+    callback: (response) => { if (googleNonce === nonce) { googleNonce = null; onCredential(response.credential, nonce.raw); } },
+    nonce: nonce.hashed,
     ux_mode: "popup",
     context: "signin"
   });
@@ -687,22 +714,25 @@ async function setUpGoogleButton() {
     type: "standard",
     theme: "outline",
     size: "large",
-    text: "continue_with",
+    text: text || "continue_with",
     shape: "rectangular",
     logo_alignment: "center",
     width: Math.min(400, Math.max(200, holder.clientWidth || 320))
   });
+  return true;
 }
 
-async function handleGoogleCredential(response) {
-  if (!googleNonce) return;
+async function setUpGoogleButton() {
+  const holder = $("google-btn");
+  holder.hidden = false;
+  const ok = await renderGoogleButton(holder, handleGoogleCredential);
+  holder.hidden = !ok;
+  $("signin-google").hidden = ok;
+}
+
+async function handleGoogleCredential(idToken, rawNonce) {
   setStatus("signin-status", "Signing in…");
-  const { error } = await db.auth.signInWithIdToken({
-    provider: "google",
-    token: response.credential,
-    nonce: googleNonce.raw
-  });
-  googleNonce = null;
+  const { error } = await db.auth.signInWithIdToken({ provider: "google", token: idToken, nonce: rawNonce });
   if (error) {
     setStatus("signin-status", "Google sign-in failed: " + error.message, "err");
     return setUpGoogleButton(); // ready for another try with a new nonce
@@ -744,85 +774,81 @@ async function sendCode(e) {
 // One box per digit. Typing moves to the next box, Backspace moves back,
 // pasting or phone autofill spreads the digits across the boxes,
 // and the code submits by itself once every box is filled.
+// Used for the email code and for authenticator-app codes.
 
-const otpBoxes = [];
-let verifying = false;
-
-function buildOtp() {
-  const wrap = $("otp");
-  for (let i = 0; i < OTP_LENGTH; i++) {
+function createCodeBoxes(wrap, length, onComplete) {
+  const boxes = [];
+  const value = () => boxes.map((b) => b.value).join("");
+  const complete = () => {
+    const v = value();
+    if (v.length === length && /^\d+$/.test(v)) onComplete(v);
+  };
+  const fillFrom = (start, digits) => {
+    for (let j = 0; j < digits.length && start + j < length; j++) boxes[start + j].value = digits[j];
+    boxes[Math.min(start + digits.length, length - 1)].focus();
+    complete();
+  };
+  for (let i = 0; i < length; i++) {
     const box = document.createElement("input");
     box.className = "otp-box";
     box.type = "text";
     box.inputMode = "numeric";
-    box.maxLength = OTP_LENGTH; // lets autofill/paste land the whole code in one box; we spread it out
+    box.maxLength = length; // lets autofill/paste land the whole code in one box; we spread it out
     box.autocomplete = i === 0 ? "one-time-code" : "off";
-    box.setAttribute("aria-label", "Digit " + (i + 1) + " of " + OTP_LENGTH);
-
+    box.setAttribute("aria-label", "Digit " + (i + 1) + " of " + length);
     box.addEventListener("input", () => {
       const digits = box.value.replace(/\D/g, "");
-      if (digits.length > 1) return fillOtpFrom(i, digits);
+      if (digits.length > 1) return fillFrom(i, digits);
       box.value = digits;
-      if (digits && i < OTP_LENGTH - 1) otpBoxes[i + 1].focus();
-      maybeSubmitOtp();
+      if (digits && i < length - 1) boxes[i + 1].focus();
+      complete();
     });
     box.addEventListener("keydown", (e) => {
       if (e.key === "Backspace" && !box.value && i > 0) {
-        otpBoxes[i - 1].value = "";
-        otpBoxes[i - 1].focus();
+        boxes[i - 1].value = "";
+        boxes[i - 1].focus();
         e.preventDefault();
       } else if (e.key === "ArrowLeft" && i > 0) {
-        otpBoxes[i - 1].focus();
-      } else if (e.key === "ArrowRight" && i < OTP_LENGTH - 1) {
-        otpBoxes[i + 1].focus();
+        boxes[i - 1].focus();
+      } else if (e.key === "ArrowRight" && i < length - 1) {
+        boxes[i + 1].focus();
       }
     });
     box.addEventListener("paste", (e) => {
       e.preventDefault();
-      fillOtpFrom(i, (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, ""));
+      fillFrom(i, (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, ""));
     });
     box.addEventListener("focus", () => box.select());
-
-    otpBoxes.push(box);
+    boxes.push(box);
     wrap.append(box);
   }
+  return {
+    boxes,
+    value,
+    clear() { boxes.forEach((b) => (b.value = "")); boxes[0].focus(); },
+    setDisabled(on) { boxes.forEach((b) => (b.disabled = on)); },
+    focus() { boxes[0].focus(); }
+  };
 }
 
-function fillOtpFrom(start, digits) {
-  for (let j = 0; j < digits.length && start + j < OTP_LENGTH; j++) {
-    otpBoxes[start + j].value = digits[j];
-  }
-  const next = Math.min(start + digits.length, OTP_LENGTH - 1);
-  otpBoxes[next].focus();
-  maybeSubmitOtp();
-}
-
-function getOtp() {
-  return otpBoxes.map((b) => b.value).join("");
-}
-
-function clearOtp() {
-  otpBoxes.forEach((b) => (b.value = ""));
-  otpBoxes[0].focus();
-}
-
-function maybeSubmitOtp() {
-  if (/^\d+$/.test(getOtp()) && getOtp().length === OTP_LENGTH) verifyCode();
-}
+const emailCode = createCodeBoxes($("otp"), OTP_LENGTH, () => verifyCode());
+const otpBoxes = emailCode.boxes; // (kept for tests)
+const clearOtp = () => emailCode.clear();
+let verifying = false;
 
 async function verifyCode(e) {
   if (e) e.preventDefault();
   if (!db || verifying) return;
-  const token = getOtp();
+  const token = emailCode.value();
   if (token.length !== OTP_LENGTH) {
     return setStatus("signin-status", "Enter all " + OTP_LENGTH + " digits.", "err");
   }
   verifying = true;
-  otpBoxes.forEach((b) => (b.disabled = true));
+  emailCode.setDisabled(true);
   setStatus("signin-status", "Checking…");
   const { error } = await db.auth.verifyOtp({ email: pendingEmail, token, type: "email" });
   verifying = false;
-  otpBoxes.forEach((b) => (b.disabled = false));
+  emailCode.setDisabled(false);
   if (error) {
     setStatus("signin-status", "That code didn't work (" + error.message + "). Try again or request a new one.", "err");
     return clearOtp();
@@ -836,6 +862,271 @@ async function signOut() {
 
 function updateAuthButton() {
   $("auth-button").textContent = state.user ? "Sign out" : "Sign in";
+}
+
+// ─────────────────────────── Sign-in methods (account linking) ───────────────────────────
+
+const YOUVERSION_ONLY_DOMAIN = "@youversion.seeklikesilver.com";
+const isYouVersionOnly = (user) => !!(user && user.email && user.email.toLowerCase().endsWith(YOUVERSION_ONLY_DOMAIN));
+
+const LINK_ERRORS = {
+  linked_to_other_account: "That YouVersion account is already connected to a different Seek Like Silver account. Sign in there and disconnect it first.",
+  already_linked_to_different_youversion: "This account is already connected to a different YouVersion account. Disconnect it first.",
+  authenticator_required: "Enter your authenticator code first: sign out and back in, then try again.",
+  youversion_only_account: "This account was created with YouVersion, so YouVersion can't be connected or disconnected here.",
+  not_signed_in: "You need to be signed in to connect YouVersion."
+};
+
+// Pull the server's reason code out of a Supabase function error.
+async function functionErrorReason(error) {
+  let reason = error ? error.message : "no response";
+  try {
+    const ctx = error && error.context;
+    if (ctx && typeof ctx.json === "function") {
+      const body = await ctx.json();
+      reason = body.error || reason;
+      if (body.detail) reason += ": " + body.detail;
+    }
+  } catch (_) { /* keep the generic reason */ }
+  return reason;
+}
+
+function methodRow(name, detail, stateText, actions) {
+  const li = document.createElement("li");
+  li.className = "method";
+  const left = document.createElement("div");
+  const n = document.createElement("span");
+  n.className = "method-name";
+  n.textContent = name;
+  left.append(n);
+  if (detail) {
+    const d = document.createElement("span");
+    d.className = "method-detail";
+    d.textContent = detail;
+    left.append(d);
+  }
+  const right = document.createElement("div");
+  right.className = "method-actions";
+  if (stateText) {
+    const s = document.createElement("span");
+    s.className = "method-state";
+    s.textContent = stateText;
+    right.append(s);
+  }
+  for (const [label, handler, ghost] of actions || []) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = ghost ? "link-button" : "btn btn-small";
+    b.textContent = label;
+    b.addEventListener("click", handler);
+    right.append(b);
+  }
+  li.append(left, right);
+  return li;
+}
+
+async function renderMethods() {
+  const panel = $("methods-panel");
+  panel.hidden = !state.user || !db;
+  if (panel.hidden) return;
+  const list = $("method-list");
+  const googleHolder = $("link-google-btn");
+
+  const { data: fresh } = await db.auth.getUser();
+  const user = (fresh && fresh.user) || state.user;
+  const identities = user.identities || [];
+  const google = identities.find((i) => i.provider === "google");
+  const yvOnly = isYouVersionOnly(user);
+  let yvLinked = yvOnly;
+  if (!yvOnly) {
+    const { data: link } = await db.from("youversion_links").select("yvp_id").maybeSingle();
+    yvLinked = !!link;
+  }
+
+  list.replaceChildren();
+  googleHolder.hidden = true;
+
+  // Google
+  if (google) {
+    const gEmail = google.identity_data && google.identity_data.email;
+    const canRemove = identities.length >= 2;
+    list.append(methodRow("Google", gEmail, "Connected", canRemove ? [["Disconnect", () => disconnectGoogle(google), true]] : []));
+  } else if (!yvOnly) {
+    list.append(methodRow("Google", "Sign in with your Google account", null, []));
+    googleHolder.hidden = false;
+    const ok = await renderGoogleButton(googleHolder, connectGoogle, "continue_with");
+    if (!ok) googleHolder.hidden = true;
+  }
+
+  // Email code
+  if (!yvOnly) {
+    list.append(methodRow("Email code", user.email, "On", []));
+  }
+
+  // YouVersion
+  if (yvOnly) {
+    list.append(methodRow("YouVersion", "This account was created with YouVersion", "Connected", []));
+  } else if (yvLinked) {
+    list.append(methodRow("YouVersion", null, "Connected", [["Disconnect", disconnectYouVersion, true]]));
+  } else if (YOUVERSION_APP_KEY) {
+    list.append(methodRow("YouVersion", "Sign in with your Bible App account", null, [["Connect YouVersion", () => startYouVersion("link")]]));
+  }
+
+  const oldNote = panel.querySelector(".method-note");
+  if (oldNote) oldNote.remove();
+  if (yvOnly) {
+    const note = document.createElement("p");
+    note.className = "method-note";
+    note.textContent = "To add Google or email: sign out, sign in with Google or an email code, then come back here and choose Connect YouVersion. Your saved answers will move over.";
+    list.after(note);
+  }
+}
+
+async function connectGoogle(idToken, rawNonce) {
+  setStatus("methods-status", "Connecting Google…");
+  const { error } = await db.auth.linkIdentity({ provider: "google", token: idToken, nonce: rawNonce });
+  if (error) {
+    const code = error.code || "";
+    let msg = "Couldn't connect Google (" + error.message + ").";
+    if (code === "identity_already_exists" || /already/i.test(error.message)) {
+      msg = "That Google account already has its own Seek Like Silver account, so it can't be added here. Sign in with it to use it.";
+    } else if (code === "manual_linking_disabled" || /manual linking/i.test(error.message)) {
+      msg = "Connecting accounts is switched off in Supabase. Turn on \"Allow manual linking\" under Authentication → Sign In / Providers.";
+    }
+    setStatus("methods-status", msg, "err");
+    return renderMethods();
+  }
+  setStatus("methods-status", "Google is connected.", "ok");
+  renderMethods();
+}
+
+async function disconnectGoogle(identity) {
+  if (!confirm("Disconnect Google? You can still sign in with your other methods.")) return;
+  const { error } = await db.auth.unlinkIdentity(identity);
+  setStatus("methods-status", error ? "Couldn't disconnect Google (" + error.message + ")." : "Google is disconnected.", error ? "err" : "ok");
+  renderMethods();
+}
+
+async function disconnectYouVersion() {
+  if (!confirm("Disconnect YouVersion? Signing in with YouVersion afterward will open a separate account.")) return;
+  const { data, error } = await db.functions.invoke("youversion-signin", { body: { mode: "unlink" } });
+  if (error || !data || data.linked !== false) {
+    const reason = await functionErrorReason(error);
+    setStatus("methods-status", LINK_ERRORS[reason] || "Couldn't disconnect YouVersion (" + reason + ").", "err");
+  } else {
+    setStatus("methods-status", "YouVersion is disconnected.", "ok");
+  }
+  renderMethods();
+}
+
+// ─────────────────────────── Authenticator app (TOTP) ───────────────────────────
+// Turning it on adds a 6-digit code from the person's authenticator app at
+// every sign-in. The database (supabase-migrations/003) refuses to show their
+// answers until that code is entered.
+
+let pendingFactorId = null;
+let mfaLoginBusy = false;
+
+async function needsAuthenticatorCode() {
+  if (!db) return false;
+  const { data, error } = await db.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (error || !data) return false;
+  return data.nextLevel === "aal2" && data.currentLevel !== "aal2";
+}
+
+async function verifiedTotpFactor() {
+  const { data } = await db.auth.mfa.listFactors();
+  return ((data && data.totp) || []).find((f) => f.status === "verified") || null;
+}
+
+const mfaLoginCode = createCodeBoxes($("mfa-login-code"), 6, async (code) => {
+  if (mfaLoginBusy) return;
+  mfaLoginBusy = true;
+  mfaLoginCode.setDisabled(true);
+  setStatus("mfa-login-status", "Checking…");
+  const factor = await verifiedTotpFactor();
+  const { error } = factor
+    ? await db.auth.mfa.challengeAndVerify({ factorId: factor.id, code })
+    : { error: { message: "no authenticator found" } };
+  mfaLoginBusy = false;
+  mfaLoginCode.setDisabled(false);
+  if (error) {
+    setStatus("mfa-login-status", "That code didn't work. Codes change every 30 seconds; try the current one.", "err");
+    return mfaLoginCode.clear();
+  }
+  $("mfa-dialog").close();
+  await refreshAfterSignIn();
+});
+
+function promptForAuthenticator() {
+  setStatus("mfa-login-status", "");
+  mfaLoginCode.boxes.forEach((b) => (b.value = ""));
+  if (!$("mfa-dialog").open) $("mfa-dialog").showModal();
+  mfaLoginCode.focus();
+}
+
+const mfaEnrollCode = createCodeBoxes($("mfa-enroll-code"), 6, async (code) => {
+  if (!pendingFactorId) return;
+  mfaEnrollCode.setDisabled(true);
+  setStatus("mfa-status", "Checking…");
+  const { error } = await db.auth.mfa.challengeAndVerify({ factorId: pendingFactorId, code });
+  mfaEnrollCode.setDisabled(false);
+  if (error) {
+    setStatus("mfa-status", "That code didn't work. Codes change every 30 seconds; try the current one.", "err");
+    return mfaEnrollCode.clear();
+  }
+  pendingFactorId = null;
+  $("mfa-enroll").hidden = true;
+  setStatus("mfa-status", "Authenticator is on. You'll enter a code from it each time you sign in.", "ok");
+  renderMfaPanel(true);
+});
+
+async function renderMfaPanel(keepStatus) {
+  const panel = $("mfa-panel");
+  panel.hidden = !state.user || !db;
+  if (panel.hidden) return;
+  if (!keepStatus) setStatus("mfa-status", "");
+  const factor = await verifiedTotpFactor();
+  const enrolling = !$("mfa-enroll").hidden;
+  $("mfa-summary").textContent = factor
+    ? "On. Each time you sign in, you'll also enter a 6-digit code from your authenticator app."
+    : "Add a second step to signing in: a 6-digit code from an app on your phone. Even if someone gets into your email or Google account, they can't open your answers without it.";
+  $("mfa-setup").hidden = !!factor || enrolling;
+  $("mfa-remove").hidden = !factor;
+}
+
+async function startAuthenticatorSetup() {
+  setStatus("mfa-status", "Setting up…");
+  // Clear any half-finished setup first.
+  const { data: list } = await db.auth.mfa.listFactors();
+  for (const f of ((list && list.all) || []).filter((x) => x.factor_type === "totp" && x.status !== "verified")) {
+    await db.auth.mfa.unenroll({ factorId: f.id });
+  }
+  const { data, error } = await db.auth.mfa.enroll({ factorType: "totp", friendlyName: "Seek Like Silver" });
+  if (error) return setStatus("mfa-status", "Couldn't start setup (" + error.message + ").", "err");
+  pendingFactorId = data.id;
+  $("mfa-qr").src = data.totp.qr_code;
+  $("mfa-secret").textContent = data.totp.secret;
+  $("mfa-enroll").hidden = false;
+  $("mfa-setup").hidden = true;
+  setStatus("mfa-status", "");
+  mfaEnrollCode.clear();
+}
+
+async function cancelAuthenticatorSetup() {
+  if (pendingFactorId) await db.auth.mfa.unenroll({ factorId: pendingFactorId });
+  pendingFactorId = null;
+  $("mfa-enroll").hidden = true;
+  renderMfaPanel();
+}
+
+async function removeAuthenticator() {
+  if (!confirm("Turn off the authenticator? Signing in will go back to just Google, email, or YouVersion.")) return;
+  const factor = await verifiedTotpFactor();
+  if (!factor) return renderMfaPanel();
+  const { error } = await db.auth.mfa.unenroll({ factorId: factor.id });
+  setStatus("mfa-status", error ? "Couldn't turn it off (" + error.message + ")." : "Authenticator is off.", error ? "err" : "ok");
+  renderMfaPanel(true);
 }
 
 // ─────────────────────────── Drafts (survive sign-in) ───────────────────────────
@@ -897,10 +1188,9 @@ $("next-question").addEventListener("click", () => openQuestion(pickQuestion(sta
 $("save-answer").addEventListener("click", saveAnswer);
 $("auth-button").addEventListener("click", () => (state.user ? signOut() : openSignIn()));
 $("signin-google").addEventListener("click", signInWithGoogle);
-$("signin-youversion").addEventListener("click", startYouVersion);
+$("signin-youversion").addEventListener("click", () => startYouVersion("signin"));
 if (yvReturn) finishYouVersion(yvReturn);
 $("email-form").addEventListener("submit", sendCode);
-buildOtp();
 $("code-form").addEventListener("submit", verifyCode);
 $("code-back").addEventListener("click", () => {
   $("code-form").hidden = true;
@@ -908,6 +1198,23 @@ $("code-back").addEventListener("click", () => {
   setStatus("signin-status", "");
 });
 $("settings-form").addEventListener("submit", saveSettings);
+
+async function refreshAfterSignIn() {
+  await loadUserData();
+  if (!$("view-question").hidden && state.question) {
+    renderTradition();
+    openQuestion(state.question, state.level);
+  }
+  if (!$("view-answers").hidden) renderAnswers();
+  if (!$("view-settings").hidden) renderSettings();
+  if (state.user) restoreDraft();
+}
+
+$("mfa-setup").addEventListener("click", startAuthenticatorSetup);
+$("mfa-cancel").addEventListener("click", cancelAuthenticatorSetup);
+$("mfa-remove").addEventListener("click", removeAuthenticator);
+$("mfa-signout").addEventListener("click", async () => { $("mfa-dialog").close(); await signOut(); });
+$("mfa-dialog").addEventListener("cancel", (e) => e.preventDefault()); // must enter a code or sign out
 
 let lastUserId;
 if (db) db.auth.onAuthStateChange((_event, session) => {
@@ -918,13 +1225,8 @@ if (db) db.auth.onAuthStateChange((_event, session) => {
   updateAuthButton();
   // Run outside the auth callback, as Supabase recommends, to avoid deadlocks.
   setTimeout(async () => {
-    await loadUserData();
-    if (!$("view-question").hidden && state.question) {
-      renderTradition();
-      openQuestion(state.question, state.level);
-    }
-    if (!$("view-answers").hidden) renderAnswers();
-    if (!$("view-settings").hidden) renderSettings();
-    if (state.user) restoreDraft();
+    if (state.user && (await needsAuthenticatorCode())) return promptForAuthenticator();
+    if (!state.user && $("mfa-dialog").open) $("mfa-dialog").close();
+    await refreshAfterSignIn();
   }, 0);
 });

@@ -128,6 +128,36 @@
           <button class="btn" type="submit">Save settings</button>
         </div>
       </form>
+
+      <section class="settings-panel" id="methods-panel" hidden>
+        <h2 class="panel-title">Sign-in methods</h2>
+        <p class="muted">Connect more than one way to sign in. They all open this same account and the same saved answers.</p>
+        <ul class="method-list" id="method-list"></ul>
+        <div id="link-google-btn" class="google-btn" hidden></div>
+        <p class="status" id="methods-status" role="status"></p>
+      </section>
+
+      <section class="settings-panel" id="mfa-panel" hidden>
+        <h2 class="panel-title">Authenticator app</h2>
+        <p class="muted" id="mfa-summary"></p>
+        <div class="mfa-enroll" id="mfa-enroll" hidden>
+          <ol class="mfa-steps">
+            <li>Open an authenticator app on your phone, such as Google Authenticator, Microsoft Authenticator, or 1Password.</li>
+            <li>Scan this code with it.
+              <img id="mfa-qr" class="mfa-qr" alt="QR code to add Seek Like Silver to your authenticator app" width="180" height="180">
+              <span class="mfa-secret-line">Can't scan? Enter this key instead: <code id="mfa-secret"></code></span>
+            </li>
+            <li>Enter the 6-digit code the app shows.</li>
+          </ol>
+          <div class="otp" id="mfa-enroll-code" role="group" aria-label="Authenticator code"></div>
+          <button class="link-button" type="button" id="mfa-cancel">Cancel</button>
+        </div>
+        <div class="answer-actions">
+          <span class="status" id="mfa-status" role="status"></span>
+          <button class="btn btn-ghost" type="button" id="mfa-remove" hidden>Turn off authenticator</button>
+          <button class="btn" type="button" id="mfa-setup" hidden>Set up authenticator</button>
+        </div>
+      </section>
     </section>
   </main>
 
@@ -137,6 +167,15 @@
   </footer>
 
   <!-- Sign-in dialog -->
+  <!-- Authenticator code at sign-in -->
+  <dialog id="mfa-dialog" class="dialog">
+    <h2>Enter your code</h2>
+    <p class="muted">Open your authenticator app and enter the 6-digit code for Seek Like Silver.</p>
+    <div class="otp" id="mfa-login-code" role="group" aria-label="Authenticator code"></div>
+    <p class="status" id="mfa-login-status" role="status"></p>
+    <button class="link-button" type="button" id="mfa-signout">Sign out instead</button>
+  </dialog>
+
   <dialog id="signin-dialog" class="dialog">
     <form method="dialog" class="dialog-close-row">
       <button class="link-button" aria-label="Close">✕</button>

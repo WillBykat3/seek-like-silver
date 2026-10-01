@@ -393,6 +393,36 @@ textarea:focus, input:focus, select:focus { outline: 2px solid var(--silver); ou
 }
 .settings-form label { display: grid; gap: 6px; font-weight: 700; }
 
+.settings-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-top: 16px;
+}
+.panel-title { font-family: var(--display); font-size: 1.5rem; font-weight: 700; margin: 0 0 4px; }
+.settings-panel > .muted { margin: 0 0 14px; max-width: 36em; }
+.method-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.method {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.method-name { font-weight: 700; }
+.method-detail { display: block; color: var(--muted); font-size: 0.92rem; overflow-wrap: anywhere; }
+.method-state { font-size: 0.92rem; color: var(--success); font-weight: 700; }
+.method-actions { display: flex; align-items: center; gap: 12px; }
+.method-note { color: var(--muted); font-size: 0.92rem; margin: 12px 0 0; }
+.mfa-steps { margin: 4px 0 8px; padding-left: 22px; }
+.mfa-steps li { margin: 6px 0; }
+.mfa-qr { display: block; margin: 10px 0 6px; background: #fff; padding: 8px; border-radius: var(--radius); border: 1px solid var(--line); }
+.mfa-secret-line { display: block; font-size: 0.9rem; color: var(--muted); }
+.mfa-secret-line code { font-size: 0.85rem; color: var(--ink); overflow-wrap: anywhere; }
+
 /* ───────── Sign-in dialog ───────── */
 .dialog {
   border: 1px solid var(--line);

@@ -86,3 +86,19 @@ Google's menus get renamed from time to time; if a label doesn't match, look for
 - **Signed in with Google but landed on the wrong page:** check the URLs in step 4.
 - **No email arrives:** check spam and wait a minute. The default sender allows only about 2 emails per hour and only to your own address (see step 2).
 - **"Email address not authorized":** custom email (step 2) isn't set up yet; the default sender only emails you.
+
+---
+
+## Supabase pieces added later (run each once)
+
+**Database updates** (SQL Editor → New query → paste → Run; each is safe to re-run):
+- `supabase-migrations/002-more-translations.sql`: allows the 18 translations in Settings.
+- `supabase-migrations/003-account-linking-and-mfa.sql`: YouVersion account connections, plus the rule that locks an account's answers behind its authenticator code once that's turned on.
+
+**Server functions** (Edge Functions → Deploy a new function → Via Editor; paste the file; Deploy; then turn **Verify JWT off** for each). Both use the secret `YOUVERSION_APP_KEY` (Edge Functions → Secrets).
+- `youversion-signin` ← `supabase/functions/youversion-signin/index.ts` (YouVersion sign-in, connect, disconnect)
+- `bible-passage` ← `supabase/functions/bible-passage/index.ts` (only needed if verse previews say "Couldn't load the text")
+
+Editing a function's file on GitHub does **not** update it in Supabase. Paste the new code and deploy again.
+
+**Account linking:** Authentication → Sign In / Providers → turn on **Allow manual linking** (needed for "Connect Google" in Settings).
