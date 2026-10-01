@@ -47,15 +47,14 @@
     <section id="view-home" class="view">
       <div class="hero">
         <p class="hero-verse" id="hero-verse">“If thou seekest her as silver, and searchest for her as for hid treasures; then shalt thou understand the fear of the LORD, and find the knowledge of God.”</p>
-        <p class="hero-ref"><a id="hero-link" href="https://www.bible.com/bible/1/PRO.2.4-5.KJV" target="_blank" rel="noopener">Proverbs 2:4–5 (KJV)</a></p>
+        <p class="hero-ref"><a id="hero-link" href="https://www.bible.com/bible/1/PRO.2.4-5.KJV" target="_blank" rel="noopener">Proverbs 2:4–5 (KJV)</a><span class="ref-fallback" id="hero-fallback"></span></p>
         <p class="hero-note" id="hero-note"></p>
       </div>
       <aside class="votd" id="votd" aria-labelledby="votd-title" hidden>
-        <h2 class="votd-title" id="votd-title">Verse of the Day</h2>
+        <h2 class="votd-title" id="votd-title">Verse of the Day <span class="votd-credit">· from YouVersion</span></h2>
         <p class="votd-text" id="votd-text"></p>
-        <p class="votd-ref"><a id="votd-link" href="#" target="_blank" rel="noopener"></a></p>
+        <p class="votd-ref"><a id="votd-link" href="#" target="_blank" rel="noopener"></a><span class="ref-fallback" id="votd-fallback"></span></p>
         <p class="votd-note" id="votd-note"></p>
-        <p class="votd-credit">Chosen by YouVersion (the Bible App).</p>
       </aside>
       <h1 class="section-title home-title">Choose your level</h1>
       <div class="levels">
@@ -77,34 +76,19 @@
       </div>
 
       <section class="browse" aria-labelledby="browse-title">
-        <h2 class="section-title browse-title" id="browse-title">Or browse by topic or book</h2>
-        <div class="chips" id="topic-chips" role="group" aria-label="Topics"></div>
-        <div class="browse-filters">
-          <label>Bible book
-            <select id="browse-book"><option value="">Any book</option></select>
-          </label>
-          <label>Level
-            <select id="browse-level">
-              <option value="">All levels</option>
-              <option value="beginner">Beginner</option>
-              <option value="moderate">Moderate</option>
-              <option value="philosopher">Philosopher</option>
-            </select>
-          </label>
-          <button class="link-button" type="button" id="browse-all">Show all questions</button>
-        </div>
-        <p class="muted" id="browse-count" role="status"></p>
-        <ul class="browse-list" id="browse-list"></ul>
+        <h2 class="section-title browse-title" id="browse-title">Or choose a topic</h2>
+        <div class="chips" id="topic-chips"></div>
       </section>
     </section>
 
     <!-- Question -->
     <section id="view-question" class="view" hidden>
       <div class="question-top">
-        <button class="link-button" data-nav="home">← Change level</button>
+        <button class="link-button" data-nav="home">← Back</button>
         <span class="question-tools">
           <button class="link-button" type="button" id="copy-link">Copy link</button>
           <button class="link-button" type="button" id="print-question">Print for a group</button>
+          <span class="topic-pill" id="q-topic" hidden></span>
           <span class="level-pill" id="q-level"></span>
         </span>
       </div>
@@ -151,7 +135,44 @@
           <ol class="answer-history" id="my-answers-list"></ol>
         </div>
         <label for="answer" class="answer-label" id="answer-label">Your answer</label>
-        <textarea id="answer" rows="9" maxlength="20000" placeholder="Take your time. Write what you find in the text, and why."></textarea>
+        <div class="rt-wrap">
+          <div class="rt-toolbar" id="answer-toolbar" role="toolbar" aria-label="Formatting" aria-controls="answer">
+            <button type="button" class="rt-btn" data-cmd="bold" data-state="bold" title="Bold (Ctrl/⌘ B)" aria-label="Bold" aria-pressed="false"><b>B</b></button>
+            <button type="button" class="rt-btn" data-cmd="italic" data-state="italic" title="Italic (Ctrl/⌘ I)" aria-label="Italic" aria-pressed="false"><i>I</i></button>
+            <button type="button" class="rt-btn" data-cmd="underline" data-state="underline" title="Underline (Ctrl/⌘ U)" aria-label="Underline" aria-pressed="false"><u>U</u></button>
+            <button type="button" class="rt-btn" data-cmd="strikeThrough" data-state="strikeThrough" title="Strikethrough" aria-label="Strikethrough" aria-pressed="false"><s>S</s></button>
+            <span class="rt-sep" aria-hidden="true"></span>
+            <span class="rt-group">
+              <button type="button" class="rt-btn rt-menu-btn" data-menu="rt-colors" aria-haspopup="true" aria-expanded="false" title="Text color" aria-label="Text color"><span class="rt-a">A</span><span class="rt-caret" aria-hidden="true">▾</span></button>
+              <div class="rt-menu" id="rt-colors" hidden>
+                <button type="button" class="rt-swatch rt-none" data-color="" title="Default color" aria-label="Default color">A</button>
+              <button type="button" class="rt-swatch c-red" data-color="#b42318" title="Red" aria-label="Red"></button>
+              <button type="button" class="rt-swatch c-blue" data-color="#2453a6" title="Blue" aria-label="Blue"></button>
+              <button type="button" class="rt-swatch c-green" data-color="#1f7a4d" title="Green" aria-label="Green"></button>
+              <button type="button" class="rt-swatch c-gold" data-color="#8a5a00" title="Gold" aria-label="Gold"></button>
+              <button type="button" class="rt-swatch c-purple" data-color="#6b3fa0" title="Purple" aria-label="Purple"></button>
+              </div>
+            </span>
+            <span class="rt-group">
+              <button type="button" class="rt-btn rt-menu-btn" data-menu="rt-highlights" aria-haspopup="true" aria-expanded="false" title="Highlight" aria-label="Highlight"><span class="rt-hl">ab</span><span class="rt-caret" aria-hidden="true">▾</span></button>
+              <div class="rt-menu" id="rt-highlights" hidden>
+                <button type="button" class="rt-swatch rt-none" data-highlight="" title="No highlight" aria-label="No highlight">⌀</button>
+              <button type="button" class="rt-swatch hl-yellow" data-highlight="#fff3a3" title="Yellow" aria-label="Yellow"></button>
+              <button type="button" class="rt-swatch hl-green" data-highlight="#d4f5dc" title="Green" aria-label="Green"></button>
+              <button type="button" class="rt-swatch hl-blue" data-highlight="#d6e6ff" title="Blue" aria-label="Blue"></button>
+              <button type="button" class="rt-swatch hl-pink" data-highlight="#ffd9e8" title="Pink" aria-label="Pink"></button>
+              </div>
+            </span>
+            <span class="rt-sep" aria-hidden="true"></span>
+            <button type="button" class="rt-btn" data-cmd="insertUnorderedList" data-state="insertUnorderedList" title="Bulleted list" aria-label="Bulleted list" aria-pressed="false">•≡</button>
+            <button type="button" class="rt-btn" data-cmd="insertOrderedList" data-state="insertOrderedList" title="Numbered list" aria-label="Numbered list" aria-pressed="false">1≡</button>
+            <button type="button" class="rt-btn" data-cmd="formatBlock" data-value="blockquote" title="Quote" aria-label="Quote">❝</button>
+            <span class="rt-sep" aria-hidden="true"></span>
+            <button type="button" class="rt-btn" data-cmd="removeFormat" title="Clear formatting" aria-label="Clear formatting">T<span class="rt-x">×</span></button>
+          </div>
+          <div id="answer" class="answer-editor is-empty" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="answer-label" spellcheck="true" data-placeholder="Take your time. Write what you find in the text, and why."></div>
+          <div class="rt-grip" id="answer-grip" role="separator" aria-orientation="horizontal" aria-label="Drag to resize the answer box" tabindex="0" title="Drag to resize"><span></span><span></span><span></span></div>
+        </div>
         <label class="share-check" id="share-row" hidden>
           <input type="checkbox" id="answer-shared"> Share this answer with my groups
         </label>
@@ -349,6 +370,7 @@
   <script src="questions.js"></script>
   <script src="library.js"></script>
   <script src="glossary.js"></script>
+  <script src="richtext.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

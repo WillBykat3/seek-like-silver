@@ -180,7 +180,11 @@ a { color: inherit; }
 .votd-ref { margin: 8px 0 0; font-size: 0.92rem; }
 .votd-ref a { color: var(--ink); text-decoration-color: var(--silver); text-underline-offset: 3px; }
 .votd-ref a:hover { text-decoration-color: currentColor; }
-.votd-note, .votd-credit { color: var(--muted); font-size: 0.78rem; margin: 4px 0 0; }
+.votd-note { color: var(--muted); font-size: 0.78rem; margin: 4px 0 0; }
+.votd-credit { font-weight: 500; letter-spacing: 0.04em; }
+.ref-fallback { color: var(--muted); font-size: 0.85em; }
+.hero-note, .votd-note { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.hero-note.expanded, .votd-note.expanded { white-space: normal; }
 
 .section-title {
   font-family: var(--display);
@@ -536,46 +540,47 @@ textarea:focus, input:focus, select:focus { outline: 2px solid var(--silver); ou
   gap: 4px;
   overflow: hidden;
 }
+/* Each topic has its own mosaic color (evenly spaced around the color wheel). */
+.topic-god { --pigment: hsl(225 52% 42%); --pigment-deep: hsl(225 55% 28%); }
+.topic-christ { --pigment: hsl(335 52% 42%); --pigment-deep: hsl(335 55% 28%); }
+.topic-spirit { --pigment: hsl(28 52% 42%); --pigment-deep: hsl(28 55% 28%); }
+.topic-creation { --pigment: hsl(85 52% 42%); --pigment-deep: hsl(85 55% 28%); }
+.topic-sin { --pigment: hsl(0 52% 42%); --pigment-deep: hsl(0 55% 28%); }
+.topic-salvation { --pigment: hsl(290 52% 42%); --pigment-deep: hsl(290 55% 28%); }
+.topic-covenant { --pigment: hsl(50 52% 42%); --pigment-deep: hsl(50 55% 28%); }
+.topic-scripture { --pigment: hsl(258 52% 42%); --pigment-deep: hsl(258 55% 28%); }
+.topic-church { --pigment: hsl(170 52% 42%); --pigment-deep: hsl(170 55% 28%); }
+.topic-life { --pigment: hsl(200 52% 42%); --pigment-deep: hsl(200 55% 28%); }
+.topic-hope { --pigment: hsl(130 52% 42%); --pigment-deep: hsl(130 55% 28%); }
+@media (prefers-color-scheme: dark) {
+  .topic-god { --pigment: hsl(225 55% 62%); --pigment-deep: hsl(225 70% 80%); }
+  .topic-christ { --pigment: hsl(335 55% 62%); --pigment-deep: hsl(335 70% 80%); }
+  .topic-spirit { --pigment: hsl(28 55% 62%); --pigment-deep: hsl(28 70% 80%); }
+  .topic-creation { --pigment: hsl(85 55% 62%); --pigment-deep: hsl(85 70% 80%); }
+  .topic-sin { --pigment: hsl(0 55% 62%); --pigment-deep: hsl(0 70% 80%); }
+  .topic-salvation { --pigment: hsl(290 55% 62%); --pigment-deep: hsl(290 70% 80%); }
+  .topic-covenant { --pigment: hsl(50 55% 62%); --pigment-deep: hsl(50 70% 80%); }
+  .topic-scripture { --pigment: hsl(258 55% 62%); --pigment-deep: hsl(258 70% 80%); }
+  .topic-church { --pigment: hsl(170 55% 62%); --pigment-deep: hsl(170 70% 80%); }
+  .topic-life { --pigment: hsl(200 55% 62%); --pigment-deep: hsl(200 70% 80%); }
+  .topic-hope { --pigment: hsl(130 55% 62%); --pigment-deep: hsl(130 70% 80%); }
+}
 .topic-card .tesserae { height: 14px; margin: 0 -16px 10px; }
 .topic-card:hover, .topic-card:focus-visible { border-color: var(--pigment); }
 .topic-card:hover .tesserae { opacity: 1; }
 .topic-name { font-family: var(--display); font-size: 1.3rem; font-weight: 700; line-height: 1.1; color: var(--pigment-deep); }
 .topic-desc { color: var(--muted); font-size: 0.92rem; line-height: 1.4; }
 .topic-count { margin-top: auto; padding-top: 4px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
-.topic-card[aria-pressed="true"] { border-color: var(--pigment); background: var(--lapis-tint); box-shadow: inset 0 0 0 1px var(--pigment); }
-.topic-card[aria-pressed="true"] .topic-count { color: var(--pigment-deep); }
+.topic-pill {
+  color: var(--pigment-deep); border: 1px solid var(--pigment); border-radius: 999px;
+  padding: 2px 12px; font-size: 0.9rem; font-weight: 500; white-space: nowrap;
+}
 @media (max-width: 420px) {
   .topic-card { padding: 0 12px 12px; }
   .topic-card .tesserae { margin: 0 -12px 8px; }
   .topic-name { font-size: 1.12rem; }
   .topic-desc { font-size: 0.85rem; }
 }
-.browse-filters { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: end; margin-bottom: 8px; }
-.browse-filters label { display: grid; gap: 4px; font-size: 0.92rem; color: var(--muted); }
-.browse-filters select {
-  font: inherit; font-size: 1rem; color: var(--ink); background: var(--surface);
-  border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 10px; min-width: 11em;
-}
-.browse-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
-.browse-item {
-  --pigment: var(--silver); --pigment-deep: var(--ink);
-  width: 100%; text-align: left; font: inherit; color: var(--ink); cursor: pointer;
-  display: grid; grid-template-columns: auto 1fr auto; gap: 4px 12px; align-items: baseline;
-  background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--pigment);
-  border-radius: 0 var(--radius) var(--radius) 0; padding: 10px 14px;
-}
-.browse-item:hover, .browse-item:focus-visible { border-color: var(--pigment); }
-.browse-item.level-beginner { --pigment: var(--beginner); --pigment-deep: var(--beginner-deep); }
-.browse-item.level-moderate { --pigment: var(--moderate); --pigment-deep: var(--moderate-deep); }
-.browse-item.level-philosopher { --pigment: var(--philosopher); --pigment-deep: var(--philosopher-deep); }
-.browse-level { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--pigment-deep); }
-.browse-prompt { font-family: var(--serif); font-size: 1.02rem; line-height: 1.4; }
-.browse-done { font-size: 0.8rem; color: var(--success); font-weight: 700; }
-@media (max-width: 560px) {
-  .browse-item { grid-template-columns: 1fr auto; }
-  .browse-prompt { grid-column: 1 / -1; grid-row: 2; }
-}
-
 /* ───────── Question extras ───────── */
 .question-tools { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
 .question-top { gap: 10px; flex-wrap: wrap; }
@@ -604,8 +609,8 @@ textarea:focus, input:focus, select:focus { outline: 2px solid var(--silver); ou
 
 .my-answers { margin-bottom: 18px; }
 .answer-history { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-.answer-history li { border-left: 3px solid var(--line); padding-left: 12px; }
-.answer-history li.editing { border-left-color: var(--pigment); }
+.answer-history > li { border-left: 3px solid var(--line); padding-left: 12px; }
+.answer-history > li.editing { border-left-color: var(--pigment); }
 .answer-entry-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-size: 0.9rem; color: var(--muted); }
 .answer-entry .body { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .answer-entry + .answer-entry { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
@@ -670,4 +675,77 @@ textarea:focus, input:focus, select:focus { outline: 2px solid var(--silver); ou
   .print-notes h3 { font-family: var(--display); margin: 0 0 6px; }
   .print-lines { height: 3.2in; background: repeating-linear-gradient(to bottom, transparent 0, transparent 0.32in, #bbb 0.32in, #bbb calc(0.32in + 1px)); }
   .fathers-block, .tradition-block { break-inside: avoid; }
+}
+
+/* ───────── Answer editor (formatting) ───────── */
+.rt-wrap { border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.rt-wrap:focus-within { border-color: var(--pigment, var(--silver)); box-shadow: 0 0 0 1px var(--pigment, var(--silver)); }
+.rt-toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px;
+  padding: 6px; border-bottom: 1px solid var(--line); background: var(--surface);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.rt-btn {
+  font: inherit; font-size: 1rem; line-height: 1; color: var(--ink);
+  min-width: 34px; height: 34px; padding: 0 8px; border: 1px solid transparent; border-radius: 6px;
+  background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 3px;
+}
+.rt-btn:hover { background: var(--wash); }
+.rt-btn[aria-pressed="true"] { background: var(--pigment-tint, var(--wash)); border-color: var(--pigment, var(--silver)); color: var(--pigment-deep, var(--ink)); }
+.rt-btn b, .rt-btn i, .rt-btn u, .rt-btn s { font-family: var(--serif); font-size: 1.05rem; }
+.rt-a { font-weight: 700; text-decoration: underline; text-decoration-color: #b42318; text-decoration-thickness: 3px; text-underline-offset: 2px; }
+.rt-hl { background: #fff3a3; color: #1c2440; padding: 0 3px; border-radius: 2px; font-weight: 700; }
+.rt-caret { font-size: 0.7rem; color: var(--muted); }
+.rt-x { font-size: 0.75rem; color: var(--error); margin-left: -1px; }
+.rt-sep { width: 1px; height: 22px; background: var(--line); margin: 0 4px; }
+.rt-group { position: relative; }
+.rt-menu {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 20;
+  display: flex; gap: 6px; padding: 8px; background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(10, 14, 30, 0.18);
+}
+.rt-swatch {
+  width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--line); cursor: pointer; padding: 0; font: inherit; font-weight: 700; color: var(--ink);
+}
+.rt-swatch:hover, .rt-swatch:focus-visible { box-shadow: 0 0 0 2px var(--ink); }
+.rt-swatch.rt-none { background: var(--surface); }
+.rt-swatch.c-red { background: #b42318; } .rt-swatch.c-blue { background: #2453a6; } .rt-swatch.c-green { background: #1f7a4d; }
+.rt-swatch.c-gold { background: #8a5a00; } .rt-swatch.c-purple { background: #6b3fa0; }
+.rt-swatch.hl-yellow { background: #fff3a3; } .rt-swatch.hl-green { background: #d4f5dc; }
+.rt-swatch.hl-blue { background: #d6e6ff; } .rt-swatch.hl-pink { background: #ffd9e8; }
+
+.answer-editor {
+  height: 240px; min-height: 140px; overflow-y: auto; padding: 12px 14px;
+  font-family: var(--serif); font-size: 1.05rem; line-height: 1.6; color: var(--ink);
+  outline: none; overflow-wrap: anywhere;
+}
+.answer-editor.is-empty::before { content: attr(data-placeholder); color: var(--muted); pointer-events: none; }
+.rt-grip {
+  display: flex; justify-content: center; align-items: center; gap: 4px;
+  height: 18px; cursor: ns-resize; touch-action: none; user-select: none;
+  border-top: 1px solid var(--line); background: var(--surface); border-radius: 0 0 var(--radius) var(--radius);
+}
+.rt-grip span { width: 5px; height: 5px; border-radius: 50%; background: var(--silver); }
+.rt-grip:hover span, .rt-grip.dragging span, .rt-grip:focus-visible span { background: var(--ink); }
+
+/* Formatting inside answers (editor and saved answers) */
+.answer-editor blockquote, .body blockquote { margin: 6px 0; padding: 2px 12px; border-left: 3px solid var(--silver); color: var(--muted); font-style: italic; }
+.answer-editor ul, .answer-editor ol, .body ul, .body ol { margin: 4px 0; padding-left: 24px; }
+.answer-editor p, .body p { margin: 0 0 6px; }
+.body.rich { white-space: normal; }
+.c-red { color: #b42318; } .c-blue { color: #2453a6; } .c-green { color: #1f7a4d; } .c-gold { color: #8a5a00; } .c-purple { color: #6b3fa0; }
+.hl-yellow { background: #fff3a3; } .hl-green { background: #d4f5dc; } .hl-blue { background: #d6e6ff; } .hl-pink { background: #ffd9e8; }
+.hl-yellow, .hl-green, .hl-blue, .hl-pink { color: #1c2440; border-radius: 2px; padding: 0 1px; }
+@media (prefers-color-scheme: dark) {
+  .c-red { color: #f08a95; } .c-blue { color: #8fb1f2; } .c-green { color: #72d3a0; } .c-gold { color: #e8c169; } .c-purple { color: #c6a6ee; }
+  .hl-yellow { background: #e9d46a; } .hl-green { background: #9fdcb2; } .hl-blue { background: #a9c7f5; } .hl-pink { background: #f2b3cc; }
+  .hl-yellow, .hl-green, .hl-blue, .hl-pink { color: #121726; }
+}
+@media (prefers-color-scheme: dark) {
+  /* While typing, the browser writes the light-mode colors inline; show them readably. */
+  .answer-editor font[color="#b42318"] { color: #f08a95; } .answer-editor font[color="#2453a6"] { color: #8fb1f2; }
+  .answer-editor font[color="#1f7a4d"] { color: #72d3a0; } .answer-editor font[color="#8a5a00"] { color: #e8c169; }
+  .answer-editor font[color="#6b3fa0"] { color: #c6a6ee; }
+  .answer-editor span[style*="background-color"] { color: #121726; }
 }

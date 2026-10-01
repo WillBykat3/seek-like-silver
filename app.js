@@ -40,6 +40,7 @@ const state = {
   answers: new Map(), // question_id -> [answer rows], newest first
   level: null,
   question: null,
+  topic: null,         // set when studying by topic instead of by level
   editing: null,       // the answer row being edited, or null when writing a new one
   features: { multi: true, groups: true }, // switched off if the database update (005) hasn't been run
   groups: [],          // [{ id, name, owner_id, invite_code, members: [...] }]
@@ -47,6 +48,12 @@ const state = {
 };
 
 const $ = (id) => document.getElementById(id);
+
+const answerEditor = createRichEditor({
+  editor: $("answer"),
+  toolbar: $("answer-toolbar"),
+  grip: $("answer-grip")
+});
 
 // ─────────────────────────── Question lookup ───────────────────────────
 
@@ -56,7 +63,9 @@ for (const [level, list] of Object.entries(QUESTIONS)) {
 }
 
 function pickQuestion(level) {
-  const list = QUESTIONS[level];
+  const list = state.topic
+    ? [...QUESTION_INDEX.values()].filter((q) => (q.topics || []).includes(state.topic))
+    : QUESTIONS[level].map((q) => QUESTION_INDEX.get(q.id));
   const notCurrent = list.filter((q) => !state.question || q.id !== state.question.id);
   const unanswered = notCurrent.filter((q) => !state.answers.has(q.id));
   const pool = unanswered.length ? unanswered : (notCurrent.length ? notCurrent : list);
@@ -289,7 +298,23 @@ function bibleComLink(code, usfm) {
 }
 
 function fallbackNote(wanted, code) {
-  return code === wanted ? "" : wanted + " isn't available to show here, so this is the " + code + ".";
+  return code === wanted ? "" : " · " + wanted + " isn't available here";
+}
+
+// Copyright line: one line, cut off with "…"; tap or click to read all of it.
+function setCopyright(el, text) {
+  el.textContent = text;
+  el.title = text;
+  el.classList.remove("expanded");
+  el.tabIndex = text ? 0 : -1;
+  el.setAttribute("role", "button");
+  el.setAttribute("aria-expanded", "false");
+}
+for (const id of ["hero-note", "votd-note"]) {
+  const el = document.getElementById(id);
+  const toggle = () => el.setAttribute("aria-expanded", String(el.classList.toggle("expanded")));
+  el.addEventListener("click", toggle);
+  el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
 }
 
 async function renderHomeVerses() {
@@ -308,7 +333,8 @@ async function renderHeroVerse(run) {
     const link = $("hero-link");
     link.href = bibleComLink(code, HERO_USFM);
     link.textContent = "Proverbs 2:4–5 (" + code + ")";
-    $("hero-note").textContent = [fallbackNote(wanted, code), copyright].filter(Boolean).join(" ");
+    $("hero-fallback").textContent = fallbackNote(wanted, code);
+    setCopyright($("hero-note"), copyright);
   } catch (err) {
     console.error("Top verse:", err); // keep the KJV already shown
   }
@@ -328,7 +354,8 @@ async function renderVerseOfTheDay(run) {
     const link = $("votd-link");
     link.href = bibleComLink(code, usfm);
     link.textContent = (passage.reference || usfm) + " (" + code + ")";
-    $("votd-note").textContent = [fallbackNote(wanted, code), copyright].filter(Boolean).join(" ");
+    $("votd-fallback").textContent = fallbackNote(wanted, code);
+    setCopyright($("votd-note"), copyright);
     card.hidden = false;
   } catch (err) {
     console.error("Verse of the Day:", err);
@@ -375,6 +402,10 @@ function openQuestion(q, level) {
   state.question = q;
 
   $("q-level").textContent = LEVEL_LABELS[level];
+  const topic = state.topic && TOPICS[state.topic];
+  $("q-topic").hidden = !topic;
+  $("q-topic").textContent = topic ? topic.label : "";
+  $("q-topic").className = "topic-pill" + (topic ? " topic-" + state.topic : "");
   $("view-question").dataset.level = level; // drives the level color
   renderWithTerms($("q-prompt"), q.prompt);
 
@@ -399,7 +430,7 @@ function openQuestion(q, level) {
   renderTradition();
 
   state.editing = null;
-  $("answer").value = "";
+  answerEditor.clear();
   $("answer-shared").checked = false;
   setStatus("save-status", "");
   setStatus("share-status", "");
@@ -557,9 +588,9 @@ function answerEntry(row, { onEdit, onDelete, author } = {}) {
     b.onclick = fn;
     head.append(b);
   }
-  const body = document.createElement("p");
-  body.className = "body";
-  body.textContent = row.answer;
+  const body = document.createElement("div");
+  body.className = "body" + (isRich(row.answer) ? " rich" : "");
+  body.append(answerContent(row.answer));
   wrap.append(head, body);
   return wrap;
 }
@@ -586,14 +617,14 @@ function renderMyAnswers() {
 
 function startEdit(row, quiet) {
   state.editing = row;
-  $("answer").value = row.answer;
+  answerEditor.setValue(row.answer);
   $("answer-shared").checked = !!row.shared;
-  if (!quiet) { renderMyAnswers(); $("answer").focus(); }
+  if (!quiet) { renderMyAnswers(); answerEditor.focus(); }
 }
 
 function cancelEdit() {
   state.editing = null;
-  $("answer").value = "";
+  answerEditor.clear();
   $("answer-shared").checked = false;
   renderMyAnswers();
 }
@@ -713,9 +744,10 @@ function myAnswerRows() {
 }
 
 async function saveAnswer() {
-  const text = $("answer").value.trim();
+  const text = answerEditor.getValue();
   if (!state.question) return;
   if (!text) return setStatus("save-status", "Write an answer first.", "err");
+  if (text.length > 20000) return setStatus("save-status", "That answer is too long to save (about 20,000 characters, counting formatting). Try splitting it into two answers.", "err");
 
   if (!state.user) {
     stashDraft(text);
@@ -750,7 +782,7 @@ async function saveAnswer() {
   clearDraft();
   const wasEditing = !!target;
   state.editing = null;
-  $("answer").value = "";
+  answerEditor.clear();
   $("answer-shared").checked = false;
   renderMyAnswers();
   setStatus("save-status", wasEditing ? "Saved your changes." : "Saved. You can add another answer any time.", "ok");
@@ -790,8 +822,8 @@ function redirectUrl() {
 
 function openSignIn() {
   // Keep anything typed so far; signing in reloads the question view.
-  if (state.question && !$("view-question").hidden && $("answer").value.trim()) {
-    stashDraft($("answer").value);
+  if (state.question && !$("view-question").hidden && !answerEditor.isEmpty()) {
+    stashDraft(answerEditor.getValue());
   }
   $("email-form").hidden = false;
   $("code-form").hidden = true;
@@ -1518,7 +1550,7 @@ function restoreDraft() {
   const q = QUESTION_INDEX.get(draft.id);
   if (!q) return clearDraft();
   openQuestion(q, draft.level);
-  $("answer").value = draft.text;
+  answerEditor.setValue(draft.text);
   setStatus("save-status", state.user ? "Your draft is back. Press Save answer to keep it." : "");
 }
 
@@ -1616,63 +1648,27 @@ function renderGlossaryList() {
 
 // ─────────────────────────── Browse by topic or book ───────────────────────────
 
-const BOOK_ORDER = Object.keys(BOOK_CODES);
-const bookOf = (ref) => { const m = ref.trim().match(/^(.+?)\s+\d/); return m ? m[1] : ref; };
-const canonicalBook = (name) => { const k = name.toLowerCase(); return k === "psalms" ? "psalm" : k; };
-const browse = { topic: "", book: "", level: "", all: false };
-
-function setUpBrowse() {
-  const chips = $("topic-chips");
+// A topic card opens a question on that topic; "New question" then stays on it.
+function setUpTopics() {
+  const wrap = $("topic-chips");
   for (const [key, t] of Object.entries(TOPICS)) {
     const count = [...QUESTION_INDEX.values()].filter((q) => (q.topics || []).includes(key)).length;
     const b = document.createElement("button");
     b.type = "button";
-    b.className = "topic-card";
-    b.dataset.topic = key;
-    b.setAttribute("aria-pressed", "false");
+    b.className = "topic-card topic-" + key;
     b.append(
       Object.assign(document.createElement("span"), { className: "tesserae", ariaHidden: "true" }),
       Object.assign(document.createElement("span"), { className: "topic-name", textContent: t.label }),
       Object.assign(document.createElement("span"), { className: "topic-desc", textContent: t.desc }),
       Object.assign(document.createElement("span"), { className: "topic-count", textContent: count + " questions" })
     );
-    b.onclick = () => { browse.topic = browse.topic === key ? "" : key; browse.all = false; renderBrowse(); };
-    chips.append(b);
-  }
-  const books = new Map();
-  for (const q of QUESTION_INDEX.values()) for (const ref of q.passage) books.set(canonicalBook(bookOf(ref)), bookOf(ref));
-  const sel = $("browse-book");
-  for (const key of [...books.keys()].sort((x, y) => BOOK_ORDER.indexOf(x) - BOOK_ORDER.indexOf(y))) {
-    sel.add(new Option(books.get(key).replace(/^Psalm$/, "Psalms"), key));
-  }
-  sel.onchange = () => { browse.book = sel.value; browse.all = false; renderBrowse(); };
-  $("browse-level").onchange = () => { browse.level = $("browse-level").value; renderBrowse(); };
-  $("browse-all").onclick = () => { browse.all = true; browse.topic = ""; browse.book = ""; sel.value = ""; renderBrowse(); };
-}
-
-function renderBrowse() {
-  document.querySelectorAll("#topic-chips .topic-card").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.topic === browse.topic)));
-  const list = $("browse-list");
-  list.replaceChildren();
-  const active = browse.all || browse.topic || browse.book || browse.level;
-  if (!active) { setStatus("browse-count", ""); return; }
-  const matches = [...QUESTION_INDEX.values()].filter((q) =>
-    (!browse.topic || (q.topics || []).includes(browse.topic)) &&
-    (!browse.book || q.passage.some((r) => canonicalBook(bookOf(r)) === browse.book)) &&
-    (!browse.level || q.level === browse.level));
-  setStatus("browse-count", matches.length === 1 ? "1 question" : matches.length + " questions");
-  for (const q of matches) {
-    const li = document.createElement("li");
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "browse-item level-" + q.level;
-    const pill = Object.assign(document.createElement("span"), { className: "browse-level", textContent: LEVEL_LABELS[q.level] });
-    const text = Object.assign(document.createElement("span"), { className: "browse-prompt", textContent: q.prompt });
-    b.append(pill, text);
-    if (state.answers.has(q.id)) b.append(Object.assign(document.createElement("span"), { className: "browse-done", textContent: "Answered" }));
-    b.onclick = () => openQuestion(q, q.level);
-    li.append(b);
-    list.append(li);
+    b.onclick = () => {
+      state.topic = key;
+      state.question = null;
+      const q = pickQuestion();
+      openQuestion(q, q.level);
+    };
+    wrap.append(b);
   }
 }
 
@@ -1713,7 +1709,8 @@ function exportAnswers(kind) {
       profile: { display_name: state.profile.display_name || null, denomination: state.profile.denomination, translation: state.profile.translation },
       answers: rows.map((r) => {
         const q = QUESTION_INDEX.get(r.question_id);
-        return { question_id: r.question_id, level: r.level, question: q ? q.prompt : null, answer: r.answer,
+        return { question_id: r.question_id, level: r.level, question: q ? q.prompt : null, answer: answerPlainText(r.answer),
+                 answer_formatted_html: isRich(r.answer) ? r.answer.slice(RICH_MARK.length) : null,
                  shared_with_groups: !!r.shared, created_at: r.created_at, updated_at: r.updated_at };
       })
     };
@@ -1731,7 +1728,7 @@ function exportAnswers(kind) {
     lines.push("");
     for (const r of list) {
       lines.push(formatDate(r.created_at || r.updated_at) + (r.shared ? " (shared with groups)" : ""));
-      lines.push(r.answer, "");
+      lines.push(answerPlainText(r.answer), "");
     }
   }
   downloadFile("seek-like-silver-answers-" + stamp + ".txt", "text/plain;charset=utf-8", lines.join("\n"));
@@ -1992,12 +1989,13 @@ document.querySelectorAll("[data-nav]").forEach((el) =>
 document.querySelectorAll("[data-level]").forEach((el) =>
   el.addEventListener("click", () => {
     state.question = null;
+    state.topic = null;
     const lvl = el.dataset.level;
     openQuestion(pickQuestion(lvl), lvl);
   })
 );
 
-$("next-question").addEventListener("click", () => openQuestion(pickQuestion(state.level), state.level));
+$("next-question").addEventListener("click", () => { const q = pickQuestion(state.level); openQuestion(q, q.level); });
 $("save-answer").addEventListener("click", saveAnswer);
 $("cancel-edit").addEventListener("click", cancelEdit);
 $("copy-link").addEventListener("click", copyQuestionLink);
@@ -2008,7 +2006,7 @@ $("delete-account").addEventListener("click", deleteAccount);
 $("create-group-form").addEventListener("submit", createGroup);
 $("join-group-form").addEventListener("submit", joinGroup);
 window.addEventListener("hashchange", handleHash);
-setUpBrowse();
+setUpTopics();
 $("auth-button").addEventListener("click", () => (state.user ? signOut() : openSignIn()));
 $("signin-google").addEventListener("click", signInWithGoogle);
 $("signin-youversion").addEventListener("click", () => startYouVersion("signin"));
