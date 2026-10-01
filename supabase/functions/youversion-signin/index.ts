@@ -57,7 +57,10 @@ Deno.serve(async (req) => {
   const appKey = Deno.env.get("YOUVERSION_APP_KEY") ?? "";
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const key = serviceKey();
-  if (!appKey || !supabaseUrl || !key) return reply(500, { error: "server_not_configured" });
+  if (!appKey || !supabaseUrl || !key) {
+    console.error("Missing configuration:", { appKey: !!appKey, supabaseUrl: !!supabaseUrl, serviceKey: !!key });
+    return reply(500, { error: "server_not_configured" });
+  }
 
   let idToken: unknown, nonce: unknown;
   try {
@@ -78,10 +81,17 @@ Deno.serve(async (req) => {
       algorithms: ["RS256", "ES256"],
       clockTolerance: 30
     }));
-  } catch {
-    return reply(401, { error: "invalid_token" });
+  } catch (err) {
+    // Report which check failed (e.g. "ERR_JWT_CLAIM_VALIDATION_FAILED aud") without echoing token contents.
+    const e = err as { code?: string; claim?: string };
+    const detail = [e.code, e.claim].filter(Boolean).join(" ");
+    console.error("YouVersion token rejected:", detail || String(err));
+    return reply(401, { error: "invalid_token", detail });
   }
-  if (payload.nonce !== nonce) return reply(401, { error: "nonce_mismatch" });
+  if (payload.nonce !== nonce) {
+    console.error("YouVersion token rejected: nonce mismatch (token has nonce: " + (typeof payload.nonce === "string") + ")");
+    return reply(401, { error: "nonce_mismatch" });
+  }
 
   const yvId = String(payload.yvp_id ?? payload.sub ?? "");
   if (!yvId) return reply(401, { error: "missing_user_id" });

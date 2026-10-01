@@ -408,8 +408,17 @@ async function finishYouVersion(ret) {
       body: { id_token: tokens.id_token, nonce }
     });
     if (error || !data || !data.token_hash) {
-      console.error("youversion-signin:", error);
-      return fail("Couldn't finish YouVersion sign-in on our side. Please try again, or use Google or email.");
+      // Show the server's reason code so problems can be diagnosed.
+      let reason = error ? error.message : "no sign-in key returned";
+      try {
+        const ctx = error && error.context;
+        if (ctx && typeof ctx.json === "function") {
+          const body = await ctx.json();
+          reason = [body.error, body.detail].filter(Boolean).join(": ") || reason;
+        }
+      } catch (_) { /* keep the generic reason */ }
+      console.error("youversion-signin:", reason);
+      return fail("Couldn't finish YouVersion sign-in on our side (" + reason + "). Please try again, or use Google or email.");
     }
     const { error: verifyError } = await db.auth.verifyOtp({ token_hash: data.token_hash, type: "email" });
     if (verifyError) return fail("Couldn't finish YouVersion sign-in (" + verifyError.message + ").");
