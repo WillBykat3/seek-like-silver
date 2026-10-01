@@ -1036,7 +1036,7 @@ async function mergeGoogleAccount() {
   if (!confirm("Merge the Google account into this one? Its answers move here and the Google-only account is deleted. This can't be undone.")) return;
   $("merge-google").disabled = true;
   setStatus("methods-status", "Merging…");
-  const { data, error } = await db.functions.invoke("merge-accounts", {
+  const { data, error } = await db.functions.invoke(MERGE_FUNCTION, {
     body: { provider: "google", id_token: pending.idToken, nonce: pending.rawNonce }
   });
   $("merge-google").disabled = false;

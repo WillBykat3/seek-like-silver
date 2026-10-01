@@ -101,6 +101,8 @@ Google's menus get renamed from time to time; if a label doesn't match, look for
 - `merge-accounts` ← `supabase/functions/merge-accounts/index.ts` (merges a separate Google-sign-in account into the signed-in one; no secret needed)
 - `bible-passage` ← `supabase/functions/bible-passage/index.ts` (only needed if verse previews say "Couldn't load the text")
 
+Name each function correctly **before** its first deploy: the address is fixed at that moment, and renaming later only changes the label. (merge-accounts is deployed at the address `smooth-endpoint`; config.js points there.)
+
 Editing a function's file on GitHub does **not** update it in Supabase. Paste the new code and deploy again.
 
 **Account linking:** Authentication → Sign In / Providers → turn on **Allow manual linking** (needed for "Connect Google" in Settings).

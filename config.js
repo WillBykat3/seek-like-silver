@@ -14,3 +14,7 @@ const OTP_LENGTH = 6;
 // The redirect URL must EXACTLY match the one registered at platform.youversion.com.
 const YOUVERSION_APP_KEY = "AisS92WgjEzhGeTiAqOmFem9YoEtGY8GEMT1f9jUc8jDzd1A";
 const YOUVERSION_REDIRECT_URI = "https://seeklikesilver.com/";
+
+// Supabase function addresses ("slugs"). Supabase fixes a function's address when it is
+// first deployed; renaming it later doesn't change the address.
+const MERGE_FUNCTION = "smooth-endpoint"; // the merge-accounts function (supabase/functions/merge-accounts)
