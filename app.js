@@ -647,7 +647,8 @@ async function finishYouVersion(ret) {
         body: { mode: "link", id_token: tokens.id_token, nonce }
       });
       if (error || !data || !data.linked) {
-        const reason = await functionErrorReason(error);
+        // An old copy of the function ignores "link" and answers with a sign-in key.
+        const reason = data && data.token_hash ? "server_outdated" : await functionErrorReason(error);
         return fail(LINK_ERRORS[reason] || "Couldn't connect YouVersion (" + reason + "). Please try again.");
       }
       clearYouVersionStore();
@@ -874,7 +875,8 @@ const LINK_ERRORS = {
   already_linked_to_different_youversion: "This account is already connected to a different YouVersion account. Disconnect it first.",
   authenticator_required: "Enter your authenticator code first: sign out and back in, then try again.",
   youversion_only_account: "This account was created with YouVersion, so YouVersion can't be connected or disconnected here.",
-  not_signed_in: "You need to be signed in to connect YouVersion."
+  not_signed_in: "You need to be signed in to connect YouVersion.",
+  server_outdated: "The youversion-signin function in Supabase is an older version. Paste the latest code into it and deploy, then try again."
 };
 
 // Pull the server's reason code out of a Supabase function error.
