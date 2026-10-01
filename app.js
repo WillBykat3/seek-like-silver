@@ -1623,14 +1623,20 @@ const browse = { topic: "", book: "", level: "", all: false };
 
 function setUpBrowse() {
   const chips = $("topic-chips");
-  for (const [key, label] of Object.entries(TOPICS)) {
+  for (const [key, t] of Object.entries(TOPICS)) {
+    const count = [...QUESTION_INDEX.values()].filter((q) => (q.topics || []).includes(key)).length;
     const b = document.createElement("button");
     b.type = "button";
-    b.className = "chip";
-    b.textContent = label;
-    b.setAttribute("aria-pressed", "false");
-    b.onclick = () => { browse.topic = browse.topic === key ? "" : key; browse.all = false; renderBrowse(); };
+    b.className = "topic-card";
     b.dataset.topic = key;
+    b.setAttribute("aria-pressed", "false");
+    b.append(
+      Object.assign(document.createElement("span"), { className: "tesserae", ariaHidden: "true" }),
+      Object.assign(document.createElement("span"), { className: "topic-name", textContent: t.label }),
+      Object.assign(document.createElement("span"), { className: "topic-desc", textContent: t.desc }),
+      Object.assign(document.createElement("span"), { className: "topic-count", textContent: count + " questions" })
+    );
+    b.onclick = () => { browse.topic = browse.topic === key ? "" : key; browse.all = false; renderBrowse(); };
     chips.append(b);
   }
   const books = new Map();
@@ -1645,7 +1651,7 @@ function setUpBrowse() {
 }
 
 function renderBrowse() {
-  document.querySelectorAll("#topic-chips .chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.topic === browse.topic)));
+  document.querySelectorAll("#topic-chips .topic-card").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.topic === browse.topic)));
   const list = $("browse-list");
   list.replaceChildren();
   const active = browse.all || browse.topic || browse.book || browse.level;

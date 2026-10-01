@@ -22,17 +22,17 @@
 // Every book in `readings` must also be in library.js.
 
 const TOPICS = {
-  god: "God & the Trinity",
-  christ: "Jesus Christ",
-  spirit: "The Holy Spirit",
-  creation: "Creation & humanity",
-  sin: "Sin, evil & suffering",
-  salvation: "Salvation & grace",
-  covenant: "Covenant & Israel",
-  scripture: "Scripture & knowing God",
-  church: "Church & sacraments",
-  life: "Prayer & Christian living",
-  hope: "Death, resurrection & hope"
+  god:       { label: "God & the Trinity",         desc: "Who God is: one God in three persons, eternal and unchanging." },
+  christ:    { label: "Jesus Christ",              desc: "The Word made flesh: who Jesus is and what he came to do." },
+  spirit:    { label: "The Holy Spirit",           desc: "The Spirit's person and work in believers and the church." },
+  creation:  { label: "Creation & humanity",       desc: "The world God made, and what it means to be human." },
+  sin:       { label: "Sin, evil & suffering",     desc: "The fall, the problem of evil, and why the righteous suffer." },
+  salvation: { label: "Salvation & grace",         desc: "How God rescues sinners and makes them his own." },
+  covenant:  { label: "Covenant & Israel",         desc: "God's promises to Abraham, Moses, and David, and the new covenant." },
+  scripture: { label: "Scripture & knowing God",   desc: "How God makes himself known, and how we read the Bible." },
+  church:    { label: "Church & sacraments",       desc: "The body of Christ, baptism, and the Lord's Supper." },
+  life:      { label: "Prayer & Christian living", desc: "Prayer, holiness, love, and following Jesus day to day." },
+  hope:      { label: "Death, resurrection & hope", desc: "Christ's return, the resurrection, and the new creation." }
 };
 
 const QUESTIONS = {
