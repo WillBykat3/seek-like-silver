@@ -58,9 +58,53 @@ function pickQuestion(level) {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
+// ─────────────────────────── Verse links (YouVersion / bible.com) ───────────────────────────
+// bible.com version IDs, each checked against a live bible.com page on 2026-09-30.
+const YV_VERSIONS = {
+  KJV: [1, "KJV"],
+  NIV: [111, "NIV"],
+  ESV: [59, "ESV"],
+  NKJV: [114, "NKJV"],
+  CSB: [1713, "CSB"],
+  NASB: [2692, "NASB2020"],
+  NRSVUE: [3523, "NRSVUE"]
+};
+
+// Standard (USFM) book codes used by bible.com.
+const BOOK_CODES = {
+  "genesis": "GEN", "exodus": "EXO", "leviticus": "LEV", "numbers": "NUM", "deuteronomy": "DEU",
+  "joshua": "JOS", "judges": "JDG", "ruth": "RUT", "1 samuel": "1SA", "2 samuel": "2SA",
+  "1 kings": "1KI", "2 kings": "2KI", "1 chronicles": "1CH", "2 chronicles": "2CH", "ezra": "EZR",
+  "nehemiah": "NEH", "esther": "EST", "job": "JOB", "psalm": "PSA", "psalms": "PSA",
+  "proverbs": "PRO", "ecclesiastes": "ECC", "song of songs": "SNG", "song of solomon": "SNG",
+  "isaiah": "ISA", "jeremiah": "JER", "lamentations": "LAM", "ezekiel": "EZK", "daniel": "DAN",
+  "hosea": "HOS", "joel": "JOL", "amos": "AMO", "obadiah": "OBA", "jonah": "JON", "micah": "MIC",
+  "nahum": "NAM", "habakkuk": "HAB", "zephaniah": "ZEP", "haggai": "HAG", "zechariah": "ZEC",
+  "malachi": "MAL", "matthew": "MAT", "mark": "MRK", "luke": "LUK", "john": "JHN", "acts": "ACT",
+  "romans": "ROM", "1 corinthians": "1CO", "2 corinthians": "2CO", "galatians": "GAL",
+  "ephesians": "EPH", "philippians": "PHP", "colossians": "COL", "1 thessalonians": "1TH",
+  "2 thessalonians": "2TH", "1 timothy": "1TI", "2 timothy": "2TI", "titus": "TIT",
+  "philemon": "PHM", "hebrews": "HEB", "james": "JAS", "1 peter": "1PE", "2 peter": "2PE",
+  "1 john": "1JN", "2 john": "2JN", "3 john": "3JN", "jude": "JUD", "revelation": "REV"
+};
+
+// "John 1:1-14" -> "JHN.1.1-14"; "Psalm 23" -> "PSA.23"; "Job 38-42" -> "JOB.38"
+// (bible.com can't show a span of whole chapters, so those open at the first chapter).
+function usfmFor(ref) {
+  const m = ref.trim().match(/^(.+?)\s+(\d+)(?::(\d+)(?:-(\d+))?)?(?:-\d+)?$/);
+  if (!m) return null;
+  const book = BOOK_CODES[m[1].toLowerCase()];
+  if (!book) return null;
+  let usfm = book + "." + m[2];
+  if (m[3]) usfm += "." + m[3] + (m[4] ? "-" + m[4] : "");
+  return usfm;
+}
+
 function verseLink(ref) {
-  const version = TRANSLATIONS.includes(state.profile.translation) ? state.profile.translation : "ESV";
-  return "https://www.biblegateway.com/passage/?search=" + encodeURIComponent(ref) + "&version=" + version;
+  const [id, abbr] = YV_VERSIONS[state.profile.translation] || YV_VERSIONS.ESV;
+  const usfm = usfmFor(ref);
+  if (!usfm) return "https://www.bible.com/search/bible?q=" + encodeURIComponent(ref);
+  return "https://www.bible.com/bible/" + id + "/" + usfm + "." + abbr;
 }
 
 // ─────────────────────────── Views ───────────────────────────
