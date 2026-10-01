@@ -1088,6 +1088,16 @@ async function disconnectYouVersion() {
 // every sign-in. The database (supabase-migrations/003) refuses to show their
 // answers until that code is entered.
 
+// Explain a rejected authenticator code. A wrong or expired code gets the plain
+// message; anything else shows Supabase's own reason so it can be fixed.
+function authenticatorError(error) {
+  const code = (error && error.code) || "";
+  if (code === "mfa_verification_failed" || /invalid totp|invalid code|expired/i.test((error && error.message) || "")) {
+    return "That code didn't match. Use the newest code for Seek Like Silver in your app (codes change every 30 seconds), and make sure your phone's time is set automatically.";
+  }
+  return "Couldn't check the code (" + ((error && (error.code || error.message)) || "unknown error") + ").";
+}
+
 let pendingFactorId = null;
 let mfaLoginBusy = false;
 
@@ -1115,7 +1125,7 @@ const mfaLoginCode = createCodeBoxes($("mfa-login-code"), 6, async (code) => {
   mfaLoginBusy = false;
   mfaLoginCode.setDisabled(false);
   if (error) {
-    setStatus("mfa-login-status", "That code didn't work. Codes change every 30 seconds; try the current one.", "err");
+    setStatus("mfa-login-status", authenticatorError(error), "err");
     return mfaLoginCode.clear();
   }
   $("mfa-dialog").close();
@@ -1136,7 +1146,7 @@ const mfaEnrollCode = createCodeBoxes($("mfa-enroll-code"), 6, async (code) => {
   const { error } = await db.auth.mfa.challengeAndVerify({ factorId: pendingFactorId, code });
   mfaEnrollCode.setDisabled(false);
   if (error) {
-    setStatus("mfa-status", "That code didn't work. Codes change every 30 seconds; try the current one.", "err");
+    setStatus("mfa-status", authenticatorError(error), "err");
     return mfaEnrollCode.clear();
   }
   pendingFactorId = null;
