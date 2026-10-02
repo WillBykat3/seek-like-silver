@@ -62,14 +62,81 @@ for (const [level, list] of Object.entries(QUESTIONS)) {
   for (const q of list) QUESTION_INDEX.set(q.id, { ...q, level });
 }
 
+function questionsFor(level, topic) {
+  return [...QUESTION_INDEX.values()].filter((q) =>
+    (!level || q.level === level) && (!topic || (q.topics || []).includes(topic)));
+}
+
 function pickQuestion(level) {
-  const list = state.topic
-    ? [...QUESTION_INDEX.values()].filter((q) => (q.topics || []).includes(state.topic))
-    : QUESTIONS[level].map((q) => QUESTION_INDEX.get(q.id));
+  let list = questionsFor(level, state.topic);
+  if (!list.length) list = questionsFor(null, state.topic); // no questions at this level on this topic
   const notCurrent = list.filter((q) => !state.question || q.id !== state.question.id);
   const unanswered = notCurrent.filter((q) => !state.answers.has(q.id));
   const pool = unanswered.length ? unanswered : (notCurrent.length ? notCurrent : list);
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ─────────────────────────── Study level (Settings) ───────────────────────────
+// Saved on the profile (database update 007); kept on this device as a backup.
+const LEVEL_KEY = "sls-study-level";
+function studyLevel() {
+  const fromProfile = state.profile && state.profile.study_level;
+  if (fromProfile && LEVEL_LABELS[fromProfile]) return fromProfile;
+  if (state.profile && "study_level" in state.profile) return null; // saved as "all levels"
+  try { const v = localStorage.getItem(LEVEL_KEY); return state.user && LEVEL_LABELS[v] ? v : null; } catch (_) { return null; }
+}
+
+function applyHomeLevel() {
+  const lvl = studyLevel();
+  document.querySelectorAll(".levels [data-level]").forEach((card) => { card.hidden = !!lvl && card.dataset.level !== lvl; });
+  document.querySelector(".levels").classList.toggle("single", !!lvl);
+  $("home-level-title").textContent = lvl ? "Your level" : "Choose your level";
+  $("home-level-note").hidden = !lvl;
+}
+
+// Choose a level for a topic (skipped if Settings already has one).
+function chooseTopicLevel(topicKey) {
+  const lvl = studyLevel();
+  if (lvl && questionsFor(lvl, topicKey).length) return startTopic(topicKey, lvl);
+  const wrap = $("level-choices");
+  wrap.replaceChildren();
+  $("level-dialog-topic").textContent = "Topic: " + TOPICS[topicKey].label;
+  for (const level of Object.keys(LEVEL_LABELS)) {
+    const n = questionsFor(level, topicKey).length;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "level-choice level-" + level;
+    b.disabled = !n;
+    b.append(
+      Object.assign(document.createElement("span"), { className: "level-choice-name", textContent: LEVEL_LABELS[level] }),
+      Object.assign(document.createElement("span"), { className: "level-choice-count", textContent: n ? (n === 1 ? "1 question" : n + " questions") : "None yet" })
+    );
+    b.onclick = () => { $("level-dialog").close(); startTopic(topicKey, level); };
+    wrap.append(b);
+  }
+  $("level-dialog").showModal();
+  const first = wrap.querySelector("button:not(:disabled)");
+  if (first) first.focus();
+}
+
+function startTopic(topicKey, level) {
+  state.topic = topicKey;
+  state.question = null;
+  const q = pickQuestion(level);
+  openQuestion(q, q.level);
+}
+
+// The level menu on the question page: switch levels any time.
+function renderLevelSwitch(current) {
+  const sel = $("q-level");
+  sel.replaceChildren();
+  for (const level of Object.keys(LEVEL_LABELS)) {
+    const n = state.topic ? questionsFor(level, state.topic).length : 1;
+    const o = new Option(LEVEL_LABELS[level] + (state.topic && !n ? " (none on this topic)" : ""), level);
+    o.disabled = !n;
+    sel.add(o);
+  }
+  sel.value = current;
 }
 
 // ─────────────────────────── Verse links (YouVersion / bible.com) ───────────────────────────
@@ -402,7 +469,7 @@ function openQuestion(q, level) {
   state.level = level;
   state.question = q;
 
-  $("q-level").textContent = LEVEL_LABELS[level];
+  renderLevelSwitch(level);
   const topic = state.topic && TOPICS[state.topic];
   $("q-topic").hidden = !topic;
   $("q-topic").textContent = topic ? topic.label : "";
@@ -691,6 +758,7 @@ function renderSettings() {
   $("set-name").value = state.profile.display_name || "";
   denom.value = state.profile.denomination;
   trans.value = state.profile.translation;
+  $("set-level").value = studyLevel() || "";
   setStatus("settings-status", "");
   renderMethods();
   renderMfaPanel();
@@ -711,7 +779,7 @@ async function loadUserData() {
   await db.from("profiles").upsert({ id: state.user.id, translation: DEFAULT_TRANSLATION }, { onConflict: "id", ignoreDuplicates: true });
 
   const [{ data: profile, error: pErr }, answers] = await Promise.all([
-    db.from("profiles").select("display_name, denomination, translation").eq("id", state.user.id).maybeSingle(),
+    db.from("profiles").select("*").eq("id", state.user.id).maybeSingle(),
     loadMyAnswers()
   ]);
 
@@ -802,16 +870,28 @@ async function deleteAnswer(row) {
 
 async function saveSettings(e) {
   e.preventDefault();
+  const level = $("set-level").value || null;
   const update = {
     display_name: $("set-name").value.trim() || null,
     denomination: $("set-denomination").value,
-    translation: $("set-translation").value
+    translation: $("set-translation").value,
+    study_level: level
   };
   setStatus("settings-status", "Saving…");
-  const { error } = await db.from("profiles").update(update).eq("id", state.user.id);
+  let { error } = await db.from("profiles").update(update).eq("id", state.user.id);
+  let deviceOnly = false;
+  if (error && /study_level/.test(error.message || "")) {
+    // Database update 007 not run yet: save the rest, keep the level on this device.
+    delete update.study_level;
+    ({ error } = await db.from("profiles").update(update).eq("id", state.user.id));
+    deviceOnly = true;
+  }
   if (error) return setStatus("settings-status", "Couldn't save: " + error.message, "err");
+  try { if (level) localStorage.setItem(LEVEL_KEY, level); else localStorage.removeItem(LEVEL_KEY); } catch (_) { /* ignore */ }
   state.profile = { ...state.profile, ...update };
-  setStatus("settings-status", "Saved.", "ok");
+  if (deviceOnly) delete state.profile.study_level;
+  setStatus("settings-status", deviceOnly ? "Saved. (Your study level is saved on this device for now.)" : "Saved.", "ok");
+  applyHomeLevel();
   renderHomeVerses();
 }
 
@@ -1663,12 +1743,7 @@ function setUpTopics() {
       Object.assign(document.createElement("span"), { className: "topic-desc", textContent: t.desc }),
       Object.assign(document.createElement("span"), { className: "topic-count", textContent: count + " questions" })
     );
-    b.onclick = () => {
-      state.topic = key;
-      state.question = null;
-      const q = pickQuestion();
-      openQuestion(q, q.level);
-    };
+    b.onclick = () => chooseTopicLevel(key);
     wrap.append(b);
   }
 }
@@ -2134,6 +2209,12 @@ document.querySelectorAll("[data-level]").forEach((el) =>
 $("next-question").addEventListener("click", () => { const q = pickQuestion(state.level); openQuestion(q, q.level); });
 $("save-answer").addEventListener("click", saveAnswer);
 $("cancel-edit").addEventListener("click", cancelEdit);
+$("q-level").addEventListener("change", (e) => {
+  const level = e.target.value;
+  state.question = null;
+  const q = pickQuestion(level);
+  openQuestion(q, q.level);
+});
 $("copy-link").addEventListener("click", copyQuestionLink);
 $("print-question").addEventListener("click", () => window.print());
 document.querySelectorAll("[data-export]").forEach((b) => b.addEventListener("click", () => exportAnswers(b.dataset.export)));
@@ -2159,6 +2240,7 @@ $("settings-form").addEventListener("submit", saveSettings);
 let refreshedOnce = false;
 async function refreshAfterSignIn() {
   await loadUserData();
+  applyHomeLevel();
   checkAdmin();
   if (!$("view-question").hidden && state.question) {
     renderTradition();

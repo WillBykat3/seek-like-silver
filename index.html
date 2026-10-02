@@ -57,7 +57,8 @@
         <p class="votd-ref"><a id="votd-link" href="#" target="_blank" rel="noopener"></a><span class="ref-fallback" id="votd-fallback"></span></p>
         <p class="votd-note" id="votd-note"></p>
       </aside>
-      <h1 class="section-title home-title">Choose your level</h1>
+      <h1 class="section-title home-title" id="home-level-title">Choose your level</h1>
+      <p class="muted home-level-note" id="home-level-note" hidden>Showing your level from <a href="#" data-nav="settings">Settings</a>.</p>
       <div class="levels">
         <button class="level-card level-beginner" data-level="beginner">
           <span class="tesserae" aria-hidden="true"></span>
@@ -90,7 +91,10 @@
           <button class="link-button" type="button" id="copy-link">Copy link</button>
           <button class="link-button" type="button" id="print-question">Print for a group</button>
           <span class="topic-pill" id="q-topic" hidden></span>
-          <span class="level-pill" id="q-level"></span>
+          <label class="level-switch">
+            <span class="visually-hidden">Level</span>
+            <select id="q-level" class="level-pill" aria-label="Level"></select>
+          </label>
         </span>
       </div>
       <p class="status print-hide" id="share-status" role="status"></p>
@@ -289,6 +293,15 @@
         <label>Preferred Bible translation (for verse links)
           <select id="set-translation"></select>
         </label>
+        <label>Study level
+          <select id="set-level">
+            <option value="">Show all three levels</option>
+            <option value="beginner">Beginner</option>
+            <option value="moderate">Moderate</option>
+            <option value="philosopher">Philosopher</option>
+          </select>
+          <span class="field-hint">Pick one and the home page shows only that level. You can still switch on any question.</span>
+        </label>
         <div class="answer-actions">
           <span class="status" id="settings-status" role="status"></span>
           <button class="btn" type="submit">Save settings</button>
@@ -356,6 +369,17 @@
   </footer>
 
   <div class="term-pop" id="term-pop" role="tooltip" hidden></div>
+
+  <!-- Level picker for topics -->
+  <dialog id="level-dialog" class="dialog level-dialog" aria-labelledby="level-dialog-title">
+    <form method="dialog" class="dialog-close-row">
+      <button class="link-button" aria-label="Close">✕</button>
+    </form>
+    <h2 id="level-dialog-title">Choose your level</h2>
+    <p class="muted" id="level-dialog-topic"></p>
+    <div class="level-choices" id="level-choices"></div>
+    <p class="muted level-dialog-hint">You can switch levels any time from the question page.</p>
+  </dialog>
 
   <!-- Sign-in dialog -->
   <!-- Authenticator code at sign-in -->
