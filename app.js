@@ -278,6 +278,9 @@ function attachVersePreview(li, link, ref) {
   let timer = null;
   let loaded = false;
   const open = async () => {
+    link.classList.remove("warming");
+    clearTimeout(panel._t);
+    panel.classList.remove("closing");
     panel.hidden = false;
     toggle.setAttribute("aria-expanded", "true");
     toggle.textContent = "Hide text";
@@ -287,14 +290,21 @@ function attachVersePreview(li, link, ref) {
     }
   };
   const close = () => {
-    panel.hidden = true;
+    panel.classList.add("closing");
+    clearTimeout(panel._t);
+    panel._t = setTimeout(() => { panel.hidden = true; panel.classList.remove("closing"); }, reducedMotion() ? 0 : 220);
     toggle.setAttribute("aria-expanded", "false");
     toggle.textContent = "Show text";
   };
 
-  link.addEventListener("mouseenter", () => { timer = setTimeout(open, PREVIEW_DELAY_MS); });
-  link.addEventListener("mouseleave", () => clearTimeout(timer));
-  toggle.addEventListener("click", () => (panel.hidden ? open() : close()));
+  link.style.setProperty("--warm-ms", PREVIEW_DELAY_MS + "ms");
+  link.addEventListener("mouseenter", () => {
+    if (!panel.hidden) return;
+    link.classList.add("warming"); // a line fills under the link while you hover
+    timer = setTimeout(open, PREVIEW_DELAY_MS);
+  });
+  link.addEventListener("mouseleave", () => { clearTimeout(timer); link.classList.remove("warming"); });
+  toggle.addEventListener("click", () => (panel.hidden || panel.classList.contains("closing") ? open() : close()));
 }
 
 async function fillPreview(panel, ref, usfm) {
@@ -1680,6 +1690,7 @@ function renderWithTerms(el, text) {
 
 let termAnchor = null;
 let termHideTimer = null;
+let termShownAt = 0; // a tap on a phone also counts as a hover, so don't let that tap close it again
 function showTerm(btn) {
   clearTimeout(termHideTimer);
   const g = GLOSSARY.find((x) => x.term === btn.dataset.term);
@@ -1689,7 +1700,13 @@ function showTerm(btn) {
     Object.assign(document.createElement("strong"), { textContent: g.term }),
     Object.assign(document.createElement("span"), { textContent: g.def })
   );
+  const cs = getComputedStyle(btn);
+  for (const v of ["--pigment", "--pigment-tint", "--pigment-deep"]) pop.style.setProperty(v, cs.getPropertyValue(v));
   pop.hidden = false;
+  pop.classList.remove("show");
+  void pop.offsetWidth; // restart the entrance animation
+  pop.classList.add("show");
+  if (termAnchor !== btn) termShownAt = Date.now();
   termAnchor = btn;
   btn.setAttribute("aria-expanded", "true");
   const r = btn.getBoundingClientRect();
@@ -1697,24 +1714,33 @@ function showTerm(btn) {
   pop.style.width = width + "px";
   const left = Math.max(16, Math.min(r.left + window.scrollX, window.scrollX + window.innerWidth - width - 16));
   pop.style.left = left + "px";
-  pop.style.top = (r.bottom + window.scrollY + 8) + "px";
+  const below = r.bottom + 12 + pop.offsetHeight < window.innerHeight;
+  pop.classList.toggle("above", !below);
+  pop.style.top = (below ? r.bottom + window.scrollY + 10 : r.top + window.scrollY - pop.offsetHeight - 10) + "px";
+  pop.style.setProperty("--arrow-x", Math.max(14, Math.min(width - 14, r.left + window.scrollX + r.width / 2 - left)) + "px");
 }
 function hideTerm() {
   const pop = $("term-pop");
-  if (pop) pop.hidden = true;
+  if (pop && !pop.hidden) {
+    pop.classList.remove("show");
+    clearTimeout(pop._t);
+    pop._t = setTimeout(() => { if (!pop.classList.contains("show")) pop.hidden = true; }, reducedMotion() ? 0 : 180);
+  }
   if (termAnchor) termAnchor.setAttribute("aria-expanded", "false");
   termAnchor = null;
 }
+const reducedMotion = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 document.addEventListener("click", (e) => {
   const t = e.target.closest && e.target.closest(".term");
-  if (t) { e.preventDefault(); return termAnchor === t ? hideTerm() : showTerm(t); }
+  if (t) { e.preventDefault(); return termAnchor === t && Date.now() - termShownAt > 600 ? hideTerm() : showTerm(t); }
   if (!e.target.closest || !e.target.closest("#term-pop")) hideTerm();
 });
 document.addEventListener("mouseover", (e) => { const t = e.target.closest && e.target.closest(".term"); if (t) showTerm(t); });
 document.addEventListener("mouseout", (e) => {
-  const t = e.target.closest && e.target.closest(".term");
-  if (t) termHideTimer = setTimeout(hideTerm, 250);
+  const t = e.target.closest && e.target.closest(".term, #term-pop");
+  if (t) termHideTimer = setTimeout(hideTerm, 220);
 });
+document.addEventListener("mouseover", (e) => { if (e.target.closest && e.target.closest("#term-pop")) clearTimeout(termHideTimer); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideTerm(); });
 window.addEventListener("resize", hideTerm);
 

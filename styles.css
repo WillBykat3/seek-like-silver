@@ -821,3 +821,95 @@ select.level-pill:focus-visible { outline: 2px solid var(--pigment); outline-off
 .level-choice-name { font-family: var(--display); font-size: 1.4rem; font-weight: 700; color: var(--pigment-deep); }
 .level-choice-count { font-size: 0.88rem; color: var(--muted); }
 .level-dialog-hint { font-size: 0.9rem; margin: 0; }
+
+/* ───────── Motion: smoother hovers ───────── */
+:root { --ease-out: cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Dotted words: the underline fills in, then the definition glides in. */
+.term {
+  text-decoration: none;
+  background-image:
+    linear-gradient(var(--pigment, var(--silver)), var(--pigment, var(--silver))),
+    radial-gradient(circle, var(--pigment, var(--silver)) 1px, transparent 1.5px);
+  background-size: 0% 2px, 6px 2px;
+  background-position: 0 100%, 0 100%;
+  background-repeat: no-repeat, repeat-x;
+  padding-bottom: 3px;
+  transition: background-size 0.35s var(--ease-out), background-color 0.25s ease, color 0.25s ease;
+  border-radius: 3px;
+}
+.term:hover, .term:focus-visible, .term[aria-expanded="true"] {
+  background-size: 100% 2px, 6px 2px;
+  background-color: var(--pigment-tint, var(--wash));
+  color: var(--pigment-deep, var(--ink));
+}
+.term-pop {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.97);
+  transform-origin: var(--arrow-x, 50%) top;
+  transition: opacity 0.18s ease, transform 0.22s var(--ease-out);
+  pointer-events: none;
+  border-top: 3px solid var(--pigment, var(--silver));
+}
+.term-pop.above { transform: translateY(6px) scale(0.97); transform-origin: var(--arrow-x, 50%) bottom; }
+.term-pop.show { opacity: 1; transform: none; pointer-events: auto; }
+.term-pop::before {
+  content: ""; position: absolute; top: -9px; left: calc(var(--arrow-x, 24px) - 6px);
+  border: 6px solid transparent; border-bottom-color: var(--pigment, var(--silver));
+}
+.term-pop.above::before { top: auto; bottom: -12px; border-bottom-color: transparent; border-top-color: var(--line); }
+.term-pop span { animation: pop-text 0.3s var(--ease-out) both; animation-delay: 0.05s; }
+@keyframes pop-text { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+
+/* Verse and book links: the underline sweeps in from the left. */
+.verse-list a, .reading-list a, .fathers-list a, .hero-ref a, .votd-ref a {
+  position: relative;
+  text-decoration-color: transparent;
+  background-image: linear-gradient(var(--pigment, var(--silver)), var(--pigment, var(--silver))), linear-gradient(var(--line), var(--line));
+  background-size: 0% 2px, 100% 1px;
+  background-position: 0 100%, 0 100%;
+  background-repeat: no-repeat;
+  padding-bottom: 1px;
+  transition: background-size 0.35s var(--ease-out), color 0.2s ease;
+}
+.verse-list a:hover, .reading-list a:hover, .fathers-list a:hover, .hero-ref a:hover, .votd-ref a:hover,
+.verse-list a:focus-visible, .reading-list a:focus-visible, .fathers-list a:focus-visible {
+  background-size: 100% 2px, 100% 1px;
+  color: var(--pigment-deep, var(--ink));
+}
+/* While you rest on a verse, a line fills across it: when it's full, the text opens. */
+.verse-list a.warming { background-size: 100% 2px, 100% 1px; transition: background-size var(--warm-ms, 1.5s) linear, color 0.2s ease; }
+
+/* Verse text slides open and closed. */
+.verse-preview:not([hidden]) { animation: preview-in 0.32s var(--ease-out) both; transform-origin: top left; }
+.verse-preview.closing { animation: preview-out 0.22s ease both; }
+@keyframes preview-in { from { opacity: 0; transform: translateY(-6px); clip-path: inset(0 0 100% 0); } to { opacity: 1; transform: none; clip-path: inset(0 0 0 0); } }
+@keyframes preview-out { from { opacity: 1; transform: none; clip-path: inset(0 0 0 0); } to { opacity: 0; transform: translateY(-4px); clip-path: inset(0 0 100% 0); } }
+.verse-preview-text { animation: pop-text 0.4s var(--ease-out) both; }
+.verse-toggle { transition: color 0.2s ease; }
+.verse-toggle:hover { color: var(--pigment-deep, var(--ink)); }
+
+/* Cards lift a little, and their mosaic catches the light. */
+.level-card, .topic-card, .browse-item, .level-choice {
+  transition: transform 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out), border-color 0.2s ease, background-color 0.2s ease;
+}
+.level-card:hover, .topic-card:hover, .level-card:focus-visible, .topic-card:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px -12px rgba(12, 18, 40, 0.35);
+}
+.level-choice:hover:not(:disabled) { transform: translateX(3px); }
+.level-card:active, .topic-card:active { transform: translateY(-1px); transition-duration: 0.08s; }
+.level-card .tesserae, .topic-card .tesserae { transition: opacity 0.25s ease, background-position 0.6s var(--ease-out); }
+.level-card:hover .tesserae, .topic-card:hover .tesserae { background-position: 13px 0, 0 11px, 19px 0; }
+
+/* Dialogs fade up. */
+.dialog[open] { animation: dialog-in 0.28s var(--ease-out) both; }
+.dialog[open]::backdrop { animation: backdrop-in 0.28s ease both; }
+@keyframes dialog-in { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .term-pop { transform: none; }
+}
+@media print { .verse-list a, .reading-list a, .fathers-list a { background: none; } }
