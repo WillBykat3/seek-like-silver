@@ -968,7 +968,7 @@ select.level-pill:focus-visible { outline: 2px solid var(--pigment); outline-off
 .all-q-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .all-q-item {
   width: 100%; font: inherit; color: var(--ink); text-align: left; cursor: pointer;
-  display: grid; grid-template-columns: 2.2em 1fr auto; gap: 3px 12px;
+  display: grid; grid-template-columns: 3.6em 1fr auto; gap: 3px 12px;
   background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--pigment);
   border-radius: 0 var(--radius) var(--radius) 0; padding: 10px 14px;
   transition: transform 0.2s var(--ease-out), border-color 0.2s ease, background-color 0.2s ease;
@@ -977,8 +977,8 @@ select.level-pill:focus-visible { outline: 2px solid var(--pigment); outline-off
 .all-q-prompt { font-family: var(--serif); font-size: 1.02rem; line-height: 1.4; }
 .all-q-num {
   grid-row: 1 / span 2; align-self: start; justify-self: center; margin-top: 1px;
-  min-width: 2em; height: 2em; display: inline-flex; align-items: center; justify-content: center;
-  border-radius: 50%; background: var(--pigment-tint, var(--wash)); color: var(--pigment-deep);
+  min-width: 3.4em; height: 1.9em; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 999px; background: var(--pigment-tint, var(--wash)); color: var(--pigment-deep);
   font-family: var(--display); font-weight: 700; font-size: 0.95rem; font-variant-numeric: tabular-nums;
 }
 .all-q-prompt { grid-column: 2; }
@@ -987,7 +987,15 @@ select.level-pill:focus-visible { outline: 2px solid var(--pigment); outline-off
 .mode-choice { --pigment: var(--lapis); --pigment-deep: var(--lapis-deep); --pigment-tint: var(--lapis-tint); }
 .mode-choice .level-choice-count { text-align: right; }
 
+.question-card { position: relative; }
 .question-number {
-  margin: 0 0 4px; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--pigment-deep, var(--muted));
+  position: absolute; top: 14px; right: 16px;
+  padding: 3px 10px; border-radius: 999px;
+  background: var(--pigment-tint, var(--wash)); color: var(--pigment-deep, var(--ink));
+  border: 1px solid var(--pigment, var(--line));
+  font-family: var(--sans); font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums; cursor: default;
 }
+.question-text { padding-right: 64px; }
+@media print { .question-number { top: 0; right: 0; border: 1px solid #000; background: none; color: #000; } }
+.find-number { max-width: 360px; margin: 6px 0 4px; }

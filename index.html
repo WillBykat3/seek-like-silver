@@ -104,7 +104,7 @@
       </div>
       <p class="status print-hide" id="share-status" role="status"></p>
       <article class="question-card">
-        <p class="question-number" id="q-number"></p>
+        <span class="question-number" id="q-number"></span>
         <h2 class="question-text" id="q-prompt"></h2>
 
         <div class="helps">
@@ -243,6 +243,13 @@
       <button class="link-button" data-nav="home">← Back</button>
       <h1 class="section-title">All questions</h1>
       <p class="library-intro" id="all-intro"></p>
+      <form class="inline-form find-number" id="find-number-form">
+        <label>Go to a question by its number
+          <input type="text" id="find-number" inputmode="numeric" pattern="[0-9]{3}" maxlength="4" placeholder="e.g. 482" autocomplete="off">
+        </label>
+        <button class="btn" type="submit">Go</button>
+      </form>
+      <p class="status" id="find-number-status" role="status"></p>
       <div id="all-list"></div>
     </section>
 

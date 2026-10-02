@@ -58,11 +58,12 @@ const answerEditor = createRichEditor({
 // ─────────────────────────── Question lookup ───────────────────────────
 
 const QUESTION_INDEX = new Map();
-// "b12" -> 12: each level is numbered 1–30 (IDs never change, so numbers stay put).
-const questionNumber = (q) => Number(String(q.id).replace(/^\D+/, ""));
-const questionLabel = (q) => LEVEL_LABELS[q.level] + " · Question " + questionNumber(q);
+// Each question's public number (#482): random, permanent, used in links and printouts.
+const questionNumber = (q) => (QUESTION_INDEX.get(q.id) || q).num;
+const questionLabel = (q) => "Question #" + questionNumber(q) + " (" + LEVEL_LABELS[q.level] + ")";
+const QUESTION_BY_NUM = new Map();
 for (const [level, list] of Object.entries(QUESTIONS)) {
-  for (const q of list) QUESTION_INDEX.set(q.id, { ...q, level });
+  for (const q of list) { QUESTION_INDEX.set(q.id, { ...q, level }); QUESTION_BY_NUM.set(String(q.num), q.id); }
 }
 
 function questionsFor(level, topic) {
@@ -490,7 +491,8 @@ function openQuestion(q, level) {
   $("q-topic").textContent = topic ? topic.label : state.anyLevel ? "Random: all levels" : "";
   $("q-topic").className = "topic-pill" + (topic ? " topic-" + state.topic : "");
   $("view-question").dataset.level = level; // drives the level color
-  $("q-number").textContent = "Question " + questionNumber({ id: q.id });
+  $("q-number").textContent = "#" + questionNumber(q);
+  $("q-number").title = "Question number " + questionNumber(q) + ". Share or find this question by its number.";
   renderWithTerms($("q-prompt"), q.prompt);
 
   renderVerseList($("q-passage"), q.passage);
@@ -527,7 +529,7 @@ function openQuestion(q, level) {
   renderGroupAnswers();
 
   showView("question");
-  history.replaceState(null, "", "#q=" + q.id);
+  history.replaceState(null, "", "#q=" + questionNumber(q));
 }
 
 function renderFathers(q) {
@@ -629,7 +631,7 @@ function renderAnswers() {
 
     const meta = document.createElement("div");
     meta.className = "meta level-" + level;
-    meta.textContent = LEVEL_LABELS[level] + (q ? " · Question " + questionNumber(q) : "") + " · " + (rows.length === 1 ? "1 answer" : rows.length + " answers");
+    meta.textContent = LEVEL_LABELS[level] + (q ? " · #" + questionNumber(q) : "") + " · " + (rows.length === 1 ? "1 answer" : rows.length + " answers");
 
     const title = document.createElement("h3");
     title.textContent = q ? q.prompt : "(This question is no longer in the bank)";
@@ -1661,7 +1663,9 @@ function restoreDraft() {
 function setStatus(id, text, kind) {
   const el = $(id);
   el.textContent = text;
-  el.className = "status" + (kind ? " " + kind : "");
+  el.classList.add("status");
+  el.classList.remove("ok", "err");
+  if (kind) el.classList.add(kind);
 }
 
 function formatDate(iso) {
@@ -1789,7 +1793,7 @@ function setUpTopics() {
 
 async function copyQuestionLink() {
   if (!state.question) return;
-  const url = location.origin + location.pathname + "#q=" + state.question.id;
+  const url = location.origin + location.pathname + "#q=" + questionNumber(state.question);
   try {
     await navigator.clipboard.writeText(url);
     setStatus("share-status", "Link copied. Anyone with it can open this question.", "ok");
@@ -2079,8 +2083,8 @@ function takePendingJoin() {
 function handleHash() {
   const h = location.hash;
   let m;
-  if ((m = h.match(/^#q=([a-z]\d{1,3})$/))) {
-    const q = QUESTION_INDEX.get(m[1]);
+  if ((m = h.match(/^#q=(\d{3}|[a-z]\d{1,3})$/))) {
+    const q = QUESTION_INDEX.get(QUESTION_BY_NUM.get(m[1]) || m[1]); // new links use the number; old ones the ID
     if (q && (!state.question || state.question.id !== q.id || $("view-question").hidden)) openQuestion(q, q.level);
   } else if (h === "#all") {
     showView("all");
@@ -2254,7 +2258,7 @@ function renderAllQuestions() {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "all-q-item";
-      b.append(Object.assign(document.createElement("span"), { className: "all-q-num", textContent: questionNumber(q), ariaLabel: "Question " + questionNumber(q) }));
+      b.append(Object.assign(document.createElement("span"), { className: "all-q-num", textContent: "#" + questionNumber(q), ariaLabel: "Question number " + questionNumber(q) }));
       b.append(Object.assign(document.createElement("span"), { className: "all-q-prompt", textContent: q.prompt }));
       const meta = document.createElement("span");
       meta.className = "all-q-meta";
@@ -2293,6 +2297,16 @@ $("next-question").addEventListener("click", () => { const q = pickQuestion(stat
 $("save-answer").addEventListener("click", saveAnswer);
 $("cancel-edit").addEventListener("click", cancelEdit);
 $("all-questions-btn").addEventListener("click", () => $("all-dialog").showModal());
+$("find-number-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const n = $("find-number").value.replace(/\D/g, "");
+  const id = QUESTION_BY_NUM.get(n);
+  if (!id) return setStatus("find-number-status", n ? "No question has the number " + n + "." : "Type a 3-digit number.", "err");
+  const q = QUESTION_INDEX.get(id);
+  state.topic = null; state.anyLevel = false;
+  $("find-number").value = ""; setStatus("find-number-status", "");
+  openQuestion(q, q.level);
+});
 $("all-choose").addEventListener("click", () => { $("all-dialog").close(); showView("all"); });
 $("all-random").addEventListener("click", () => {
   $("all-dialog").close();

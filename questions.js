@@ -2,6 +2,8 @@
 //
 // Each question has:
 //   id          – permanent ID (never reuse or change one; saved answers point to it)
+//   num         – the question's public number (3 digits, random, unique, never reused);
+//                 shown in a bubble, used in links (#q=482) and printouts
 //   prompt      – the question itself, with no verse references in it
 //   passage     – "In question": the Scripture the question is about
 //   inspiration – "Inspiration": other Scripture that helps you answer
@@ -39,6 +41,7 @@ const QUESTIONS = {
   beginner: [
     {
       id: "b1",
+      num: 424,
       prompt: "John's Gospel opens by calling Jesus \"the Word.\" Who is the Word, and what does it mean that the Word \"became flesh\"?",
       passage: ["John 1:1-14"],
       inspiration: ["Philippians 2:5-8", "Colossians 1:15-20", "Hebrews 1:1-3"],
@@ -54,6 +57,7 @@ const QUESTIONS = {
     },
     {
       id: "b2",
+      num: 314,
       prompt: "What does it mean for human beings to be made in the image of God?",
       passage: ["Genesis 1:26-28"],
       inspiration: ["Genesis 9:6", "Psalm 8:3-8", "James 3:9", "Colossians 3:10"],
@@ -69,6 +73,7 @@ const QUESTIONS = {
     },
     {
       id: "b3",
+      num: 610,
       prompt: "In the parable of the prodigal son, what does the father's response to his returning son teach about God?",
       passage: ["Luke 15:11-32"],
       inspiration: ["Psalm 103:8-13", "Romans 5:8", "Luke 15:1-7"],
@@ -85,6 +90,7 @@ const QUESTIONS = {
     },
     {
       id: "b4",
+      num: 640,
       prompt: "In the parable of the Good Samaritan, Jesus answers the question \"Who is my neighbor?\" What is his answer, and what does it ask of us?",
       passage: ["Luke 10:25-37"],
       inspiration: ["Leviticus 19:18", "Leviticus 19:33-34", "1 John 4:19-21"],
@@ -100,6 +106,7 @@ const QUESTIONS = {
     },
     {
       id: "b5",
+      num: 560,
       prompt: "How is a person saved, and where do good works fit in?",
       passage: ["Ephesians 2:8-10"],
       inspiration: ["Titus 3:4-7", "Romans 3:23-24", "James 2:14-26"],
@@ -115,6 +122,7 @@ const QUESTIONS = {
     },
     {
       id: "b6",
+      num: 425,
       prompt: "What does the Lord's Prayer teach us about what prayer is and what we should pray for?",
       passage: ["Matthew 6:5-13"],
       inspiration: ["Luke 11:1-13", "Philippians 4:6-7", "Romans 8:26"],
@@ -131,6 +139,7 @@ const QUESTIONS = {
     },
     {
       id: "b7",
+      num: 883,
       prompt: "This psalm describes God as a shepherd. What does that image teach about how God cares for his people?",
       passage: ["Psalm 23"],
       inspiration: ["John 10:11-15", "Ezekiel 34:11-16", "Isaiah 40:11"],
@@ -146,6 +155,7 @@ const QUESTIONS = {
     },
     {
       id: "b8",
+      num: 922,
       prompt: "Why did Jesus die? What reasons do Paul's summary of the gospel and Isaiah's prophecy of the suffering servant give?",
       passage: ["1 Corinthians 15:3-8", "Isaiah 53:4-6"],
       inspiration: ["Mark 10:45", "Romans 5:6-8", "1 Peter 2:24"],
@@ -162,6 +172,7 @@ const QUESTIONS = {
     },
     {
       id: "b9",
+      num: 127,
       prompt: "What does Jesus say the Holy Spirit will do for his followers?",
       passage: ["John 14:15-27", "John 16:7-15"],
       inspiration: ["Galatians 5:22-23", "Romans 8:14-16", "Acts 1:8"],
@@ -178,6 +189,7 @@ const QUESTIONS = {
     },
     {
       id: "b10",
+      num: 715,
       prompt: "What would be lost if Jesus had not risen from the dead? What does his resurrection change?",
       passage: ["1 Corinthians 15:12-22"],
       inspiration: ["Romans 6:4-5", "1 Peter 1:3", "John 11:25-26"],
@@ -193,6 +205,7 @@ const QUESTIONS = {
     },
     {
       id: "b11",
+      num: 272,
       prompt: "What does the Bible's opening account of creation teach about who God is and what kind of world he made?",
       passage: ["Genesis 1", "Genesis 2:1-3"],
       inspiration: ["Psalm 104:24-30", "Psalm 33:6-9", "John 1:1-3"],
@@ -209,6 +222,7 @@ const QUESTIONS = {
     },
     {
       id: "b12",
+      num: 298,
       prompt: "What happened in the garden? How did the first sin change humanity's relationship with God, with each other, and with the world?",
       passage: ["Genesis 3"],
       inspiration: ["Romans 5:12", "Romans 8:20-22", "1 Corinthians 15:21-22"],
@@ -225,6 +239,7 @@ const QUESTIONS = {
     },
     {
       id: "b13",
+      num: 632,
       prompt: "What do the Ten Commandments show about God and how his people should live? Why does God remind them he rescued them from Egypt before giving the commands?",
       passage: ["Exodus 20:1-17"],
       inspiration: ["Matthew 22:36-40", "Romans 13:8-10", "Psalm 19:7-11"],
@@ -240,6 +255,7 @@ const QUESTIONS = {
     },
     {
       id: "b14",
+      num: 224,
       prompt: "Jesus called loving God with all your heart, soul, and mind the greatest commandment. What does it mean to love God this way, and why is loving your neighbor \"like it\"?",
       passage: ["Matthew 22:34-40"],
       inspiration: ["Deuteronomy 6:4-9", "Leviticus 19:18", "1 John 4:7-12"],
@@ -255,6 +271,7 @@ const QUESTIONS = {
     },
     {
       id: "b15",
+      num: 188,
       prompt: "What kind of people does Jesus call \"blessed\" in the Beatitudes, and why might that have surprised the people listening?",
       passage: ["Matthew 5:1-12"],
       inspiration: ["Luke 6:20-26", "Isaiah 61:1-3", "Psalm 37:11"],
@@ -270,6 +287,7 @@ const QUESTIONS = {
     },
     {
       id: "b16",
+      num: 733,
       prompt: "Jesus tells Nicodemus that he must be \"born again\" (or \"born from above\"). What does Jesus mean, and how does it happen?",
       passage: ["John 3:1-21"],
       inspiration: ["Ezekiel 36:25-27", "2 Corinthians 5:17", "1 Peter 1:3", "Titus 3:4-7"],
@@ -285,6 +303,7 @@ const QUESTIONS = {
     },
     {
       id: "b17",
+      num: 868,
       prompt: "What is faith, according to this chapter? What do the examples of Abraham, Moses, and the others show about it?",
       passage: ["Hebrews 11"],
       inspiration: ["Genesis 15:1-6", "Genesis 22:1-18", "Romans 4:18-22"],
@@ -301,6 +320,7 @@ const QUESTIONS = {
     },
     {
       id: "b18",
+      num: 281,
       prompt: "Paul contrasts the \"works of the flesh\" with the \"fruit of the Spirit.\" What is the difference, and how does that fruit grow in a believer?",
       passage: ["Galatians 5:16-26"],
       inspiration: ["John 15:1-8", "Romans 8:5-11", "Colossians 3:12-17"],
@@ -316,6 +336,7 @@ const QUESTIONS = {
     },
     {
       id: "b19",
+      num: 354,
       prompt: "Paul says even the greatest gifts are worthless without love. What does he say love is, and why does he call it greater than even faith and hope?",
       passage: ["1 Corinthians 13"],
       inspiration: ["1 John 4:7-21", "John 13:34-35", "Romans 13:8-10"],
@@ -332,6 +353,7 @@ const QUESTIONS = {
     },
     {
       id: "b20",
+      num: 848,
       prompt: "David prayed this psalm after his sin with Bathsheba. What does it teach about sin, confession, and forgiveness?",
       passage: ["Psalm 51"],
       inspiration: ["2 Samuel 12:1-13", "1 John 1:8-9", "Luke 18:9-14"],
@@ -347,6 +369,7 @@ const QUESTIONS = {
     },
     {
       id: "b21",
+      num: 367,
       prompt: "Jesus tells his followers not to worry. What reasons does he give for trusting God instead, and what does he tell us to seek first?",
       passage: ["Matthew 6:25-34"],
       inspiration: ["1 Peter 5:6-7", "Psalm 55:22", "Philippians 4:6-7"],
@@ -362,6 +385,7 @@ const QUESTIONS = {
     },
     {
       id: "b22",
+      num: 877,
       prompt: "Before he ascended, Jesus gave his followers a mission. What did he command them to do, and what promise did he attach to it?",
       passage: ["Matthew 28:16-20"],
       inspiration: ["Acts 1:6-11", "Genesis 12:1-3", "Romans 10:13-15"],
@@ -377,6 +401,7 @@ const QUESTIONS = {
     },
     {
       id: "b23",
+      num: 828,
       prompt: "Paul says believers were \"baptized into Christ's death.\" What does baptism picture or do, according to the New Testament?",
       passage: ["Romans 6:1-11"],
       inspiration: ["Matthew 3:13-17", "Acts 2:38-41", "Colossians 2:11-12", "1 Peter 3:21"],
@@ -393,6 +418,7 @@ const QUESTIONS = {
     },
     {
       id: "b24",
+      num: 438,
       prompt: "What did Jesus say and do at the Last Supper, and what do Christians proclaim whenever they share the bread and the cup?",
       passage: ["1 Corinthians 11:23-26"],
       inspiration: ["Luke 22:14-20", "1 Corinthians 10:16-17", "John 6:35"],
@@ -409,6 +435,7 @@ const QUESTIONS = {
     },
     {
       id: "b25",
+      num: 365,
       prompt: "Paul compares the church to a body with many parts. What does this picture teach about how believers belong to each other?",
       passage: ["1 Corinthians 12:12-27"],
       inspiration: ["Romans 12:3-8", "Ephesians 4:11-16", "1 Peter 4:10-11"],
@@ -425,6 +452,7 @@ const QUESTIONS = {
     },
     {
       id: "b26",
+      num: 488,
       prompt: "What is \"the armor of God,\" and what does it teach about the spiritual struggle Christians face?",
       passage: ["Ephesians 6:10-18"],
       inspiration: ["Isaiah 59:15-17", "1 Peter 5:8-9", "James 4:7-8"],
@@ -441,6 +469,7 @@ const QUESTIONS = {
     },
     {
       id: "b27",
+      num: 153,
       prompt: "What does Jonah's story teach about God's mercy? Why is Jonah angry when God spares Nineveh, and how does God answer him?",
       passage: ["Jonah 3", "Jonah 4"],
       inspiration: ["Exodus 34:6-7", "Matthew 12:38-41", "Luke 15:25-32"],
@@ -456,6 +485,7 @@ const QUESTIONS = {
     },
     {
       id: "b28",
+      num: 149,
       prompt: "After Jesus calms the storm, his disciples ask, \"Who is this?\" How would you answer them from this passage and the Old Testament?",
       passage: ["Mark 4:35-41"],
       inspiration: ["Psalm 107:23-30", "Psalm 89:8-9", "Mark 6:45-52"],
@@ -471,6 +501,7 @@ const QUESTIONS = {
     },
     {
       id: "b29",
+      num: 798,
       prompt: "Why did Jesus wash his disciples' feet, and what did he want them to learn from it?",
       passage: ["John 13:1-17"],
       inspiration: ["Philippians 2:3-8", "Mark 10:42-45", "Luke 22:24-27"],
@@ -487,6 +518,7 @@ const QUESTIONS = {
     },
     {
       id: "b30",
+      num: 525,
       prompt: "How does the Bible's final vision describe the future God has promised? What will be there, and what will be gone?",
       passage: ["Revelation 21:1-7", "Revelation 22:1-5"],
       inspiration: ["Isaiah 65:17-25", "Romans 8:18-23", "2 Peter 3:13"],
@@ -506,6 +538,7 @@ const QUESTIONS = {
   moderate: [
     {
       id: "m1",
+      num: 469,
       prompt: "How does the Passover help explain the Last Supper and the meaning of Jesus' death?",
       passage: ["Exodus 12:1-14", "Luke 22:7-20"],
       inspiration: ["1 Corinthians 5:7", "John 1:29", "John 19:31-36"],
@@ -522,6 +555,7 @@ const QUESTIONS = {
     },
     {
       id: "m2",
+      num: 950,
       prompt: "Paul says a person is justified by faith apart from works of the law. James says a person is justified by works and not by faith alone. How do these fit together?",
       passage: ["Romans 3:21-28", "James 2:14-26"],
       inspiration: ["Galatians 5:6", "Genesis 15:6", "Ephesians 2:8-10"],
@@ -539,6 +573,7 @@ const QUESTIONS = {
     },
     {
       id: "m3",
+      num: 324,
       prompt: "How does God's covenant with Abraham shape Paul's argument about who belongs to God's family?",
       passage: ["Genesis 12:1-3", "Galatians 3:6-29"],
       inspiration: ["Genesis 15:6", "Genesis 17:1-8", "Romans 4"],
@@ -555,6 +590,7 @@ const QUESTIONS = {
     },
     {
       id: "m4",
+      num: 313,
       prompt: "Trace the theme of God dwelling with his people from Eden to the tabernacle, the temple, Jesus, the church, and the new creation. What does this story reveal?",
       passage: ["Exodus 40:34-38", "John 1:14", "Revelation 21:3"],
       inspiration: ["Genesis 3:8", "1 Kings 8:10-11", "1 Corinthians 3:16", "Ezekiel 43:1-7"],
@@ -570,6 +606,7 @@ const QUESTIONS = {
     },
     {
       id: "m5",
+      num: 155,
       prompt: "The title Jesus used most often for himself was \"Son of Man.\" How does Daniel's vision shape what that title means, and why did Jesus' use of it at his trial provoke such a reaction?",
       passage: ["Daniel 7:13-14", "Mark 14:61-64"],
       inspiration: ["Matthew 26:64", "Mark 2:10", "Mark 8:31"],
@@ -586,6 +623,7 @@ const QUESTIONS = {
     },
     {
       id: "m6",
+      num: 197,
       prompt: "Job's friends assume his suffering must be punishment for sin. How do Job's story and Jesus' own words challenge that assumption?",
       passage: ["Job 1-2", "John 9:1-3"],
       inspiration: ["Job 38-42", "Luke 13:1-5", "2 Corinthians 4:16-18"],
@@ -601,6 +639,7 @@ const QUESTIONS = {
     },
     {
       id: "m7",
+      num: 444,
       prompt: "How does the Day of Atonement help explain what the letter to the Hebrews says about Jesus as our high priest?",
       passage: ["Leviticus 16", "Hebrews 9:11-14"],
       inspiration: ["Hebrews 4:14-16", "Hebrews 10:1-14", "Romans 3:25"],
@@ -617,6 +656,7 @@ const QUESTIONS = {
     },
     {
       id: "m8",
+      num: 461,
       prompt: "Paul sets Adam and Christ side by side. What does each one bring to humanity, and why does Paul compare them?",
       passage: ["Romans 5:12-21", "1 Corinthians 15:21-22"],
       inspiration: ["1 Corinthians 15:45-49", "Genesis 3", "Genesis 2:15-17"],
@@ -632,6 +672,7 @@ const QUESTIONS = {
     },
     {
       id: "m9",
+      num: 317,
       prompt: "How does Pentecost relate to the Tower of Babel and to the prophet Joel's promise?",
       passage: ["Acts 2:1-21"],
       inspiration: ["Genesis 11:1-9", "Joel 2:28-32", "Numbers 11:24-29"],
@@ -648,6 +689,7 @@ const QUESTIONS = {
     },
     {
       id: "m10",
+      num: 654,
       prompt: "Jesus said he came not to abolish the Law but to fulfill it. In the Sermon on the Mount, how does he relate to the Law of Moses?",
       passage: ["Matthew 5:17-48"],
       inspiration: ["Jeremiah 31:31-34", "Romans 10:4", "Romans 13:8-10"],
@@ -663,6 +705,7 @@ const QUESTIONS = {
     },
     {
       id: "m11",
+      num: 826,
       prompt: "Who is Melchizedek, and why does Hebrews use this mysterious figure to explain Jesus' priesthood?",
       passage: ["Hebrews 7"],
       inspiration: ["Genesis 14:17-20", "Psalm 110", "Hebrews 5:5-10"],
@@ -679,6 +722,7 @@ const QUESTIONS = {
     },
     {
       id: "m12",
+      num: 652,
       prompt: "How do Isaiah's \"Servant\" passages help the New Testament explain who Jesus is and what he came to do?",
       passage: ["Isaiah 52:13-15", "Isaiah 53"],
       inspiration: ["Isaiah 42:1-4", "Matthew 12:15-21", "Acts 8:26-35", "1 Peter 2:21-25"],
@@ -695,6 +739,7 @@ const QUESTIONS = {
     },
     {
       id: "m13",
+      num: 239,
       prompt: "The exodus from Egypt is the Old Testament's great story of rescue. How do the prophets and the New Testament use it to describe salvation in Christ?",
       passage: ["Exodus 14"],
       inspiration: ["Isaiah 43:16-19", "Luke 9:28-31", "1 Corinthians 10:1-4"],
@@ -711,6 +756,7 @@ const QUESTIONS = {
     },
     {
       id: "m14",
+      num: 468,
       prompt: "God promised David a son whose throne would last forever. How does that promise shape the way the New Testament presents Jesus?",
       passage: ["2 Samuel 7:8-16"],
       inspiration: ["Psalm 89:3-4", "Isaiah 9:6-7", "Luke 1:30-33", "Acts 2:29-36"],
@@ -726,6 +772,7 @@ const QUESTIONS = {
     },
     {
       id: "m15",
+      num: 506,
       prompt: "Genesis says humans were made in God's image; Paul calls Christ \"the image of God.\" How does the New Testament connect the two, and what does it say God is doing to that image in us?",
       passage: ["2 Corinthians 3:18", "2 Corinthians 4:1-6"],
       inspiration: ["Genesis 1:26-27", "Colossians 1:15", "Romans 8:29", "Colossians 3:9-10"],
@@ -742,6 +789,7 @@ const QUESTIONS = {
     },
     {
       id: "m16",
+      num: 398,
       prompt: "Jesus announced that \"the kingdom of God has come near.\" What is the kingdom, and how is it both here now and still to come?",
       passage: ["Mark 1:14-15"],
       inspiration: ["Daniel 2:44", "Matthew 13:31-33", "Luke 17:20-21", "Revelation 11:15"],
@@ -757,6 +805,7 @@ const QUESTIONS = {
     },
     {
       id: "m17",
+      num: 421,
       prompt: "If no one is made right with God by keeping the Law, why did God give it? How do Paul and the Psalms describe the Law's purpose?",
       passage: ["Galatians 3:19-25"],
       inspiration: ["Romans 7:7-12", "Romans 3:19-20", "Psalm 119:97-105"],
@@ -773,6 +822,7 @@ const QUESTIONS = {
     },
     {
       id: "m18",
+      num: 924,
       prompt: "Proverbs pictures Wisdom as present with God at creation. How did the New Testament writers and the early church connect this figure to Christ?",
       passage: ["Proverbs 8:22-31"],
       inspiration: ["1 Corinthians 1:24", "1 Corinthians 1:30", "John 1:1-3", "Colossians 2:2-3"],
@@ -788,6 +838,7 @@ const QUESTIONS = {
     },
     {
       id: "m19",
+      num: 160,
       prompt: "What was the Sabbath for? How does the New Testament treat it after Christ, and why did Christians come to gather on Sunday?",
       passage: ["Mark 2:23-28", "Mark 3:1-6"],
       inspiration: ["Genesis 2:2-3", "Exodus 20:8-11", "Hebrews 4:1-11", "Acts 20:7", "Revelation 1:10"],
@@ -804,6 +855,7 @@ const QUESTIONS = {
     },
     {
       id: "m20",
+      num: 697,
       prompt: "Paul says that Gentile believers have been grafted into Israel's olive tree. How does the New Testament describe the relationship between Israel and the church?",
       passage: ["Romans 11:11-32"],
       inspiration: ["Ephesians 2:11-22", "Galatians 6:15-16", "Jeremiah 31:35-37"],
@@ -819,6 +871,7 @@ const QUESTIONS = {
     },
     {
       id: "m21",
+      num: 140,
       prompt: "Jesus calls himself \"the bread of life.\" How does the manna in the wilderness help explain what he means?",
       passage: ["John 6:25-51"],
       inspiration: ["Exodus 16:1-21", "Deuteronomy 8:3", "Matthew 4:4"],
@@ -834,6 +887,7 @@ const QUESTIONS = {
     },
     {
       id: "m22",
+      num: 482,
       prompt: "Where do we find hope of resurrection in the Old Testament, and how did Jesus and the apostles read those texts?",
       passage: ["Daniel 12:1-3"],
       inspiration: ["Job 19:25-27", "Ezekiel 37:1-14", "Isaiah 26:19", "Mark 12:24-27", "Acts 2:24-32"],
@@ -850,6 +904,7 @@ const QUESTIONS = {
     },
     {
       id: "m23",
+      num: 251,
       prompt: "Joseph tells his brothers, \"You meant evil against me, but God meant it for good.\" How does his story show the way God works through human evil, and how does it point toward the cross?",
       passage: ["Genesis 50:15-21"],
       inspiration: ["Genesis 45:4-8", "Acts 4:27-28", "Romans 8:28"],
@@ -866,6 +921,7 @@ const QUESTIONS = {
     },
     {
       id: "m24",
+      num: 353,
       prompt: "The last of the prophets promised that Elijah would come again before the day of the Lord. How do the Gospels connect that promise to John the Baptist?",
       passage: ["Matthew 11:7-15"],
       inspiration: ["Malachi 4:5-6", "Luke 1:13-17", "Matthew 17:10-13", "John 1:19-23"],
@@ -882,6 +938,7 @@ const QUESTIONS = {
     },
     {
       id: "m25",
+      num: 129,
       prompt: "What does the \"new covenant\" promised by the prophets offer, and how does the New Testament say it is fulfilled?",
       passage: ["Jeremiah 31:31-34"],
       inspiration: ["Ezekiel 36:24-28", "Luke 22:20", "Hebrews 8:6-13", "2 Corinthians 3:4-6"],
@@ -897,6 +954,7 @@ const QUESTIONS = {
     },
     {
       id: "m26",
+      num: 295,
       prompt: "On the cross Jesus cried, \"My God, my God, why have you forsaken me?\" quoting a psalm. How does the whole psalm shed light on the crucifixion?",
       passage: ["Psalm 22"],
       inspiration: ["Mark 15:33-39", "Matthew 27:35-46", "Hebrews 2:10-12"],
@@ -912,6 +970,7 @@ const QUESTIONS = {
     },
     {
       id: "m27",
+      num: 351,
       prompt: "Why does Jesus call himself \"the true vine\"? How do the Old Testament's pictures of Israel as God's vine help explain his words?",
       passage: ["John 15:1-11"],
       inspiration: ["Isaiah 5:1-7", "Psalm 80:8-19", "Jeremiah 2:21"],
@@ -928,6 +987,7 @@ const QUESTIONS = {
     },
     {
       id: "m28",
+      num: 414,
       prompt: "Paul says marriage points to Christ and the church. How does the Bible use marriage to describe God's relationship with his people, from the prophets to Revelation?",
       passage: ["Ephesians 5:21-33"],
       inspiration: ["Hosea 2:14-20", "Isaiah 54:5-8", "Revelation 19:6-9"],
@@ -943,6 +1003,7 @@ const QUESTIONS = {
     },
     {
       id: "m29",
+      num: 763,
       prompt: "How do the apostles' teachings about Christ's return build on the Old Testament's \"day of the Lord\"? How should that hope shape the way Christians live now?",
       passage: ["1 Thessalonians 4:13-18", "1 Thessalonians 5:1-11"],
       inspiration: ["Amos 5:18-20", "Zephaniah 1:14-16", "Matthew 24:36-44", "2 Peter 3:8-13"],
@@ -959,6 +1020,7 @@ const QUESTIONS = {
     },
     {
       id: "m30",
+      num: 330,
       prompt: "God told Israel, \"Be holy, for I am holy,\" and Peter repeats it to Christians. What does holiness mean across Scripture, and how is it different from simply being good?",
       passage: ["1 Peter 1:13-25"],
       inspiration: ["Leviticus 19:1-2", "Isaiah 6:1-7", "Hebrews 12:10-14"],
@@ -977,6 +1039,7 @@ const QUESTIONS = {
   philosopher: [
     {
       id: "p1",
+      num: 533,
       prompt: "If God knows everything that will happen, are human choices truly free? How have Christians tried to hold divine foreknowledge and human freedom together?",
       passage: ["Romans 8:28-30", "Acts 2:23"],
       inspiration: ["Romans 9:14-24", "Philippians 2:12-13", "Deuteronomy 30:19"],
@@ -995,6 +1058,7 @@ const QUESTIONS = {
     },
     {
       id: "p2",
+      num: 109,
       prompt: "If God is all-good and all-powerful, why is there evil? Is evil a \"thing\" God created, or something else?",
       passage: ["Genesis 50:20", "Romans 8:18-23"],
       inspiration: ["Job 38:1-11", "Genesis 1:31", "Revelation 21:4"],
@@ -1012,6 +1076,7 @@ const QUESTIONS = {
     },
     {
       id: "p3",
+      num: 856,
       prompt: "How can God be one and yet three persons without contradiction? What would be lost if we said God is only one person, or three separate gods?",
       passage: ["Deuteronomy 6:4", "Matthew 28:19"],
       inspiration: ["John 1:1", "John 10:30", "2 Corinthians 13:14"],
@@ -1029,6 +1094,7 @@ const QUESTIONS = {
     },
     {
       id: "p4",
+      num: 832,
       prompt: "Scripture says God does not change, yet it also describes God grieving and relenting. Does God change, or suffer? What is at stake either way?",
       passage: ["Malachi 3:6", "Genesis 6:5-6", "Hosea 11:8-9"],
       inspiration: ["James 1:17", "Numbers 23:19", "Exodus 32:9-14"],
@@ -1046,6 +1112,7 @@ const QUESTIONS = {
     },
     {
       id: "p5",
+      num: 226,
       prompt: "The Council of Chalcedon (451) said Christ is one person in two natures, fully God and fully man. Why did the early church insist on both, and what goes wrong if you lose either one?",
       passage: ["John 1:14", "Philippians 2:5-11"],
       inspiration: ["Hebrews 4:15", "Colossians 2:9", "Hebrews 2:14-18"],
@@ -1063,6 +1130,7 @@ const QUESTIONS = {
     },
     {
       id: "p6",
+      num: 126,
       prompt: "When Jesus said \"This is my body,\" what did he mean? How do Catholic, Orthodox, Lutheran, and Reformed Christians understand Christ's presence in the Lord's Supper, and why does it matter?",
       passage: ["Matthew 26:26-28", "John 6:51-58"],
       inspiration: ["1 Corinthians 10:16-17", "1 Corinthians 11:23-29"],
@@ -1081,6 +1149,7 @@ const QUESTIONS = {
     },
     {
       id: "p7",
+      num: 870,
       prompt: "God is infinite and our words are finite. When we call God \"good\" or \"wise,\" do those words mean the same thing they mean for us, something completely different, or something in between?",
       passage: ["Isaiah 55:8-9", "Exodus 3:14"],
       inspiration: ["Romans 11:33-36", "1 Timothy 6:16", "Psalm 145:3"],
@@ -1097,6 +1166,7 @@ const QUESTIONS = {
     },
     {
       id: "p8",
+      num: 998,
       prompt: "Does faith go beyond reason, against reason, or depend on reason? Can we reason our way to God, or only understand after we believe?",
       passage: ["1 Corinthians 1:18-25", "Acts 17:22-31"],
       inspiration: ["1 Peter 3:15", "Hebrews 11:1-3", "Isaiah 1:18"],
@@ -1115,6 +1185,7 @@ const QUESTIONS = {
     },
     {
       id: "p9",
+      num: 637,
       prompt: "Why did God become man, and how exactly does Christ's death save us? Compare the idea of Christ paying a debt of honor, Christ as a substitute bearing punishment, and Christ as victor over sin, death, and the devil.",
       passage: ["Romans 3:23-26", "Colossians 2:13-15"],
       inspiration: ["Mark 10:45", "Hebrews 2:14-15", "Isaiah 53:4-6"],
@@ -1132,6 +1203,7 @@ const QUESTIONS = {
     },
     {
       id: "p10",
+      num: 235,
       prompt: "Is God outside of time altogether, or does God exist through all time without beginning or end? How would each view change the way we understand prayer and God's knowledge?",
       passage: ["Psalm 90:2-4", "2 Peter 3:8"],
       inspiration: ["Revelation 1:8", "Isaiah 57:15", "John 8:58"],
@@ -1147,6 +1219,7 @@ const QUESTIONS = {
     },
     {
       id: "p11",
+      num: 906,
       prompt: "Does God choose who will be saved because he foresees their faith, or does faith itself flow from God's choice? What is at stake for how we see God's grace and human responsibility?",
       passage: ["Ephesians 1:3-14"],
       inspiration: ["Romans 8:29-30", "John 6:37-44", "1 Timothy 2:3-6", "2 Peter 3:9"],
@@ -1164,6 +1237,7 @@ const QUESTIONS = {
     },
     {
       id: "p12",
+      num: 563,
       prompt: "Can a true believer fall away and be lost? How do Christians read the warnings of this passage alongside the promises that no one can snatch Christ's sheep from his hand?",
       passage: ["Hebrews 6:4-8"],
       inspiration: ["Hebrews 10:26-31", "John 10:27-29", "Romans 8:35-39", "Philippians 1:6"],
@@ -1180,6 +1254,7 @@ const QUESTIONS = {
     },
     {
       id: "p13",
+      num: 627,
       prompt: "What is hell? Is it unending conscious punishment, the final destruction of the wicked, or something else? What does each view say about God's justice and love?",
       passage: ["Matthew 25:31-46"],
       inspiration: ["Mark 9:43-48", "2 Thessalonians 1:5-10", "Revelation 20:10-15", "Romans 6:23"],
@@ -1197,6 +1272,7 @@ const QUESTIONS = {
     },
     {
       id: "p14",
+      num: 133,
       prompt: "Scripture is both God's word and written by human authors. How can it be fully both, and what does that mean for how we handle hard passages and apparent contradictions?",
       passage: ["2 Timothy 3:14-17", "2 Peter 1:19-21"],
       inspiration: ["Luke 1:1-4", "2 Peter 3:15-16", "John 10:35"],
@@ -1213,6 +1289,7 @@ const QUESTIONS = {
     },
     {
       id: "p15",
+      num: 285,
       prompt: "Is Scripture the only infallible rule for the church, or do Scripture and Tradition together carry authority? How do Protestants, Catholics, and Orthodox answer, and why?",
       passage: ["2 Thessalonians 2:13-15"],
       inspiration: ["Mark 7:6-13", "Acts 15:22-29", "1 Timothy 3:15", "2 Timothy 3:16-17"],
@@ -1232,6 +1309,7 @@ const QUESTIONS = {
     },
     {
       id: "p16",
+      num: 419,
       prompt: "Should baptism be given to the infants of believers, or only to people who profess faith themselves? What does each view believe baptism is?",
       passage: ["Acts 2:37-41"],
       inspiration: ["Acts 16:30-34", "Colossians 2:11-12", "Mark 10:13-16", "Genesis 17:9-14"],
@@ -1250,6 +1328,7 @@ const QUESTIONS = {
     },
     {
       id: "p17",
+      num: 180,
       prompt: "Is it right to use images of Christ and the saints in worship? How did the church settle the iconoclast controversy, and why do many Protestants still disagree?",
       passage: ["Exodus 20:4-6"],
       inspiration: ["Exodus 25:18-22", "Numbers 21:8-9", "2 Kings 18:4", "Colossians 1:15"],
@@ -1268,6 +1347,7 @@ const QUESTIONS = {
     },
     {
       id: "p18",
+      num: 529,
       prompt: "Why did the Council of Ephesus (431) call Mary \"Theotokos,\" the God-bearer? Is that title mainly a claim about Mary, or about Christ?",
       passage: ["Luke 1:26-45"],
       inspiration: ["Galatians 4:4-5", "John 1:14", "Matthew 1:18-23"],
@@ -1284,6 +1364,7 @@ const QUESTIONS = {
     },
     {
       id: "p19",
+      num: 332,
       prompt: "Are miracles violations of the laws of nature? How have Christians answered skeptics of miracles, and what do miracles reveal about God and the world?",
       passage: ["John 20:30-31"],
       inspiration: ["John 2:1-11", "Acts 2:22", "1 Corinthians 15:14-17", "Colossians 1:16-17"],
@@ -1301,6 +1382,7 @@ const QUESTIONS = {
     },
     {
       id: "p20",
+      num: 372,
       prompt: "Paul says Gentiles who never had the Law still show its work written on their hearts. Is there a moral law everyone can know, and how much can people know about God without the Bible?",
       passage: ["Romans 1:18-32", "Romans 2:12-16"],
       inspiration: ["Psalm 19:1-4", "Acts 14:15-17", "Acts 17:24-28"],
@@ -1318,6 +1400,7 @@ const QUESTIONS = {
     },
     {
       id: "p21",
+      num: 997,
       prompt: "What did we inherit from Adam: his guilt, or the death and corruption his sin brought into human nature? How do Augustine and the Eastern Orthodox tradition differ on \"original sin,\" and why did the church reject the idea that we inherit nothing at all?",
       passage: ["Romans 5:12-19"],
       inspiration: ["Psalm 51:5", "Ephesians 2:1-3", "Ezekiel 18:20", "1 Corinthians 15:22"],
@@ -1334,6 +1417,7 @@ const QUESTIONS = {
     },
     {
       id: "p22",
+      num: 187,
       prompt: "Can a Christian become free of willful sin in this life, or will believers struggle until death? Who is the \"wretched man\" in this passage: Paul as a Christian, Paul before Christ, or someone else?",
       passage: ["Romans 7:14-25"],
       inspiration: ["1 John 1:8-10", "1 John 3:6-9", "Matthew 5:48", "Philippians 3:12-15"],
@@ -1350,6 +1434,7 @@ const QUESTIONS = {
     },
     {
       id: "p23",
+      num: 321,
       prompt: "If God already knows what we need and has already decided what he will do, why pray? Can prayer change anything?",
       passage: ["James 5:13-18"],
       inspiration: ["Matthew 6:7-8", "Luke 18:1-8", "Genesis 18:22-33", "Exodus 32:9-14"],
@@ -1367,6 +1452,7 @@ const QUESTIONS = {
     },
     {
       id: "p24",
+      num: 168,
       prompt: "Classical theologians taught that God is \"simple\": without parts, so that his goodness, wisdom, and being are all one. Why did they insist on this, and why have some modern thinkers questioned it?",
       passage: ["Exodus 3:13-15", "1 John 4:8"],
       inspiration: ["Deuteronomy 6:4", "James 1:17", "1 John 1:5"],
@@ -1384,6 +1470,7 @@ const QUESTIONS = {
     },
     {
       id: "p25",
+      num: 460,
       prompt: "Can a Christian fight in a war? How have some Christians drawn on Scripture to defend \"just war,\" and others to defend nonviolence?",
       passage: ["Matthew 5:38-48", "Romans 13:1-7"],
       inspiration: ["Romans 12:17-21", "Luke 3:14", "Matthew 26:51-52"],
@@ -1401,6 +1488,7 @@ const QUESTIONS = {
     },
     {
       id: "p26",
+      num: 958,
       prompt: "The apostles proclaimed that salvation is found in no one but Christ. What then of people who never hear the gospel? How have Christians answered, and what is at stake?",
       passage: ["Acts 4:12"],
       inspiration: ["John 14:6", "Romans 10:13-17", "Acts 10:34-35", "1 Timothy 2:3-6"],
@@ -1418,6 +1506,7 @@ const QUESTIONS = {
     },
     {
       id: "p27",
+      num: 504,
       prompt: "How should we read the days of creation? What have Christians, from the church fathers to the Reformers, made of how Genesis describes the making of the world?",
       passage: ["Genesis 1", "Genesis 2:1-4"],
       inspiration: ["Exodus 20:11", "Psalm 90:4", "Hebrews 11:3"],
@@ -1435,6 +1524,7 @@ const QUESTIONS = {
     },
     {
       id: "p28",
+      num: 540,
       prompt: "Are human beings souls who have bodies, or embodied creatures whose hope is resurrection? What happens to a person between death and the resurrection?",
       passage: ["2 Corinthians 5:1-10"],
       inspiration: ["Genesis 2:7", "Luke 23:42-43", "Philippians 1:21-24", "1 Corinthians 15:42-44"],
@@ -1452,6 +1542,7 @@ const QUESTIONS = {
     },
     {
       id: "p29",
+      num: 509,
       prompt: "The Creed confesses \"one, holy, catholic, and apostolic Church.\" What makes the church one, and why do Christians disagree about where that church is found?",
       passage: ["Ephesians 4:1-16"],
       inspiration: ["John 17:20-23", "Matthew 16:13-19", "1 Corinthians 1:10-13"],
@@ -1469,6 +1560,7 @@ const QUESTIONS = {
     },
     {
       id: "p30",
+      num: 110,
       prompt: "Isaiah calls God \"a God who hides himself.\" If God wants to be known, why isn't he more obvious? What might God's hiddenness be for?",
       passage: ["Isaiah 45:15-19"],
       inspiration: ["Psalm 13:1-2", "Romans 1:19-20", "Acts 17:26-27", "John 20:29"],
