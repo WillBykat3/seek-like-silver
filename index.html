@@ -80,6 +80,11 @@
       <section class="browse" aria-labelledby="browse-title">
         <h2 class="section-title browse-title" id="browse-title">Or choose a topic</h2>
         <div class="chips" id="topic-chips"></div>
+        <button type="button" class="all-questions-btn" id="all-questions-btn">
+          <span class="all-q-title">All questions</span>
+          <span class="all-q-desc">See every question at every level and pick any one to study.</span>
+          <span class="all-q-arrow" aria-hidden="true">→</span>
+        </button>
       </section>
     </section>
 
@@ -230,6 +235,14 @@
       <h2 class="library-heading" id="glossary">Glossary</h2>
       <p class="library-intro">Words you'll meet in the questions. In a question, tap or hover a dotted word to see its meaning.</p>
       <dl class="glossary-list" id="glossary-list"></dl>
+    </section>
+
+    <!-- All questions -->
+    <section id="view-all" class="view" hidden>
+      <button class="link-button" data-nav="home">← Back</button>
+      <h1 class="section-title">All questions</h1>
+      <p class="library-intro" id="all-intro"></p>
+      <div id="all-list"></div>
     </section>
 
     <!-- Stats (site owner only) -->

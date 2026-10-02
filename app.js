@@ -444,7 +444,7 @@ async function renderVerseOfTheDay(run) {
 
 function showView(name) {
   if (name !== "question" && location.hash.startsWith("#q=")) history.replaceState(null, "", location.pathname + location.search);
-  for (const v of ["home", "question", "answers", "groups", "library", "settings", "stats"]) {
+  for (const v of ["home", "question", "answers", "groups", "library", "settings", "stats", "all"]) {
     $("view-" + v).hidden = v !== name;
   }
   document.querySelectorAll(".nav-link").forEach((b) => {
@@ -456,6 +456,7 @@ function showView(name) {
   if (name === "library") { renderLibrary(); renderGlossaryList(); }
   if (name === "groups") renderGroups();
   if (name === "stats") renderStats();
+  if (name === "all") renderAllQuestions();
   hideTerm();
   window.scrollTo(0, 0);
 }
@@ -2076,6 +2077,8 @@ function handleHash() {
   if ((m = h.match(/^#q=([a-z]\d{1,3})$/))) {
     const q = QUESTION_INDEX.get(m[1]);
     if (q && (!state.question || state.question.id !== q.id || $("view-question").hidden)) openQuestion(q, q.level);
+  } else if (h === "#all") {
+    showView("all");
   } else if (h === "#stats") {
     showView("stats");
   } else if ((m = h.match(/^#join=([A-Fa-f0-9]{10})$/))) {
@@ -2219,6 +2222,48 @@ function renderWeekChart(weeks) {
   }
 }
 
+// ─────────────────────────── All questions ───────────────────────────
+
+function renderAllQuestions() {
+  const wrap = $("all-list");
+  wrap.replaceChildren();
+  const total = QUESTION_INDEX.size;
+  const done = [...QUESTION_INDEX.keys()].filter((id) => state.answers.has(id)).length;
+  $("all-intro").textContent = total + " questions" + (state.user ? " · you've answered " + done : "") + ". Pick any one to study.";
+  const mine = studyLevel();
+  const order = Object.keys(LEVEL_LABELS).sort((x, y) => (x === mine ? -1 : y === mine ? 1 : 0));
+  for (const level of order) {
+    const qs = QUESTIONS[level];
+    const section = document.createElement("section");
+    section.className = "all-level level-" + level;
+    const head = document.createElement("h2");
+    head.className = "all-level-title";
+    head.append(Object.assign(document.createElement("span"), { className: "tesserae", ariaHidden: "true" }),
+                Object.assign(document.createElement("span"), { textContent: LEVEL_LABELS[level] }),
+                Object.assign(document.createElement("span"), { className: "all-level-count", textContent: qs.length + " questions" }));
+    const ol = document.createElement("ol");
+    ol.className = "all-q-list";
+    for (const raw of qs) {
+      const q = QUESTION_INDEX.get(raw.id);
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "all-q-item";
+      b.append(Object.assign(document.createElement("span"), { className: "all-q-prompt", textContent: q.prompt }));
+      const meta = document.createElement("span");
+      meta.className = "all-q-meta";
+      meta.textContent = q.passage.map((r) => r.replace(/-/g, "–")).join("; ") + " · " + (q.topics || []).map((t) => TOPICS[t].label).join(", ");
+      b.append(meta);
+      if (state.answers.has(q.id)) b.append(Object.assign(document.createElement("span"), { className: "all-q-done", textContent: "Answered" }));
+      b.onclick = () => { state.topic = null; openQuestion(q, q.level); };
+      li.append(b);
+      ol.append(li);
+    }
+    section.append(head, ol);
+    wrap.append(section);
+  }
+}
+
 // ─────────────────────────── Wire up ───────────────────────────
 
 document.querySelectorAll("[data-nav]").forEach((el) =>
@@ -2240,6 +2285,7 @@ document.querySelectorAll("[data-level]").forEach((el) =>
 $("next-question").addEventListener("click", () => { const q = pickQuestion(state.level); openQuestion(q, q.level); });
 $("save-answer").addEventListener("click", saveAnswer);
 $("cancel-edit").addEventListener("click", cancelEdit);
+$("all-questions-btn").addEventListener("click", () => showView("all"));
 // Printing a handout opens every section, then puts them back.
 let printOpened = [];
 window.addEventListener("beforeprint", () => {
