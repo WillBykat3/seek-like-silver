@@ -977,3 +977,5 @@ select.level-pill:focus-visible { outline: 2px solid var(--pigment); outline-off
 .all-q-prompt { font-family: var(--serif); font-size: 1.02rem; line-height: 1.4; }
 .all-q-meta { grid-column: 1; font-size: 0.82rem; color: var(--muted); }
 .all-q-done { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 0.8rem; font-weight: 700; color: var(--success); }
+.mode-choice { --pigment: var(--lapis); --pigment-deep: var(--lapis-deep); --pigment-tint: var(--lapis-tint); }
+.mode-choice .level-choice-count { text-align: right; }

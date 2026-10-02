@@ -68,7 +68,7 @@ function questionsFor(level, topic) {
 }
 
 function pickQuestion(level) {
-  let list = questionsFor(level, state.topic);
+  let list = questionsFor(state.anyLevel ? null : level, state.topic);
   if (!list.length) list = questionsFor(null, state.topic); // no questions at this level on this topic
   const notCurrent = list.filter((q) => !state.question || q.id !== state.question.id);
   const unanswered = notCurrent.filter((q) => !state.answers.has(q.id));
@@ -120,6 +120,7 @@ function chooseTopicLevel(topicKey) {
 }
 
 function startTopic(topicKey, level) {
+  state.anyLevel = false;
   state.topic = topicKey;
   state.question = null;
   const q = pickQuestion(level);
@@ -482,8 +483,8 @@ function openQuestion(q, level) {
 
   renderLevelSwitch(level);
   const topic = state.topic && TOPICS[state.topic];
-  $("q-topic").hidden = !topic;
-  $("q-topic").textContent = topic ? topic.label : "";
+  $("q-topic").hidden = !topic && !state.anyLevel;
+  $("q-topic").textContent = topic ? topic.label : state.anyLevel ? "Random: all levels" : "";
   $("q-topic").className = "topic-pill" + (topic ? " topic-" + state.topic : "");
   $("view-question").dataset.level = level; // drives the level color
   renderWithTerms($("q-prompt"), q.prompt);
@@ -2255,7 +2256,7 @@ function renderAllQuestions() {
       meta.textContent = q.passage.map((r) => r.replace(/-/g, "–")).join("; ") + " · " + (q.topics || []).map((t) => TOPICS[t].label).join(", ");
       b.append(meta);
       if (state.answers.has(q.id)) b.append(Object.assign(document.createElement("span"), { className: "all-q-done", textContent: "Answered" }));
-      b.onclick = () => { state.topic = null; openQuestion(q, q.level); };
+      b.onclick = () => { state.topic = null; state.anyLevel = false; openQuestion(q, q.level); };
       li.append(b);
       ol.append(li);
     }
@@ -2277,6 +2278,7 @@ document.querySelectorAll("[data-level]").forEach((el) =>
   el.addEventListener("click", () => {
     state.question = null;
     state.topic = null;
+    state.anyLevel = false;
     const lvl = el.dataset.level;
     openQuestion(pickQuestion(lvl), lvl);
   })
@@ -2285,7 +2287,16 @@ document.querySelectorAll("[data-level]").forEach((el) =>
 $("next-question").addEventListener("click", () => { const q = pickQuestion(state.level); openQuestion(q, q.level); });
 $("save-answer").addEventListener("click", saveAnswer);
 $("cancel-edit").addEventListener("click", cancelEdit);
-$("all-questions-btn").addEventListener("click", () => showView("all"));
+$("all-questions-btn").addEventListener("click", () => $("all-dialog").showModal());
+$("all-choose").addEventListener("click", () => { $("all-dialog").close(); showView("all"); });
+$("all-random").addEventListener("click", () => {
+  $("all-dialog").close();
+  state.topic = null;
+  state.anyLevel = true; // "New question" keeps picking from every level
+  state.question = null;
+  const q = pickQuestion(null);
+  openQuestion(q, q.level);
+});
 // Printing a handout opens every section, then puts them back.
 let printOpened = [];
 window.addEventListener("beforeprint", () => {
@@ -2295,6 +2306,7 @@ window.addEventListener("beforeprint", () => {
 window.addEventListener("afterprint", () => { printOpened.forEach((d) => { d.open = false; }); printOpened = []; });
 $("q-level").addEventListener("change", (e) => {
   const level = e.target.value;
+  state.anyLevel = false;
   state.question = null;
   const q = pickQuestion(level);
   openQuestion(q, q.level);

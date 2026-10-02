@@ -82,7 +82,7 @@
         <div class="chips" id="topic-chips"></div>
         <button type="button" class="all-questions-btn" id="all-questions-btn">
           <span class="all-q-title">All questions</span>
-          <span class="all-q-desc">See every question at every level and pick any one to study.</span>
+          <span class="all-q-desc">Pick any question yourself, or let the site choose one at random.</span>
           <span class="all-q-arrow" aria-hidden="true">→</span>
         </button>
       </section>
@@ -392,6 +392,25 @@
   </footer>
 
   <div class="term-pop" id="term-pop" role="tooltip" hidden></div>
+
+  <!-- All questions: choose or random -->
+  <dialog id="all-dialog" class="dialog level-dialog" aria-labelledby="all-dialog-title">
+    <form method="dialog" class="dialog-close-row">
+      <button class="link-button" aria-label="Close">✕</button>
+    </form>
+    <h2 id="all-dialog-title">All questions</h2>
+    <p class="muted">How would you like to study?</p>
+    <div class="level-choices">
+      <button type="button" class="level-choice mode-choice" id="all-choose">
+        <span class="level-choice-name">Choose a question</span>
+        <span class="level-choice-count">See the full list</span>
+      </button>
+      <button type="button" class="level-choice mode-choice" id="all-random">
+        <span class="level-choice-name">Surprise me</span>
+        <span class="level-choice-count">A random question from any level</span>
+      </button>
+    </div>
+  </dialog>
 
   <!-- Level picker for topics -->
   <dialog id="level-dialog" class="dialog level-dialog" aria-labelledby="level-dialog-title">
