@@ -58,6 +58,9 @@ const answerEditor = createRichEditor({
 // ─────────────────────────── Question lookup ───────────────────────────
 
 const QUESTION_INDEX = new Map();
+// "b12" -> 12: each level is numbered 1–30 (IDs never change, so numbers stay put).
+const questionNumber = (q) => Number(String(q.id).replace(/^\D+/, ""));
+const questionLabel = (q) => LEVEL_LABELS[q.level] + " · Question " + questionNumber(q);
 for (const [level, list] of Object.entries(QUESTIONS)) {
   for (const q of list) QUESTION_INDEX.set(q.id, { ...q, level });
 }
@@ -487,6 +490,7 @@ function openQuestion(q, level) {
   $("q-topic").textContent = topic ? topic.label : state.anyLevel ? "Random: all levels" : "";
   $("q-topic").className = "topic-pill" + (topic ? " topic-" + state.topic : "");
   $("view-question").dataset.level = level; // drives the level color
+  $("q-number").textContent = "Question " + questionNumber({ id: q.id });
   renderWithTerms($("q-prompt"), q.prompt);
 
   renderVerseList($("q-passage"), q.passage);
@@ -625,7 +629,7 @@ function renderAnswers() {
 
     const meta = document.createElement("div");
     meta.className = "meta level-" + level;
-    meta.textContent = LEVEL_LABELS[level] + " · " + (rows.length === 1 ? "1 answer" : rows.length + " answers");
+    meta.textContent = LEVEL_LABELS[level] + (q ? " · Question " + questionNumber(q) : "") + " · " + (rows.length === 1 ? "1 answer" : rows.length + " answers");
 
     const title = document.createElement("h3");
     title.textContent = q ? q.prompt : "(This question is no longer in the bank)";
@@ -1831,7 +1835,7 @@ function exportAnswers(kind) {
   for (const [qid, list] of byQ) {
     const q = QUESTION_INDEX.get(qid);
     lines.push("────────────────────────────────────────");
-    lines.push((LEVEL_LABELS[q ? q.level : list[0].level] || "") + " · " + qid);
+    lines.push(q ? questionLabel(q) : (LEVEL_LABELS[list[0].level] || "") + " · " + qid);
     lines.push(q ? q.prompt : "(This question is no longer in the bank)");
     if (q) lines.push("In question: " + q.passage.join("; ").replace(/-/g, "–"));
     lines.push("");
@@ -2016,7 +2020,7 @@ async function loadGroupFeed(g, feed, btn) {
     const item = document.createElement("div");
     item.className = "feed-item";
     if (q) {
-      const open = Object.assign(document.createElement("button"), { type: "button", className: "link-button feed-question", textContent: q.prompt });
+      const open = Object.assign(document.createElement("button"), { type: "button", className: "link-button feed-question", textContent: questionLabel(q) + ": " + q.prompt });
       open.onclick = () => openQuestion(q, q.level);
       item.append(open);
     }
@@ -2250,6 +2254,7 @@ function renderAllQuestions() {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "all-q-item";
+      b.append(Object.assign(document.createElement("span"), { className: "all-q-num", textContent: questionNumber(q), ariaLabel: "Question " + questionNumber(q) }));
       b.append(Object.assign(document.createElement("span"), { className: "all-q-prompt", textContent: q.prompt }));
       const meta = document.createElement("span");
       meta.className = "all-q-meta";
