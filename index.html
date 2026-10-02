@@ -454,8 +454,8 @@
 
     <div class="divider"><span>or use your email</span></div>
 
-    <form id="email-form" class="email-form">
-      <input type="email" id="email" placeholder="you@example.com" required autocomplete="email">
+    <form id="email-form" class="email-form" data-form-type="login">
+      <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="username email" data-form-type="email">
       <button class="btn btn-full" type="submit">Email me a code</button>
     </form>
 

@@ -932,7 +932,7 @@ function openSignIn() {
   $("email-form").hidden = false;
   $("code-form").hidden = true;
   setStatus("signin-status", db ? "" : "Sign-in couldn't load. Check your connection or ad blocker, then refresh.", db ? "" : "err");
-  if (!$("signin-dialog").open) $("signin-dialog").showModal();
+  if (!$("signin-dialog").open) openSoftModal($("signin-dialog"));
   setUpGoogleButton();
   setUpYouVersionButton();
 }
@@ -1542,7 +1542,7 @@ async function verifiedTotpFactor() {
   return ((data && data.totp) || []).find((f) => f.status === "verified") || null;
 }
 
-const mfaLoginCode = createCodeBoxes($("mfa-login-code"), 6, async (code) => {
+const mfaLoginCode = createCodeBoxes($("mfa-login-code"), 6, async (code) => { // password managers may fill this
   if (mfaLoginBusy) return;
   mfaLoginBusy = true;
   mfaLoginCode.setDisabled(true);
@@ -1559,12 +1559,12 @@ const mfaLoginCode = createCodeBoxes($("mfa-login-code"), 6, async (code) => {
   }
   $("mfa-dialog").close();
   await refreshAfterSignIn();
-}, false);
+});
 
 function promptForAuthenticator() {
   setStatus("mfa-login-status", "");
   mfaLoginCode.boxes.forEach((b) => (b.value = ""));
-  if (!$("mfa-dialog").open) $("mfa-dialog").showModal();
+  if (!$("mfa-dialog").open) openSoftModal($("mfa-dialog"));
   mfaLoginCode.focus();
 }
 
@@ -2273,6 +2273,39 @@ function renderAllQuestions() {
     wrap.append(section);
   }
 }
+
+// ─────────────────────────── Sign-in popups that password managers can reach ───────────────────────────
+// A dialog opened with showModal() sits in the browser's "top layer" and makes the rest of
+// the page inert, which hides password managers' own popups (Dashlane's list flashes and
+// vanishes). These two dialogs open normally instead, with our own backdrop, and only the
+// site's own content is made inert, so a password manager's popup stays usable.
+function openSoftModal(d) {
+  if (d.open) return;
+  let shade = document.getElementById("soft-backdrop");
+  if (!shade) {
+    shade = Object.assign(document.createElement("div"), { id: "soft-backdrop", className: "soft-backdrop" });
+    document.body.append(shade);
+  }
+  shade.hidden = false;
+  d.classList.add("soft-modal");
+  d.show();
+  for (const el of document.querySelectorAll("body > header, body > main, body > footer")) el.inert = true;
+  setTimeout(() => {
+    const usable = (el) => el.offsetParent !== null && !el.disabled;
+    const first = [...d.querySelectorAll("input")].find(usable) || [...d.querySelectorAll("button")].find(usable);
+    if (first) first.focus();
+  }, 0);
+}
+function closeSoftModalCleanup() {
+  if ([...document.querySelectorAll("dialog.soft-modal")].some((x) => x.open)) return;
+  const shade = document.getElementById("soft-backdrop");
+  if (shade) shade.hidden = true;
+  for (const el of document.querySelectorAll("body > header, body > main, body > footer")) el.inert = false;
+}
+for (const id of ["signin-dialog", "mfa-dialog"]) document.getElementById(id).addEventListener("close", closeSoftModalCleanup);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && $("signin-dialog").open) { e.preventDefault(); $("signin-dialog").close(); } // the code prompt can't be skipped
+});
 
 // ─────────────────────────── Wire up ───────────────────────────
 
