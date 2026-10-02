@@ -112,21 +112,31 @@
             <p class="help-hint">Other verses that help you answer</p>
             <ul id="q-inspiration" class="verse-list"></ul>
           </div>
-          <div class="help-block help-wide">
-            <h3>Look up</h3>
-            <ul id="q-readings" class="reading-list"></ul>
-          </div>
         </div>
 
-        <div class="fathers-block">
-          <h3>What the early church fathers said</h3>
-          <p class="help-hint">Passages where the church's earliest teachers take up this question</p>
-          <ul id="q-fathers" class="reading-list fathers-list"></ul>
-        </div>
+        <div class="more-sections">
+          <details class="more-block" id="more-readings">
+            <summary><span class="more-title">Look up</span><span class="more-count" id="q-readings-count"></span></summary>
+            <div class="more-body">
+              <p class="help-hint">Books by theologians that take up this question</p>
+              <ul id="q-readings" class="reading-list"></ul>
+            </div>
+          </details>
 
-        <div class="tradition-block">
-          <h3>Go deeper in your tradition <span class="muted" id="q-tradition-label"></span></h3>
-          <ul id="q-tradition" class="reading-list"></ul>
+          <details class="more-block fathers-block" id="more-fathers">
+            <summary><span class="more-title">What the early church fathers said</span><span class="more-count" id="q-fathers-count"></span></summary>
+            <div class="more-body">
+              <p class="help-hint">Passages where the church's earliest teachers take up this question</p>
+              <ul id="q-fathers" class="reading-list fathers-list"></ul>
+            </div>
+          </details>
+
+          <details class="more-block tradition-block" id="more-tradition">
+            <summary><span class="more-title">Go deeper in your tradition</span><span class="more-count"><span id="q-tradition-label"></span></span></summary>
+            <div class="more-body">
+              <ul id="q-tradition" class="reading-list"></ul>
+            </div>
+          </details>
         </div>
         <div class="print-notes" aria-hidden="true">
           <h3>Notes</h3>

@@ -913,3 +913,32 @@ select.level-pill:focus-visible { outline: 2px solid var(--pigment); outline-off
   .term-pop { transform: none; }
 }
 @media print { .verse-list a, .reading-list a, .fathers-list a { background: none; } }
+
+/* ───────── Collapsible extras on a question ───────── */
+.more-sections { margin-top: 18px; display: grid; gap: 0; }
+.more-block { border-top: 1px solid var(--line); margin: 0 !important; padding: 0 !important; }
+.more-block summary {
+  list-style: none; cursor: pointer; user-select: none;
+  display: flex; align-items: baseline; gap: 10px; padding: 12px 2px;
+}
+.more-block summary::-webkit-details-marker { display: none; }
+.more-block summary::before {
+  content: ""; flex: none; width: 8px; height: 8px; align-self: center;
+  border-right: 2px solid var(--pigment, var(--silver)); border-bottom: 2px solid var(--pigment, var(--silver));
+  transform: rotate(-45deg); transition: transform 0.25s var(--ease-out);
+}
+.more-block[open] summary::before { transform: rotate(45deg); }
+.more-title { font-family: var(--display); font-size: 1.15rem; font-weight: 700; }
+.more-count { font-size: 0.85rem; color: var(--muted); margin-left: auto; text-align: right; }
+.more-block summary:hover .more-title { color: var(--pigment-deep, var(--ink)); }
+.more-block summary:focus-visible { outline: 2px solid var(--pigment, var(--silver)); outline-offset: 2px; border-radius: 4px; }
+.more-body { padding: 0 2px 14px 20px; }
+.more-block[open] .more-body { animation: preview-in 0.3s var(--ease-out) both; }
+@media print {
+  .more-block summary::before, .more-count { display: none; }
+  .more-body { padding-left: 0; }
+}
+@media print {
+  /* Show folded sections on paper too (backup for browsers that skip beforeprint). */
+  .more-block::details-content { content-visibility: visible; display: block; height: auto; }
+}

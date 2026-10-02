@@ -506,6 +506,11 @@ function openQuestion(q, level) {
 
   renderFathers(q);
   renderTradition();
+  const n = (k) => (k === 1 ? "1 book" : k + " books");
+  $("q-readings-count").textContent = n(q.readings.length);
+  $("q-fathers-count").textContent = (q.fathers || []).length === 1 ? "1 passage" : (q.fathers || []).length + " passages";
+  // Start each question with the extras folded up, so the question and verses stay in view.
+  document.querySelectorAll("#view-question .more-block").forEach((d) => { d.open = false; });
 
   state.editing = null;
   answerEditor.clear();
@@ -585,7 +590,7 @@ function splitSource(s) {
 
 function renderTradition() {
   const t = TRADITIONS[state.profile.denomination] || TRADITIONS.general;
-  $("q-tradition-label").textContent = "(" + t.label + ")";
+  $("q-tradition-label").textContent = t.label;
   const list = $("q-tradition");
   list.replaceChildren();
   for (const s of t.sources) {
@@ -2235,6 +2240,13 @@ document.querySelectorAll("[data-level]").forEach((el) =>
 $("next-question").addEventListener("click", () => { const q = pickQuestion(state.level); openQuestion(q, q.level); });
 $("save-answer").addEventListener("click", saveAnswer);
 $("cancel-edit").addEventListener("click", cancelEdit);
+// Printing a handout opens every section, then puts them back.
+let printOpened = [];
+window.addEventListener("beforeprint", () => {
+  printOpened = [...document.querySelectorAll(".more-block:not([open])")];
+  printOpened.forEach((d) => { d.open = true; });
+});
+window.addEventListener("afterprint", () => { printOpened.forEach((d) => { d.open = false; }); printOpened = []; });
 $("q-level").addEventListener("change", (e) => {
   const level = e.target.value;
   state.question = null;
