@@ -95,6 +95,7 @@ Google's menus get renamed from time to time; if a label doesn't match, look for
 - `supabase-migrations/002-more-translations.sql`: allows the 18 translations in Settings.
 - `supabase-migrations/003-account-linking-and-mfa.sql`: YouVersion account connections, plus the rule that locks an account's answers behind its authenticator code once that's turned on.
 - `supabase-migrations/004-merge-accounts.sql`: lets the merge-accounts function find which account owns a Google login.
+- `supabase-migrations/006-site-stats.sql`: the owner-only Stats page. After running it, add yourself as admin with the one-line insert shown at the top of that file (using your own sign-in email).
 - `supabase-migrations/005-answers-groups.sql`: more than one answer per question, sharing answers with groups, and private study groups. Until it's run, the site keeps one answer per question and Groups says it isn't switched on.
 
 **Server functions** (Edge Functions → Deploy a new function → Via Editor; paste the file; Deploy; then turn **Verify JWT off** for each). Both use the secret `YOUVERSION_APP_KEY` (Edge Functions → Secrets).

@@ -367,7 +367,7 @@ async function renderVerseOfTheDay(run) {
 
 function showView(name) {
   if (name !== "question" && location.hash.startsWith("#q=")) history.replaceState(null, "", location.pathname + location.search);
-  for (const v of ["home", "question", "answers", "groups", "library", "settings"]) {
+  for (const v of ["home", "question", "answers", "groups", "library", "settings", "stats"]) {
     $("view-" + v).hidden = v !== name;
   }
   document.querySelectorAll(".nav-link").forEach((b) => {
@@ -378,6 +378,7 @@ function showView(name) {
   if (name === "settings") renderSettings();
   if (name === "library") { renderLibrary(); renderGlossaryList(); }
   if (name === "groups") renderGroups();
+  if (name === "stats") renderStats();
   hideTerm();
   window.scrollTo(0, 0);
 }
@@ -1969,11 +1970,146 @@ function handleHash() {
   if ((m = h.match(/^#q=([a-z]\d{1,3})$/))) {
     const q = QUESTION_INDEX.get(m[1]);
     if (q && (!state.question || state.question.id !== q.id || $("view-question").hidden)) openQuestion(q, q.level);
+  } else if (h === "#stats") {
+    showView("stats");
   } else if ((m = h.match(/^#join=([A-Fa-f0-9]{10})$/))) {
     stashPendingJoin(m[1].toUpperCase());
     history.replaceState(null, "", location.pathname + location.search);
     showView("groups");
     if (!state.user) openSignIn();
+  }
+}
+
+// ─────────────────────────── Site stats (owner only) ───────────────────────────
+// The database decides who's an admin (supabase-migrations/006-site-stats.sql);
+// hiding the link is only a convenience.
+
+async function checkAdmin() {
+  $("stats-link").hidden = true;
+  if (!state.user) return;
+  const { data, error } = await db.rpc("sls_is_admin");
+  $("stats-link").hidden = !(!error && data === true);
+}
+
+const fmt = (n) => Number(n || 0).toLocaleString();
+
+async function renderStats() {
+  $("stats-body").hidden = true;
+  if (!state.user) return setStatus("stats-status", "Sign in to see stats.");
+  setStatus("stats-status", "Loading…");
+  const { data: s, error } = await db.rpc("sls_site_stats");
+  if (error) {
+    const msg = /not_allowed/.test(error.message || "") ? "This page is only for the site owner (and needs your authenticator code if you use one)."
+      : /sls_site_stats|schema cache|does not exist/i.test(error.message || "") ? "Stats aren't switched on yet. (Run supabase-migrations/006-site-stats.sql.)"
+      : "Couldn't load stats: " + error.message;
+    return setStatus("stats-status", msg, "err");
+  }
+  setStatus("stats-status", "");
+  $("stats-body").hidden = false;
+
+  const tiles = [
+    ["Accounts", s.users, fmt(s.new_7_days) + " new this week · " + fmt(s.new_30_days) + " this month"],
+    ["Signed in, last 30 days", s.active_30_days, fmt(s.active_7_days) + " in the last 7 days"],
+    ["Answers", s.answers, fmt(s.answers_7_days) + " this week · from " + fmt(s.people_who_answered) + " people"],
+    ["Groups", s.groups, fmt(s.group_members) + " memberships · " + fmt(s.shared_answers) + " shared answers"],
+    ["Sign-in methods", null, "Google " + fmt(s.with_google) + " · Email " + fmt(s.with_email) + " · YouVersion " + fmt(s.with_youversion)],
+    ["Authenticator on", s.with_authenticator, s.users ? Math.round(100 * s.with_authenticator / s.users) + "% of accounts" : ""]
+  ];
+  const wrap = $("stat-tiles");
+  wrap.replaceChildren();
+  for (const [label, value, sub] of tiles) {
+    const t = document.createElement("div");
+    t.className = "stat-tile";
+    t.append(Object.assign(document.createElement("span"), { className: "stat-label", textContent: label }));
+    if (value !== null) t.append(Object.assign(document.createElement("span"), { className: "stat-value", textContent: fmt(value) }));
+    t.append(Object.assign(document.createElement("span"), { className: "stat-sub", textContent: sub }));
+    wrap.append(t);
+  }
+
+  renderWeekChart(s.signups_by_week || []);
+
+  const levels = ["beginner", "moderate", "philosopher"];
+  const byLevel = s.answers_by_level || {};
+  const maxL = Math.max(1, ...levels.map((l) => byLevel[l] || 0));
+  const lb = $("level-bars");
+  lb.replaceChildren();
+  for (const l of levels) {
+    const n = byLevel[l] || 0;
+    const row = document.createElement("div");
+    row.className = "level-bar-row level-" + l;
+    const bar = Object.assign(document.createElement("span"), { className: "level-bar-fill" });
+    bar.style.width = (n ? Math.max(2, 100 * n / maxL) : 0) + "%";
+    const track = Object.assign(document.createElement("span"), { className: "level-bar-track" });
+    track.append(bar);
+    row.append(Object.assign(document.createElement("span"), { className: "level-bar-label", textContent: LEVEL_LABELS[l] }), track,
+               Object.assign(document.createElement("span"), { className: "level-bar-value", textContent: fmt(n) }));
+    lb.append(row);
+  }
+
+  const tq = $("top-questions");
+  tq.replaceChildren();
+  for (const t of s.top_questions || []) {
+    const q = QUESTION_INDEX.get(t.question_id);
+    const li = document.createElement("li");
+    const b = Object.assign(document.createElement("button"), { type: "button", className: "link-button feed-question", textContent: q ? q.prompt : t.question_id });
+    if (q) b.onclick = () => openQuestion(q, q.level);
+    li.append(b, Object.assign(document.createElement("span"), { className: "stat-sub", textContent: " " + fmt(t.answers) + (t.answers === 1 ? " answer" : " answers") }));
+    tq.append(li);
+  }
+  if (!tq.childElementCount) tq.append(Object.assign(document.createElement("li"), { className: "muted", textContent: "No answers yet." }));
+  $("stats-time").textContent = "Updated " + new Date(s.generated_at).toLocaleString() + ". Includes your own and any test accounts.";
+}
+
+function renderWeekChart(weeks) {
+  const box = $("week-chart");
+  box.replaceChildren();
+  const max = Math.max(1, ...weeks.map((w) => w.users));
+  const nice = max <= 4 ? max : Math.ceil(max / 5) * 5;
+  const W = 640, H = 200, padL = 32, padB = 26, padT = 10;
+  const plotW = W - padL - 8, plotH = H - padB - padT;
+  const gap = 2, bw = plotW / weeks.length - 6;
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", "New accounts per week for the last 12 weeks. Table below.");
+  const el = (tag, attrs, text) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; svg.append(e); return e; };
+  for (const v of [0, Math.round(nice / 2), nice]) {
+    const y = padT + plotH - (v / nice) * plotH;
+    el("line", { x1: padL, x2: W - 8, y1: y, y2: y, class: "grid" });
+    el("text", { x: padL - 6, y: y + 4, class: "axis", "text-anchor": "end" }, String(v));
+  }
+  const tip = Object.assign(document.createElement("div"), { className: "chart-tip", hidden: true });
+  weeks.forEach((w, i) => {
+    const x = padL + i * (plotW / weeks.length) + 3;
+    const h = (w.users / nice) * plotH;
+    const y = padT + plotH - h;
+    const label = new Date(w.week + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    if (h > 0) {
+      const r = Math.min(4, bw / 2, h);
+      el("path", { class: "bar", d: `M${x},${padT + plotH} V${y + r} Q${x},${y} ${x + r},${y} H${x + bw - r} Q${x + bw},${y} ${x + bw},${y + r} V${padT + plotH} Z` });
+    }
+    if (i % 2 === weeks.length % 2 || i === weeks.length - 1) el("text", { x: x + bw / 2, y: H - 8, class: "axis", "text-anchor": "middle" }, label);
+    const hit = el("rect", { x: x - 3 + gap / 2, y: padT, width: plotW / weeks.length - gap, height: plotH, class: "hit", tabindex: 0 });
+    const show = () => {
+      tip.hidden = false;
+      tip.textContent = "Week of " + label + ": " + fmt(w.users) + (w.users === 1 ? " new account" : " new accounts");
+      const bb = box.getBoundingClientRect(), hb = hit.getBoundingClientRect();
+      tip.style.left = Math.min(bb.width - 170, Math.max(0, hb.left - bb.left + hb.width / 2 - 85)) + "px";
+      hit.classList.add("on");
+    };
+    const hide = () => { tip.hidden = true; hit.classList.remove("on"); };
+    hit.addEventListener("mouseenter", show); hit.addEventListener("focus", show);
+    hit.addEventListener("mouseleave", hide); hit.addEventListener("blur", hide);
+  });
+  box.append(svg, tip);
+  const tb = $("week-table").querySelector("tbody");
+  tb.replaceChildren();
+  for (const w of weeks) {
+    const tr = document.createElement("tr");
+    tr.append(Object.assign(document.createElement("td"), { textContent: new Date(w.week + "T12:00:00").toLocaleDateString() }),
+              Object.assign(document.createElement("td"), { textContent: fmt(w.users) }));
+    tb.append(tr);
   }
 }
 
@@ -2023,6 +2159,7 @@ $("settings-form").addEventListener("submit", saveSettings);
 let refreshedOnce = false;
 async function refreshAfterSignIn() {
   await loadUserData();
+  checkAdmin();
   if (!$("view-question").hidden && state.question) {
     renderTradition();
     openQuestion(state.question, state.level);

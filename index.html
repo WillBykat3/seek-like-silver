@@ -38,6 +38,7 @@
       <button class="nav-link" data-nav="groups">Groups</button>
       <button class="nav-link" data-nav="library">Library</button>
       <button class="nav-link" data-nav="settings">Settings</button>
+      <button class="nav-link" data-nav="stats" id="stats-link" hidden>Stats</button>
       <button class="btn btn-small" id="auth-button">Sign in</button>
     </nav>
   </header>
@@ -215,6 +216,36 @@
       <h2 class="library-heading" id="glossary">Glossary</h2>
       <p class="library-intro">Words you'll meet in the questions. In a question, tap or hover a dotted word to see its meaning.</p>
       <dl class="glossary-list" id="glossary-list"></dl>
+    </section>
+
+    <!-- Stats (site owner only) -->
+    <section id="view-stats" class="view" hidden>
+      <h1 class="section-title">Site stats</h1>
+      <p class="library-intro">Only you can see this page. Counts only: no one's email or answers are shown here.</p>
+      <p class="status" id="stats-status" role="status"></p>
+      <div id="stats-body" hidden>
+        <div class="stat-tiles" id="stat-tiles"></div>
+        <section class="stat-panel">
+          <h2 class="panel-title">New accounts per week</h2>
+          <p class="muted stat-sub">Last 12 weeks, by the week they signed up (weeks start Monday).</p>
+          <div class="week-chart" id="week-chart"></div>
+          <details class="stat-table">
+            <summary>Show as a table</summary>
+            <table id="week-table"><thead><tr><th>Week of</th><th>New accounts</th></tr></thead><tbody></tbody></table>
+          </details>
+        </section>
+        <div class="stat-two">
+          <section class="stat-panel">
+            <h2 class="panel-title">Answers by level</h2>
+            <div class="level-bars" id="level-bars"></div>
+          </section>
+          <section class="stat-panel">
+            <h2 class="panel-title">Most-answered questions</h2>
+            <ol class="top-questions" id="top-questions"></ol>
+          </section>
+        </div>
+        <p class="muted stat-sub" id="stats-time"></p>
+      </div>
     </section>
 
     <!-- Groups -->

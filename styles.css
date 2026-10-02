@@ -749,3 +749,42 @@ textarea:focus, input:focus, select:focus { outline: 2px solid var(--silver); ou
   .answer-editor font[color="#6b3fa0"] { color: #c6a6ee; }
   .answer-editor span[style*="background-color"] { color: #121726; }
 }
+
+/* ───────── Site stats ───────── */
+.stat-tiles { display: grid; gap: 12px; grid-template-columns: repeat(2, 1fr); margin: 12px 0 18px; }
+@media (min-width: 700px) { .stat-tiles { grid-template-columns: repeat(3, 1fr); } }
+.stat-tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+.stat-label { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.stat-value { font-family: var(--display); font-size: 2.3rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat-sub { font-size: 0.85rem; color: var(--muted); }
+.stat-panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 14px; }
+.stat-two { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 700px) { .stat-two { grid-template-columns: 1fr 1fr; } .stat-two .stat-panel { margin-bottom: 0; } }
+.week-chart { position: relative; margin-top: 8px; }
+.week-chart svg { width: 100%; height: auto; display: block; }
+.week-chart .grid { stroke: var(--line); stroke-width: 1; }
+.week-chart .axis { fill: var(--muted); font-size: 11px; font-family: var(--sans); }
+.week-chart .bar { fill: var(--lapis); }
+.week-chart .hit { fill: transparent; cursor: default; outline: none; }
+.week-chart .hit.on { fill: var(--wash); fill-opacity: 0.5; }
+.chart-tip {
+  position: absolute; top: 0; width: 170px; text-align: center; pointer-events: none;
+  background: var(--ink); color: var(--bg); font-size: 0.85rem; border-radius: 6px; padding: 5px 8px;
+}
+.stat-table { margin-top: 10px; font-size: 0.92rem; }
+.stat-table summary { cursor: pointer; color: var(--muted); }
+.stat-table table { border-collapse: collapse; margin-top: 8px; }
+.stat-table th, .stat-table td { text-align: left; padding: 3px 18px 3px 0; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.level-bars { display: grid; gap: 10px; margin-top: 8px; }
+.level-bar-row { display: grid; grid-template-columns: 6.5em 1fr 3em; align-items: center; gap: 10px; }
+.level-bar-label { font-size: 0.95rem; }
+.level-bar-track { height: 12px; background: var(--wash); border-radius: 0 4px 4px 0; overflow: hidden; }
+.level-bar-fill { display: block; height: 100%; background: var(--pigment); border-radius: 0 4px 4px 0; }
+.level-bar-row.level-beginner { --pigment: var(--beginner); }
+.level-bar-row.level-moderate { --pigment: var(--moderate); }
+.level-bar-row.level-philosopher { --pigment: var(--philosopher); }
+.level-bar-value { text-align: right; font-variant-numeric: tabular-nums; }
+.top-questions { margin: 8px 0 0; padding-left: 20px; display: grid; gap: 8px; }
+.top-questions .feed-question { display: block; text-align: left; }
+.top-questions li::marker { font-family: var(--serif); }
+@media (max-width: 560px) { .week-chart .axis { font-size: 16px; } }
