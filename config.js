@@ -19,3 +19,5 @@ const YOUVERSION_REDIRECT_URI = "https://seeklikesilver.com/";
 // first deployed; renaming it later doesn't change the address.
 const MERGE_FUNCTION = "smooth-endpoint"; // the merge-accounts function (supabase/functions/merge-accounts)
 const DELETE_FUNCTION = "delete-account"; // the delete-account function (supabase/functions/delete-account)
+
+const AUTHENTICATOR_FUNCTION = "authenticator"; // sign in with an authenticator code (supabase/functions/authenticator)

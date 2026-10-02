@@ -459,6 +459,16 @@
       <button class="btn btn-full" type="submit">Email me a code</button>
     </form>
 
+    <button class="link-button authn-switch" type="button" id="use-authenticator">Use my authenticator app instead</button>
+
+    <form id="authn-form" class="email-form" data-form-type="login" hidden>
+      <p class="muted">Enter your email and the 6-digit code from your authenticator app.</p>
+      <input type="email" id="authn-email" name="email" placeholder="you@example.com" required autocomplete="username email" data-form-type="email">
+      <div class="otp" id="authn-code" role="group" aria-label="Authenticator code"></div>
+      <button class="btn btn-full" type="submit">Sign in</button>
+      <button class="link-button" type="button" id="authn-back">Email me a code instead</button>
+    </form>
+
     <form id="code-form" class="email-form" hidden>
       <p class="muted" id="code-sent-to"></p>
       <div class="otp" id="otp" role="group" aria-label="Sign-in code"></div>

@@ -1568,48 +1568,71 @@ function promptForAuthenticator() {
   mfaLoginCode.focus();
 }
 
+// ─────────────────────────── Authenticator sign-in (Settings) ───────────────────────────
+// The authenticator is a way to SIGN IN (instead of an emailed code), handled by the
+// "authenticator" server function. Setting it up retires Supabase's older two-step code.
+
+async function callAuthenticator(body) {
+  const { data, error } = await db.functions.invoke(AUTHENTICATOR_FUNCTION, { body });
+  if (!error) return { data };
+  const status = error.context && error.context.status;
+  const reason = await functionErrorReason(error);
+  return { error: reason, status, missing: status === 404 || /Failed to send/i.test(String(reason)) };
+}
+
+const AUTHN_ERRORS = {
+  invalid_code: "That code didn't match. Check the app and try the newest code.",
+  too_many_attempts: "Too many tries. Wait 15 minutes, or sign in with an emailed code instead.",
+  authenticator_required: "Enter your current authenticator code first (sign out and back in), then try again.",
+  no_pending_setup: "Start the setup again."
+};
+const authnMessage = (r) => r.missing ? "Authenticator sign-in isn't switched on yet. (Site owner: deploy the authenticator function and run migration 008.)"
+  : AUTHN_ERRORS[r.error] || "Something went wrong (" + r.error + ").";
+
 const mfaEnrollCode = createCodeBoxes($("mfa-enroll-code"), 6, async (code) => {
-  if (!pendingFactorId) return;
   mfaEnrollCode.setDisabled(true);
   setStatus("mfa-status", "Checking…");
-  const { error } = await db.auth.mfa.challengeAndVerify({ factorId: pendingFactorId, code });
+  const r = await callAuthenticator({ action: "enroll_confirm", code });
   mfaEnrollCode.setDisabled(false);
-  if (error) {
-    setStatus("mfa-status", authenticatorError(error), "err");
-    return mfaEnrollCode.clear();
-  }
-  pendingFactorId = null;
+  if (r.error) { setStatus("mfa-status", authnMessage(r), "err"); return mfaEnrollCode.clear(); }
   $("mfa-enroll").hidden = true;
-  setStatus("mfa-status", "Authenticator is on. You'll enter a code from it each time you sign in.", "ok");
+  setStatus("mfa-status", "Done. On the sign-in screen you can now choose \"Use my authenticator app\" instead of an emailed code.", "ok");
   renderMfaPanel(true);
-}, false);
+});
 
 async function renderMfaPanel(keepStatus) {
   const panel = $("mfa-panel");
   panel.hidden = !state.user || !db;
   if (panel.hidden) return;
   if (!keepStatus) setStatus("mfa-status", "");
-  const factor = await verifiedTotpFactor();
   const enrolling = !$("mfa-enroll").hidden;
-  $("mfa-summary").textContent = factor
-    ? "On. Each time you sign in, you'll also enter a 6-digit code from your authenticator app."
-    : "Add a second step to signing in: a 6-digit code from an app on your phone. Even if someone gets into your email or Google account, they can't open your answers without it.";
-  $("mfa-setup").hidden = !!factor || enrolling;
-  $("mfa-remove").hidden = !factor;
+  const r = await callAuthenticator({ action: "status" });
+  const legacy = await verifiedTotpFactor();
+  if (r.error) {
+    $("mfa-summary").textContent = r.missing ? "Authenticator sign-in isn't switched on yet." : authnMessage(r);
+    $("mfa-setup").hidden = true;
+    $("mfa-remove").hidden = !legacy; // can still turn off the older two-step code
+    $("mfa-remove").dataset.mode = "legacy";
+    return;
+  }
+  const on = r.data.enabled;
+  $("mfa-summary").textContent = on
+    ? "On. When you sign in, you can type a 6-digit code from your authenticator app instead of waiting for an email."
+    : legacy
+      ? "Right now your authenticator is a second step after your emailed code. Set it up again below to make it a sign-in option instead, so you only need one or the other."
+      : "Sign in with a 6-digit code from an app on your phone (or Dashlane) instead of waiting for an emailed code.";
+  $("mfa-setup").textContent = legacy && !on ? "Switch to authenticator sign-in" : "Set up authenticator sign-in";
+  $("mfa-setup").hidden = on || enrolling;
+  $("mfa-remove").hidden = !on && !legacy;
+  $("mfa-remove").dataset.mode = on ? "signin" : "legacy";
 }
 
 async function startAuthenticatorSetup() {
   setStatus("mfa-status", "Setting up…");
-  // Clear any half-finished setup first.
-  const { data: list } = await db.auth.mfa.listFactors();
-  for (const f of ((list && list.all) || []).filter((x) => x.factor_type === "totp" && x.status !== "verified")) {
-    await db.auth.mfa.unenroll({ factorId: f.id });
-  }
-  const { data, error } = await db.auth.mfa.enroll({ factorType: "totp", friendlyName: "Seek Like Silver" });
-  if (error) return setStatus("mfa-status", "Couldn't start setup (" + error.message + ").", "err");
-  pendingFactorId = data.id;
-  $("mfa-qr").src = data.totp.qr_code;
-  $("mfa-secret").textContent = data.totp.secret;
+  const r = await callAuthenticator({ action: "enroll_start" });
+  if (r.error) return setStatus("mfa-status", authnMessage(r), "err");
+  $("mfa-qr").src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(r.data.qr_svg);
+  $("mfa-secret").textContent = r.data.secret;
   $("mfa-enroll").hidden = false;
   $("mfa-setup").hidden = true;
   setStatus("mfa-status", "");
@@ -1617,18 +1640,25 @@ async function startAuthenticatorSetup() {
 }
 
 async function cancelAuthenticatorSetup() {
-  if (pendingFactorId) await db.auth.mfa.unenroll({ factorId: pendingFactorId });
-  pendingFactorId = null;
   $("mfa-enroll").hidden = true;
   renderMfaPanel();
 }
 
 async function removeAuthenticator() {
-  if (!confirm("Turn off the authenticator? Signing in will go back to just Google, email, or YouVersion.")) return;
-  const factor = await verifiedTotpFactor();
-  if (!factor) return renderMfaPanel();
-  const { error } = await db.auth.mfa.unenroll({ factorId: factor.id });
-  setStatus("mfa-status", error ? "Couldn't turn it off (" + error.message + ")." : "Authenticator is off.", error ? "err" : "ok");
+  const legacyMode = $("mfa-remove").dataset.mode === "legacy";
+  if (!confirm(legacyMode ? "Turn off the authenticator step? You'll sign in with just your email code, Google, or YouVersion."
+                          : "Turn off authenticator sign-in? You'll sign in with an emailed code, Google, or YouVersion.")) return;
+  if (legacyMode) {
+    const factor = await verifiedTotpFactor();
+    if (factor) {
+      const { error } = await db.auth.mfa.unenroll({ factorId: factor.id });
+      if (error) return setStatus("mfa-status", "Couldn't turn it off (" + error.message + ").", "err");
+    }
+  } else {
+    const r = await callAuthenticator({ action: "disable" });
+    if (r.error) return setStatus("mfa-status", authnMessage(r), "err");
+  }
+  setStatus("mfa-status", "Authenticator is off. Remove Seek Like Silver from your authenticator app too.", "ok");
   renderMfaPanel(true);
 }
 
@@ -2274,6 +2304,46 @@ function renderAllQuestions() {
   }
 }
 
+// ─────────────────────────── Sign in with an authenticator code ───────────────────────────
+let authnBusy = false;
+const authnCode = createCodeBoxes($("authn-code"), 6, () => signInWithAuthenticator());
+
+function showAuthnForm(on) {
+  $("authn-form").hidden = !on;
+  $("email-form").hidden = on;
+  $("code-form").hidden = true;
+  $("use-authenticator").hidden = on;
+  setStatus("signin-status", "");
+  if (on) {
+    $("authn-email").value = $("email").value;
+    setTimeout(() => ($("authn-email").value ? authnCode.focus() : $("authn-email").focus()), 0);
+  }
+}
+
+async function signInWithAuthenticator(e) {
+  if (e) e.preventDefault();
+  if (authnBusy) return;
+  const email = $("authn-email").value.trim();
+  const code = authnCode.value();
+  if (!email) return setStatus("signin-status", "Enter your email first.", "err");
+  if (code.length !== 6) return setStatus("signin-status", "Enter the 6-digit code from your app.", "err");
+  authnBusy = true;
+  authnCode.setDisabled(true);
+  setStatus("signin-status", "Checking…");
+  const r = await callAuthenticator({ action: "signin", email, code });
+  let error = r.error ? authnMessage(r) : null;
+  if (!error) {
+    const { error: vErr } = await db.auth.verifyOtp({ token_hash: r.data.token_hash, type: "magiclink" });
+    if (vErr) error = "Couldn't finish signing in (" + vErr.message + "). Try a new code.";
+  }
+  authnBusy = false;
+  authnCode.setDisabled(false);
+  if (error) { setStatus("signin-status", error, "err"); return authnCode.clear(); }
+  setStatus("signin-status", "");
+  $("signin-dialog").close();
+  showAuthnForm(false);
+}
+
 // ─────────────────────────── Sign-in popups that password managers can reach ───────────────────────────
 // A dialog opened with showModal() sits in the browser's "top layer" and makes the rest of
 // the page inert, which hides password managers' own popups (Dashlane's list flashes and
@@ -2329,6 +2399,10 @@ document.querySelectorAll("[data-level]").forEach((el) =>
 $("next-question").addEventListener("click", () => { const q = pickQuestion(state.level); openQuestion(q, q.level); });
 $("save-answer").addEventListener("click", saveAnswer);
 $("cancel-edit").addEventListener("click", cancelEdit);
+$("use-authenticator").addEventListener("click", () => showAuthnForm(true));
+$("authn-back").addEventListener("click", () => showAuthnForm(false));
+$("authn-form").addEventListener("submit", signInWithAuthenticator);
+$("signin-dialog").addEventListener("close", () => { if (!$("authn-form").hidden) showAuthnForm(false); });
 $("all-questions-btn").addEventListener("click", () => $("all-dialog").showModal());
 $("find-number-form").addEventListener("submit", (e) => {
   e.preventDefault();

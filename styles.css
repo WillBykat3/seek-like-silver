@@ -1003,3 +1003,4 @@ select.level-pill:focus-visible { outline: 2px solid var(--pigment); outline-off
 /* Sign-in popups opened without the browser's top layer (so password managers work) */
 .soft-backdrop { position: fixed; inset: 0; background: rgba(12, 16, 30, 0.55); z-index: 900; animation: backdrop-in 0.28s ease both; }
 dialog.soft-modal[open] { position: fixed; inset: 0; margin: auto; height: fit-content; max-height: calc(100vh - 32px); overflow: auto; z-index: 901; }
+.authn-switch { display: block; margin: 10px auto 0; font-size: 0.95rem; }
