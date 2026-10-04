@@ -998,8 +998,26 @@ select.level-pill:focus-visible { outline: 2px solid var(--pigment); outline-off
 }
 .question-text { padding-right: 64px; }
 @media print { .question-number { top: 0; right: 0; border: 1px solid #000; background: none; color: #000; } }
-.find-number { max-width: 360px; margin: 6px 0 4px; }
 
 /* Sign-in popups opened without the browser's top layer (so password managers work) */
 .soft-backdrop { position: fixed; inset: 0; background: rgba(12, 16, 30, 0.55); z-index: 900; animation: backdrop-in 0.28s ease both; }
 dialog.soft-modal[open] { position: fixed; inset: 0; margin: auto; height: fit-content; max-height: calc(100vh - 32px); overflow: auto; z-index: 901; }
+
+/* All questions: search and sort */
+.all-tools { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; margin: 10px 0 4px; }
+.all-search { flex: 1 1 280px; position: relative; }
+.search-icon { position: absolute; left: 14px; top: 50%; width: 18px; height: 18px; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.all-search input {
+  width: 100%; font: inherit; font-size: 1.02rem; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 999px; padding: 10px 16px 10px 40px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.all-search input:focus { outline: none; border-color: var(--silver); box-shadow: 0 0 0 3px var(--wash); }
+.all-sort { display: grid; gap: 4px; font-size: 0.9rem; color: var(--muted); }
+.all-sort select { font: inherit; font-size: 0.98rem; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; }
+.all-count { margin: 6px 0 0; font-size: 0.92rem; }
+.all-flat { margin-top: 18px; }
+.all-q-item.level-beginner { --pigment: var(--beginner); --pigment-deep: var(--beginner-deep); --pigment-tint: var(--beginner-tint); }
+.all-q-item.level-moderate { --pigment: var(--moderate); --pigment-deep: var(--moderate-deep); --pigment-tint: var(--moderate-tint); }
+.all-q-item.level-philosopher { --pigment: var(--philosopher); --pigment-deep: var(--philosopher-deep); --pigment-tint: var(--philosopher-tint); }
+mark.search-hit { background: var(--moderate-tint); color: inherit; border-radius: 2px; padding: 0 1px; box-shadow: inset 0 -2px 0 var(--moderate); }

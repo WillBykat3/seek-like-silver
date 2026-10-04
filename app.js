@@ -2220,45 +2220,111 @@ function renderWeekChart(weeks) {
 
 // ─────────────────────────── All questions ───────────────────────────
 
+const allView = { query: "", sort: "level" };
+
+// "#482", "482", words ("prodigal son"), a verse ("John 3"), or a topic; capitals don't matter.
+// Every word typed must appear somewhere in the question, its number, passages, or topics.
+function questionHaystack(q) {
+  return [q.prompt, String(questionNumber(q)), q.passage.join(" ; "), q.inspiration.join(" ; "),
+          (q.topics || []).map((t) => TOPICS[t].label).join(" ; "), LEVEL_LABELS[q.level]].join(" ; ").toLowerCase().replace(/[“”"]/g, " ");
+}
+function questionMatches(q, query, mode) {
+  const text = query.toLowerCase().replace(/#/g, " ").replace(/\s+/g, " ").trim();
+  if (!text) return true;
+  const hay = questionHaystack(q);
+  if (mode === "phrase") return hay.includes(text);
+  // Every word must appear; a number only counts as a whole number (so "3" doesn't match "13" or "#311").
+  return text.split(" ").every((w) => /^\d+$/.test(w) ? new RegExp("(^|\\D)" + w + "(\\D|$)").test(hay) : hay.includes(w));
+}
+
+// Put text into an element with the searched words highlighted (built safely as text nodes).
+function appendHighlighted(el, text, query) {
+  const words = query.toLowerCase().replace(/#/g, " ").split(/\s+/).filter((w) => w.length > 1);
+  if (!words.length) return el.append(text);
+  const lower = text.toLowerCase();
+  const marks = [];
+  for (const w of words) { let i = lower.indexOf(w); while (i !== -1) { marks.push([i, i + w.length]); i = lower.indexOf(w, i + w.length); } }
+  marks.sort((x, y) => x[0] - y[0]);
+  let at = 0;
+  for (const [s, e] of marks) {
+    if (s < at) continue;
+    el.append(text.slice(at, s), Object.assign(document.createElement("mark"), { className: "search-hit", textContent: text.slice(s, e) }));
+    at = e;
+  }
+  el.append(text.slice(at));
+}
+
+function allQuestionItem(q, query, showLevel) {
+  const li = document.createElement("li");
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "all-q-item level-" + q.level;
+  const num = Object.assign(document.createElement("span"), { className: "all-q-num", ariaLabel: "Question number " + questionNumber(q) });
+  appendHighlighted(num, "#" + questionNumber(q), query);
+  const prompt = Object.assign(document.createElement("span"), { className: "all-q-prompt" });
+  appendHighlighted(prompt, q.prompt, query);
+  const meta = Object.assign(document.createElement("span"), { className: "all-q-meta" });
+  appendHighlighted(meta, (showLevel ? LEVEL_LABELS[q.level] + " · " : "") + q.passage.map((r) => r.replace(/-/g, "–")).join("; ") + " · " + (q.topics || []).map((t) => TOPICS[t].label).join(", "), query);
+  b.append(num, prompt, meta);
+  if (state.answers.has(q.id)) b.append(Object.assign(document.createElement("span"), { className: "all-q-done", textContent: "Answered" }));
+  b.onclick = () => { state.topic = null; state.anyLevel = false; openQuestion(q, q.level); };
+  li.append(b);
+  return li;
+}
+
 function renderAllQuestions() {
   const wrap = $("all-list");
   wrap.replaceChildren();
-  const total = QUESTION_INDEX.size;
-  const done = [...QUESTION_INDEX.keys()].filter((id) => state.answers.has(id)).length;
-  $("all-intro").textContent = total + " questions" + (state.user ? " · you've answered " + done : "") + ". Pick any one to study.";
-  const mine = studyLevel();
-  const order = Object.keys(LEVEL_LABELS).sort((x, y) => (x === mine ? -1 : y === mine ? 1 : 0));
-  for (const level of order) {
-    const qs = QUESTIONS[level];
-    const section = document.createElement("section");
-    section.className = "all-level level-" + level;
-    const head = document.createElement("h2");
-    head.className = "all-level-title";
-    head.append(Object.assign(document.createElement("span"), { className: "tesserae", ariaHidden: "true" }),
-                Object.assign(document.createElement("span"), { textContent: LEVEL_LABELS[level] }),
-                Object.assign(document.createElement("span"), { className: "all-level-count", textContent: qs.length + " questions" }));
-    const ol = document.createElement("ol");
-    ol.className = "all-q-list";
-    for (const raw of qs) {
-      const q = QUESTION_INDEX.get(raw.id);
-      const li = document.createElement("li");
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "all-q-item";
-      b.append(Object.assign(document.createElement("span"), { className: "all-q-num", textContent: "#" + questionNumber(q), ariaLabel: "Question number " + questionNumber(q) }));
-      b.append(Object.assign(document.createElement("span"), { className: "all-q-prompt", textContent: q.prompt }));
-      const meta = document.createElement("span");
-      meta.className = "all-q-meta";
-      meta.textContent = q.passage.map((r) => r.replace(/-/g, "–")).join("; ") + " · " + (q.topics || []).map((t) => TOPICS[t].label).join(", ");
-      b.append(meta);
-      if (state.answers.has(q.id)) b.append(Object.assign(document.createElement("span"), { className: "all-q-done", textContent: "Answered" }));
-      b.onclick = () => { state.topic = null; state.anyLevel = false; openQuestion(q, q.level); };
-      li.append(b);
-      ol.append(li);
-    }
-    section.append(head, ol);
-    wrap.append(section);
+  const all = [...QUESTION_INDEX.values()];
+  const done = all.filter((q) => state.answers.has(q.id)).length;
+  $("all-intro").textContent = all.length + " questions" + (state.user ? " · you've answered " + done : "") + ". Pick any one to study.";
+  $("all-search").value = allView.query;
+  $("all-sort").value = allView.sort;
+
+  const query = allView.query.trim();
+  // An exact phrase ("John 3", "prodigal son") wins when it matches anything; otherwise match the words.
+  let matches = all.filter((q) => questionMatches(q, query, "phrase"));
+  if (!matches.length) matches = all.filter((q) => questionMatches(q, query, "words"));
+  $("all-count").textContent = query ? (matches.length === 1 ? "1 question matches" : matches.length + " questions match") : "";
+  if (!matches.length) {
+    wrap.append(Object.assign(document.createElement("p"), { className: "muted", textContent: "No questions match “" + query + "”. Try fewer or different words." }));
+    return;
   }
+
+  if (allView.sort === "level") {
+    const mine = studyLevel();
+    const order = Object.keys(LEVEL_LABELS).sort((x, y) => (x === mine ? -1 : y === mine ? 1 : 0));
+    for (const level of order) {
+      const qs = matches.filter((q) => q.level === level);
+      if (!qs.length) continue;
+      const section = document.createElement("section");
+      section.className = "all-level level-" + level;
+      const head = document.createElement("h2");
+      head.className = "all-level-title";
+      head.append(Object.assign(document.createElement("span"), { className: "tesserae", ariaHidden: "true" }),
+                  Object.assign(document.createElement("span"), { textContent: LEVEL_LABELS[level] }),
+                  Object.assign(document.createElement("span"), { className: "all-level-count", textContent: qs.length === 1 ? "1 question" : qs.length + " questions" }));
+      const ol = document.createElement("ol");
+      ol.className = "all-q-list";
+      for (const q of qs) ol.append(allQuestionItem(q, query, false));
+      section.append(head, ol);
+      wrap.append(section);
+    }
+    return;
+  }
+
+  const byText = (x, y) => x.prompt.replace(/^\W+/, "").localeCompare(y.prompt.replace(/^\W+/, ""), undefined, { sensitivity: "base" });
+  const sorters = {
+    "num-asc": (x, y) => questionNumber(x) - questionNumber(y),
+    "num-desc": (x, y) => questionNumber(y) - questionNumber(x),
+    az: byText,
+    za: (x, y) => byText(y, x),
+    unanswered: (x, y) => (state.answers.has(x.id) - state.answers.has(y.id)) || questionNumber(x) - questionNumber(y)
+  };
+  const ol = document.createElement("ol");
+  ol.className = "all-q-list all-flat";
+  for (const q of matches.sort(sorters[allView.sort] || sorters["num-asc"])) ol.append(allQuestionItem(q, query, true));
+  wrap.append(ol);
 }
 
 // ─────────────────────────── Sign-in popups that password managers can reach ───────────────────────────
@@ -2317,16 +2383,13 @@ $("next-question").addEventListener("click", () => { const q = pickQuestion(stat
 $("save-answer").addEventListener("click", saveAnswer);
 $("cancel-edit").addEventListener("click", cancelEdit);
 $("all-questions-btn").addEventListener("click", () => $("all-dialog").showModal());
-$("find-number-form").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const n = $("find-number").value.replace(/\D/g, "");
-  const id = QUESTION_BY_NUM.get(n);
-  if (!id) return setStatus("find-number-status", n ? "No question has the number " + n + "." : "Type a 3-digit number.", "err");
-  const q = QUESTION_INDEX.get(id);
-  state.topic = null; state.anyLevel = false;
-  $("find-number").value = ""; setStatus("find-number-status", "");
-  openQuestion(q, q.level);
+$("all-search").addEventListener("input", (e) => { allView.query = e.target.value; renderAllQuestions(); });
+$("all-search").addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+  const first = document.querySelector("#all-list .all-q-item"); // Enter opens the top result
+  if (first) { e.preventDefault(); first.click(); }
 });
+$("all-sort").addEventListener("change", (e) => { allView.sort = e.target.value; renderAllQuestions(); });
 $("all-choose").addEventListener("click", () => { $("all-dialog").close(); showView("all"); });
 $("all-random").addEventListener("click", () => {
   $("all-dialog").close();

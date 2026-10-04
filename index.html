@@ -243,13 +243,24 @@
       <button class="link-button" data-nav="home">← Back</button>
       <h1 class="section-title">All questions</h1>
       <p class="library-intro" id="all-intro"></p>
-      <form class="inline-form find-number" id="find-number-form">
-        <label>Go to a question by its number
-          <input type="text" id="find-number" inputmode="numeric" pattern="[0-9]{3}" maxlength="4" placeholder="e.g. 482" autocomplete="off">
+      <div class="all-tools">
+        <label class="all-search">
+          <span class="visually-hidden">Search questions</span>
+          <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input type="search" id="all-search" placeholder="Search by number, words, verse, or topic…" autocomplete="off" spellcheck="false">
         </label>
-        <button class="btn" type="submit">Go</button>
-      </form>
-      <p class="status" id="find-number-status" role="status"></p>
+        <label class="all-sort">Sort
+          <select id="all-sort">
+            <option value="level">By level</option>
+            <option value="num-asc">Number: low to high</option>
+            <option value="num-desc">Number: high to low</option>
+            <option value="az">Question: A to Z</option>
+            <option value="za">Question: Z to A</option>
+            <option value="unanswered">Unanswered first</option>
+          </select>
+        </label>
+      </div>
+      <p class="muted all-count" id="all-count" role="status"></p>
       <div id="all-list"></div>
     </section>
 
