@@ -447,8 +447,17 @@ async function renderVerseOfTheDay(run) {
 
 // ─────────────────────────── Views ───────────────────────────
 
-function showView(name) {
-  if (name !== "question" && location.hash.startsWith("#q=")) history.replaceState(null, "", location.pathname + location.search);
+// ─────────────────────────── Page addresses (back button, reload) ───────────────────────────
+// Each page has its own address: Study is the plain address, others are #answers, #groups,
+// #library, #settings, #all, #stats, and #q=652 for a question.
+const ROUTED_VIEWS = ["answers", "groups", "library", "settings", "stats", "all"];
+function setRoute(hash) {
+  const url = location.pathname + location.search + hash;
+  if (url !== location.pathname + location.search + location.hash) history.pushState(null, "", url);
+}
+
+function showView(name, opts = {}) {
+  if (!opts.fromHistory && name !== "question") setRoute(name === "home" ? "" : "#" + name);
   for (const v of ["home", "question", "answers", "groups", "library", "settings", "stats", "all"]) {
     $("view-" + v).hidden = v !== name;
   }
@@ -481,7 +490,7 @@ function renderVerseList(list, refs) {
   }
 }
 
-function openQuestion(q, level) {
+function openQuestion(q, level, opts = {}) {
   state.level = level;
   state.question = q;
 
@@ -529,7 +538,7 @@ function openQuestion(q, level) {
   renderGroupAnswers();
 
   showView("question");
-  history.replaceState(null, "", "#q=" + questionNumber(q));
+  if (!opts.fromHistory) setRoute("#q=" + questionNumber(q));
 }
 
 function renderFathers(q) {
@@ -2041,22 +2050,39 @@ function takePendingJoin() {
 
 // ─────────────────────────── Links into the site (#q=b17, #join=CODE) ───────────────────────────
 
-function handleHash() {
+// Show whatever page the address points to (on load, reload, and back/forward).
+function handleRoute() {
   const h = location.hash;
+  const go = { fromHistory: true };
   let m;
   if ((m = h.match(/^#q=(\d{3}|[a-z]\d{1,3})$/))) {
     const q = QUESTION_INDEX.get(QUESTION_BY_NUM.get(m[1]) || m[1]); // new links use the number; old ones the ID
-    if (q && (!state.question || state.question.id !== q.id || $("view-question").hidden)) openQuestion(q, q.level);
-  } else if (h === "#all") {
-    showView("all");
-  } else if (h === "#stats") {
-    showView("stats");
+    if (!q) return showView("home", go);
+    if (!state.question || state.question.id !== q.id || $("view-question").hidden) openQuestion(q, q.level, go);
   } else if ((m = h.match(/^#join=([A-Fa-f0-9]{10})$/))) {
     stashPendingJoin(m[1].toUpperCase());
-    history.replaceState(null, "", location.pathname + location.search);
-    showView("groups");
+    history.replaceState(null, "", location.pathname + location.search + "#groups");
+    showView("groups", go);
     if (!state.user) openSignIn();
+  } else if (ROUTED_VIEWS.includes(h.slice(1))) {
+    showView(h.slice(1), go);
+  } else {
+    showView("home", go);
   }
+}
+const handleHash = handleRoute;
+
+// Reloading keeps your place on the page, too.
+const SCROLL_KEY = "sls-scroll";
+window.addEventListener("pagehide", () => {
+  try { sessionStorage.setItem(SCROLL_KEY, JSON.stringify({ url: location.href, y: window.scrollY })); } catch (_) { /* ignore */ }
+});
+function restoreScroll() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(SCROLL_KEY) || "null");
+    sessionStorage.removeItem(SCROLL_KEY);
+    if (saved && saved.url === location.href && saved.y > 0) setTimeout(() => window.scrollTo(0, saved.y), 150);
+  } catch (_) { /* ignore */ }
 }
 
 // ─────────────────────────── Site stats (owner only) ───────────────────────────
@@ -2331,7 +2357,7 @@ $("delete-confirm").addEventListener("input", () => { $("delete-account").disabl
 $("delete-account").addEventListener("click", deleteAccount);
 $("create-group-form").addEventListener("submit", createGroup);
 $("join-group-form").addEventListener("submit", joinGroup);
-window.addEventListener("hashchange", handleHash);
+window.addEventListener("popstate", handleRoute);
 setUpTopics();
 $("auth-button").addEventListener("click", () => (state.user ? signOut() : openSignIn()));
 $("signin-google").addEventListener("click", signInWithGoogle);
@@ -2359,7 +2385,7 @@ async function refreshAfterSignIn() {
   if (!$("view-settings").hidden) renderSettings();
   if (!$("view-groups").hidden) renderGroups();
   if (state.user) restoreDraft();
-  if (!refreshedOnce) { refreshedOnce = true; handleHash(); }
+  if (!refreshedOnce) { refreshedOnce = true; handleRoute(); restoreScroll(); }
   renderHomeVerses();
 }
 
@@ -2369,7 +2395,8 @@ $("mfa-remove").addEventListener("click", removeAuthenticator);
 $("mfa-signout").addEventListener("click", async () => { $("mfa-dialog").close(); await signOut(); });
 $("mfa-dialog").addEventListener("cancel", (e) => e.preventDefault()); // must enter a code or sign out
 
-if (!db) { renderHomeVerses(); handleHash(); } // otherwise these run once we know who's signed in
+handleRoute(); // show the right page right away; it's refreshed once we know who's signed in
+if (!db) { renderHomeVerses(); restoreScroll(); } // otherwise these run once we know who's signed in
 
 let lastUserId;
 if (db) db.auth.onAuthStateChange((_event, session) => {
