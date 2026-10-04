@@ -187,8 +187,18 @@ Deno.serve(async (req) => {
     if (action === "enroll_confirm") {
       if (!row || row.confirmed) return reply(400, { error: "no_pending_setup" });
       if (code.length !== 6) return reply(400, { error: "bad_request" });
-      const step = await matchStep(await open(key, row.secret_enc), code, Date.now() / 1000);
-      if (!step) return reply(401, { error: "invalid_code" });
+      const secret = await open(key, row.secret_enc);
+      const step = await matchStep(secret, code, Date.now() / 1000);
+      if (!step) {
+        // Right app, wrong clock? Look up to 10 minutes either way, only to explain the problem.
+        const now = Math.floor(Date.now() / 1000 / STEP);
+        for (let d = 2; d <= 20; d++) {
+          if ((await totp(secret, now - d)) === code || (await totp(secret, now + d)) === code) {
+            return reply(401, { error: "clock_off" });
+          }
+        }
+        return reply(401, { error: "invalid_code" });
+      }
       await admin.from("sls_authenticators").update({ confirmed: true, confirmed_at: new Date().toISOString(), last_step: step }).eq("user_id", user.id);
       // The authenticator is now a sign-in option, so retire Supabase's built-in two-step code.
       for (const f of oldFactors) await admin.auth.admin.mfa.deleteFactor({ userId: user.id, id: f.id });
