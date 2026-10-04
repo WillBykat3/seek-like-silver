@@ -2331,7 +2331,9 @@ async function signInWithAuthenticator(e) {
   authnCode.setDisabled(true);
   setStatus("signin-status", "Checking…");
   const r = await callAuthenticator({ action: "signin", email, code });
-  let error = r.error ? authnMessage(r) : null;
+  let error = r.error ? (r.error === "invalid_code"
+    ? "That code didn't work. Use the newest code from the Seek Like Silver entry you added in Settings → \"Set up authenticator sign-in\" (codes from the older two-step setup won't work here)."
+    : authnMessage(r)) : null;
   if (!error) {
     const { error: vErr } = await db.auth.verifyOtp({ token_hash: r.data.token_hash, type: "magiclink" });
     if (vErr) error = "Couldn't finish signing in (" + vErr.message + "). Try a new code.";
