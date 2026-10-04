@@ -1581,7 +1581,7 @@ async function callAuthenticator(body) {
 }
 
 const AUTHN_ERRORS = {
-  invalid_code: "That code didn't match. Use the code from the NEW Seek Like Silver entry (the one you just scanned), not an older one.",
+  invalid_code: "That code didn't match. If Dashlane filled it, it may have used your older Seek Like Silver entry: pick the new one (or delete the old one) and try again.",
   clock_off: "That code is from the new entry, but your phone's clock is off. Turn on automatic date & time on your phone, then try again.",
   too_many_attempts: "Too many tries. Wait 15 minutes, or sign in with an emailed code instead.",
   authenticator_required: "Enter your current authenticator code first (sign out and back in), then try again.",
@@ -1599,7 +1599,7 @@ const mfaEnrollCode = createCodeBoxes($("mfa-enroll-code"), 6, async (code) => {
   $("mfa-enroll").hidden = true;
   setStatus("mfa-status", "Done. On the sign-in screen you can now choose \"Use my authenticator app\" instead of an emailed code.", "ok");
   renderMfaPanel(true);
-}, false); // setup: Dashlane only knows the OLD entry here, so keep it from filling these boxes
+}); // password managers (Dashlane) may fill this too
 
 async function renderMfaPanel(keepStatus) {
   const panel = $("mfa-panel");
