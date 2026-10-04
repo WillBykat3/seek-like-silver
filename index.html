@@ -373,22 +373,9 @@
       <section class="settings-panel" id="mfa-panel" hidden>
         <h2 class="panel-title">Authenticator app</h2>
         <p class="muted" id="mfa-summary"></p>
-        <div class="mfa-enroll" id="mfa-enroll" hidden>
-          <ol class="mfa-steps">
-            <li>Open an authenticator app on your phone, such as Google Authenticator, Microsoft Authenticator, or 1Password.</li>
-            <li>Scan this code with it.
-              <img id="mfa-qr" class="mfa-qr" alt="QR code to add Seek Like Silver to your authenticator app" width="180" height="180">
-              <span class="mfa-secret-line">Can't scan? Enter this key instead: <code id="mfa-secret"></code></span>
-            </li>
-            <li>Enter the 6-digit code the app shows.</li>
-          </ol>
-          <div class="otp" id="mfa-enroll-code" role="group" aria-label="Authenticator code"></div>
-          <button class="link-button" type="button" id="mfa-cancel">Cancel</button>
-        </div>
         <div class="answer-actions">
           <span class="status" id="mfa-status" role="status"></span>
-          <button class="btn btn-ghost" type="button" id="mfa-remove" hidden>Turn off authenticator</button>
-          <button class="btn" type="button" id="mfa-setup" hidden>Set up authenticator</button>
+          <button class="btn" type="button" id="mfa-remove">Turn off authenticator</button>
         </div>
       </section>
     </section>
@@ -457,16 +444,6 @@
     <form id="email-form" class="email-form" data-form-type="login">
       <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="username email" data-form-type="email">
       <button class="btn btn-full" type="submit">Email me a code</button>
-    </form>
-
-    <button class="link-button authn-switch" type="button" id="use-authenticator">Use my authenticator app instead</button>
-
-    <form id="authn-form" class="email-form" data-form-type="login" hidden>
-      <p class="muted">Enter your email and the 6-digit code from your authenticator app.</p>
-      <input type="email" id="authn-email" name="email" placeholder="you@example.com" required autocomplete="username email" data-form-type="email">
-      <div class="otp" id="authn-code" role="group" aria-label="Authenticator code"></div>
-      <button class="btn btn-full" type="submit">Sign in</button>
-      <button class="link-button" type="button" id="authn-back">Email me a code instead</button>
     </form>
 
     <form id="code-form" class="email-form" hidden>
