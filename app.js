@@ -542,24 +542,49 @@ function openQuestion(q, level, opts = {}) {
   if (!opts.fromHistory) setRoute("#q=" + questionNumber(q));
 }
 
+// A link that opens the source page and jumps to (and highlights) the quoted words,
+// using a browser "text fragment": #:~:text=start,end
+const fragPart = (t) => encodeURIComponent(t).replace(/-/g, "%2D");
+function fatherLink(f) {
+  if (!f.quote || !f.anchor) return f.url;
+  return f.url.split("#")[0] + "#:~:text=" + fragPart(f.anchor) + (f.anchorEnd && f.anchorEnd !== f.anchor ? "," + fragPart(f.anchorEnd) : "");
+}
+// Show where a quote starts or stops partway through a sentence.
+function quoteText(q) {
+  let t = q.trim();
+  if (/^[a-z]/.test(t)) t = "\u2026" + t;
+  if (!/[.!?;:"'\u201d\u2019\])]$/.test(t)) t += "\u2026";
+  return t;
+}
+
 function renderFathers(q) {
   const list = $("q-fathers");
   list.replaceChildren();
   for (const f of q.fathers || []) {
     const li = document.createElement("li");
-    li.append(document.createTextNode(f.who + ", "));
-    const link = document.createElement("a");
-    link.className = "work";
-    link.href = f.url;
-    link.target = "_blank";
-    link.rel = "noopener";
-    link.textContent = f.work;
-    li.append(link);
-    if (f.where) li.append(", " + f.where);
-    const about = document.createElement("span");
-    about.className = "father-about";
-    about.textContent = f.about;
-    li.append(about);
+    li.className = "father";
+    const head = document.createElement("p");
+    head.className = "father-head";
+    head.append(Object.assign(document.createElement("strong"), { className: "father-who", textContent: f.who }), ", ");
+    const link = Object.assign(document.createElement("a"), { className: "work", href: fatherLink(f), target: "_blank", rel: "noopener", textContent: f.work });
+    head.append(link);
+    if (f.where) head.append(", " + f.where);
+    li.append(head);
+    li.append(Object.assign(document.createElement("p"), { className: "father-summary", textContent: f.summary || f.about }));
+    if (f.quote) {
+      const bq = document.createElement("blockquote");
+      bq.className = "father-quote";
+      bq.cite = f.url;
+      bq.textContent = quoteText(f.quote);
+      li.append(bq);
+    }
+    const more = Object.assign(document.createElement("a"), {
+      className: "father-source with-icon", href: fatherLink(f), target: "_blank", rel: "noopener",
+      textContent: f.quote ? "Read it in context" : "Read the passage",
+    });
+    more.append(icon("arrow-right"));
+    more.title = f.quote ? "Opens the full text and jumps to this quote" : "Opens the full text";
+    li.append(more);
     list.append(li);
   }
   list.closest(".fathers-block").hidden = !list.childElementCount;

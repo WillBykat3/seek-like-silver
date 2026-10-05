@@ -590,6 +590,23 @@ textarea:focus, input:focus, select:focus { outline: 2px solid var(--silver); ou
 .fathers-list a { color: var(--ink); text-decoration-color: var(--silver); text-underline-offset: 3px; }
 .fathers-list a:hover { text-decoration-color: currentColor; }
 .father-about { display: block; font-size: 0.88rem; color: var(--muted); }
+.fathers-list { list-style: none; margin: 0; padding: 0; }
+.fathers-list li.father { margin: 0; padding: 14px 0; border-top: 1px dashed var(--line); }
+.fathers-list li.father:first-child { border-top: none; padding-top: 6px; }
+.father-head { margin: 0 0 2px; }
+.father-who { font-weight: 700; }
+.fathers-list .work { font-family: var(--serif); font-style: italic; }
+.father-summary { margin: 0 0 8px; color: var(--muted); font-size: 0.95rem; }
+.father-quote {
+  margin: 0 0 8px; padding: 6px 0 6px 16px;
+  border-left: 3px solid var(--pigment, var(--silver));
+  font-family: var(--serif); font-size: 1.04rem; line-height: 1.6; color: var(--ink);
+}
+.fathers-list a.father-source { font-size: 0.88rem; color: var(--muted); text-decoration: none; background: none; }
+.fathers-list a.father-source:hover, .fathers-list a.father-source:focus-visible { color: var(--ink); }
+.father-source .icon { transition: transform 0.2s cubic-bezier(.2,.8,.2,1); }
+.father-source:hover .icon { transform: translateX(3px); }
+@media print { .father-source { display: none; } .father-quote { break-inside: avoid; } }
 .print-notes { display: none; }
 
 .term {
@@ -932,7 +949,7 @@ select.level-pill:focus-visible { outline: 2px solid var(--pigment); outline-off
 }
 .more-block[open] summary::before { transform: rotate(45deg); }
 .more-title { font-family: var(--display); font-size: 1.15rem; font-weight: 700; }
-.more-count { font-size: 0.85rem; color: var(--muted); margin-left: auto; text-align: right; }
+.more-count { font-size: 0.85rem; color: var(--muted); margin-left: auto; text-align: right;  white-space: nowrap;}
 .more-block summary:hover .more-title { color: var(--pigment-deep, var(--ink)); }
 .more-block summary:focus-visible { outline: 2px solid var(--pigment, var(--silver)); outline-offset: 2px; border-radius: 4px; }
 .more-body { padding: 0 2px 14px 20px; }
