@@ -42,7 +42,8 @@ const state = {
   question: null,
   topic: null,         // set when studying by topic instead of by level
   editing: null,       // the answer row being edited, or null when writing a new one
-  features: { multi: true, groups: true }, // switched off if the database update (005) hasn't been run
+  features: { multi: true, groups: true, share: true },
+  shares: new Map(),   // answer_id -> share link code // switched off if the database update (005) hasn't been run
   groups: [],          // [{ id, name, owner_id, invite_code, members: [...] }]
   names: new Map()     // user_id -> display name, for people in your groups
 };
@@ -458,7 +459,7 @@ function setRoute(hash) {
 
 function showView(name, opts = {}) {
   if (!opts.fromHistory && name !== "question") setRoute(name === "home" ? "" : "#" + name);
-  for (const v of ["home", "question", "answers", "groups", "library", "settings", "stats", "all"]) {
+  for (const v of ["home", "question", "answers", "groups", "library", "settings", "stats", "all", "shared"]) {
     $("view-" + v).hidden = v !== name;
   }
   document.querySelectorAll(".nav-link").forEach((b) => {
@@ -646,7 +647,7 @@ function renderAnswers() {
     title.textContent = q ? q.prompt : "(This question is no longer in the bank)";
     card.append(meta, title);
 
-    for (const row of rows) card.append(answerEntry(row, { onDelete: () => deleteAnswer(row) }));
+    for (const row of rows) card.append(answerEntry(row, { onDelete: () => deleteAnswer(row), own: true }));
 
     if (q) {
       const actions = document.createElement("div");
@@ -663,7 +664,7 @@ function renderAnswers() {
 }
 
 // One saved answer: date, text, and optional actions.
-function answerEntry(row, { onEdit, onDelete, author } = {}) {
+function answerEntry(row, { onEdit, onDelete, author, own } = {}) {
   const wrap = document.createElement("div");
   wrap.className = "answer-entry";
   const head = document.createElement("div");
@@ -692,7 +693,100 @@ function answerEntry(row, { onEdit, onDelete, author } = {}) {
   body.className = "body" + (isRich(row.answer) ? " rich" : "");
   body.append(answerContent(row.answer));
   wrap.append(head, body);
+  if (own && state.features.share) wrap.append(shareRow(row));
   return wrap;
+}
+
+// ─────────────────────────── Share an answer by link ───────────────────────────
+// Each of your answers can get a private link (#share=…) that anyone can open to read
+// just that answer. "Stop sharing" turns the link off. (Database update 010.)
+
+const shareUrl = (token) => location.origin + location.pathname + "#share=" + token;
+
+function shareRow(row) {
+  const box = document.createElement("div");
+  box.className = "share-row";
+  const draw = (msg, kind) => {
+    box.replaceChildren();
+    const token = state.shares.get(row.id);
+    const btn = (label, fn, cls) => Object.assign(document.createElement("button"), { type: "button", className: cls || "link-button", textContent: label, onclick: fn });
+    if (!token) {
+      box.append(btn("Share link", async () => {
+        draw("Making a link…");
+        const { data, error } = await db.rpc("sls_share_answer", { p_answer: row.id });
+        if (error) return draw("Couldn't make a link: " + error.message, "err");
+        state.shares.set(row.id, data);
+        await copyText(shareUrl(data));
+        draw("Link copied. Anyone with it can read this answer.", "ok");
+      }, "link-button share-btn"));
+    } else {
+      const tag = Object.assign(document.createElement("span"), { className: "share-on", textContent: "Shared by link" });
+      box.append(tag,
+        btn("Copy link", async () => { await copyText(shareUrl(token)); draw("Link copied.", "ok"); }),
+        btn("Stop sharing", async () => {
+          if (!confirm("Stop sharing this answer? The link will stop working for everyone.")) return;
+          const { error } = await db.rpc("sls_unshare_answer", { p_answer: row.id });
+          if (error) return draw("Couldn't stop sharing: " + error.message, "err");
+          state.shares.delete(row.id);
+          draw("Link turned off.", "ok");
+        }));
+    }
+    if (msg) box.append(Object.assign(document.createElement("span"), { className: "status " + (kind || ""), textContent: msg }));
+  };
+  draw();
+  return box;
+}
+
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch (_) { window.prompt("Copy this link:", text); return false; }
+}
+
+async function loadShares() {
+  state.shares = new Map();
+  if (!state.user) return;
+  const { data, error } = await db.from("answer_shares").select("answer_id, token");
+  state.features.share = !error;
+  for (const r of data || []) state.shares.set(r.answer_id, r.token);
+}
+
+async function renderSharedAnswer(token) {
+  const box = $("shared-body");
+  box.replaceChildren(Object.assign(document.createElement("p"), { className: "muted", textContent: "Loading…" }));
+  const { data, error } = db ? await db.rpc("sls_shared_answer", { p_token: token }) : { data: null, error: true };
+  const row = !error && data && data[0];
+  box.replaceChildren();
+  if (!row) {
+    box.append(Object.assign(document.createElement("p"), { className: "muted", textContent: "This link isn't working. The person who shared it may have stopped sharing, or the answer was deleted." }));
+    return;
+  }
+  const q = QUESTION_INDEX.get(row.question_id);
+  const card = document.createElement("article");
+  card.className = "question-card shared-card level-" + (q ? q.level : row.level);
+  if (q) {
+    card.append(
+      Object.assign(document.createElement("span"), { className: "question-number", textContent: "#" + questionNumber(q) }),
+      Object.assign(document.createElement("p"), { className: "shared-level", textContent: LEVEL_LABELS[q.level] + " · " + q.passage.map((r) => r.replace(/-/g, "–")).join("; ") }));
+    const h = Object.assign(document.createElement("h2"), { className: "question-text" });
+    renderWithTerms(h, q.prompt);
+    card.append(h);
+  }
+  const who = (row.display_name || "").trim() || "Someone";
+  const ans = document.createElement("div");
+  ans.className = "shared-answer";
+  ans.append(Object.assign(document.createElement("p"), { className: "shared-by", textContent: who + "\u2019s answer · " + formatDate(row.created_at) + (row.updated_at && row.updated_at.slice(0, 16) !== row.created_at.slice(0, 16) ? " (edited " + formatDate(row.updated_at) + ")" : "") }));
+  const body = document.createElement("div");
+  body.className = "body" + (isRich(row.answer) ? " rich" : "");
+  body.append(answerContent(row.answer));
+  ans.append(body);
+  card.append(ans);
+  box.append(card);
+  if (q) {
+    const go = Object.assign(document.createElement("button"), { type: "button", className: "btn", textContent: "Answer this question yourself" });
+    go.onclick = () => { state.topic = null; state.anyLevel = false; openQuestion(q, q.level); };
+    box.append(Object.assign(document.createElement("div"), { className: "shared-actions" }));
+    box.lastChild.append(go);
+  }
 }
 
 function renderMyAnswers() {
@@ -702,7 +796,7 @@ function renderMyAnswers() {
   list.replaceChildren();
   for (const row of rows) {
     const li = document.createElement("li");
-    li.append(answerEntry(row, { onEdit: () => startEdit(row), onDelete: () => deleteAnswer(row) }));
+    li.append(answerEntry(row, { onEdit: () => startEdit(row), onDelete: () => deleteAnswer(row), own: true }));
     if (state.editing && state.editing.id === row.id) li.classList.add("editing");
     list.append(li);
   }
@@ -822,7 +916,7 @@ async function loadUserData() {
     if (!state.answers.has(r.question_id)) state.answers.set(r.question_id, []);
     state.answers.get(r.question_id).push(r);
   }
-  await loadGroups();
+  await Promise.all([loadGroups(), loadShares()]);
 }
 
 const ANSWER_COLUMNS = "id, question_id, level, answer, created_at, updated_at, shared";
@@ -1660,15 +1754,26 @@ function renderWithTerms(el, text) {
   el.replaceChildren();
   let at = 0;
   for (const h of chosen) {
-    el.append(text.slice(at, h.start));
+    // Punctuation touching a term ("the Word.") stays on the same line as the term.
+    const before = text.slice(at, h.start);
+    const lead = /[^\s\w]+$/.exec(before);
+    el.append(lead ? before.slice(0, lead.index) : before);
     const b = document.createElement("button");
     b.type = "button";
     b.className = "term";
     b.textContent = text.slice(h.start, h.end);
     b.dataset.term = h.g.term;
     b.setAttribute("aria-describedby", "term-pop");
-    el.append(b);
     at = h.end;
+    const next = chosen[chosen.indexOf(h) + 1];
+    let trail = (/^[^\s\w]+/.exec(text.slice(at)) || [""])[0];
+    if (next && at + trail.length > next.start) trail = text.slice(at, next.start);
+    if (lead || trail) {
+      const glue = Object.assign(document.createElement("span"), { className: "term-glue" });
+      glue.append(lead ? lead[0] : "", b, trail);
+      el.append(glue);
+      at += trail.length;
+    } else el.append(b);
   }
   el.append(text.slice(at));
 }
@@ -2059,6 +2164,9 @@ function handleRoute() {
     const q = QUESTION_INDEX.get(QUESTION_BY_NUM.get(m[1]) || m[1]); // new links use the number; old ones the ID
     if (!q) return showView("home", go);
     if (!state.question || state.question.id !== q.id || $("view-question").hidden) openQuestion(q, q.level, go);
+  } else if ((m = h.match(/^#share=([a-f0-9]{24})$/i))) {
+    showView("shared", go);
+    renderSharedAnswer(m[1].toLowerCase());
   } else if ((m = h.match(/^#join=([A-Fa-f0-9]{10})$/))) {
     stashPendingJoin(m[1].toUpperCase());
     history.replaceState(null, "", location.pathname + location.search + "#groups");

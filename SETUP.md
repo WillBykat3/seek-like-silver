@@ -96,6 +96,7 @@ Google's menus get renamed from time to time; if a label doesn't match, look for
 - `supabase-migrations/003-account-linking-and-mfa.sql`: YouVersion account connections, plus the rule that locks an account's answers behind its authenticator code once that's turned on.
 - `supabase-migrations/004-merge-accounts.sql`: lets the merge-accounts function find which account owns a Google login.
 - `supabase-migrations/009-remove-authenticator-signin.sql`: removes the short-lived authenticator sign-in (008). Then delete the `authenticator` Edge Function in Supabase.
+- `supabase-migrations/010-share-answers.sql`: lets you share one answer by link (#share=…). Anyone with the link sees that answer, its question and your display name; "Stop sharing" turns the link off. Until it is run, the Share link buttons stay hidden.
 - `supabase-migrations/007-study-level.sql`: remembers each person's study level from Settings on their account (until it's run, the level is kept on that device only).
 - `supabase-migrations/006-site-stats.sql`: the owner-only Stats page. After running it, add yourself as admin with the one-line insert shown at the top of that file (using your own sign-in email).
 - `supabase-migrations/005-answers-groups.sql`: more than one answer per question, sharing answers with groups, and private study groups. Until it's run, the site keeps one answer per question and Groups says it isn't switched on.

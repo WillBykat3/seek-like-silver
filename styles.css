@@ -597,6 +597,7 @@ textarea:focus, input:focus, select:focus { outline: 2px solid var(--silver); ou
   text-decoration: underline dotted; text-decoration-color: var(--pigment, var(--silver));
   text-decoration-thickness: 2px; text-underline-offset: 4px;
 }
+.term-glue { white-space: nowrap; }
 .term[aria-expanded="true"] { background: var(--pigment-tint, var(--wash)); border-radius: 3px; }
 .term-pop {
   position: absolute; z-index: 50;
@@ -1021,3 +1022,18 @@ dialog.soft-modal[open] { position: fixed; inset: 0; margin: auto; height: fit-c
 .all-q-item.level-moderate { --pigment: var(--moderate); --pigment-deep: var(--moderate-deep); --pigment-tint: var(--moderate-tint); }
 .all-q-item.level-philosopher { --pigment: var(--philosopher); --pigment-deep: var(--philosopher-deep); --pigment-tint: var(--philosopher-tint); }
 mark.search-hit { background: var(--moderate-tint); color: inherit; border-radius: 2px; padding: 0 1px; box-shadow: inset 0 -2px 0 var(--moderate); }
+
+/* Share an answer by link */
+.share-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-top: 6px; font-size: 0.9rem; }
+.share-row .status { font-size: 0.88rem; }
+.share-on { font-size: 0.78rem; font-weight: 700; color: var(--lapis-deep); background: var(--lapis-tint); border-radius: 999px; padding: 1px 9px; }
+.shared-card { --pigment: var(--silver); --pigment-deep: var(--ink); --pigment-tint: var(--wash); }
+.shared-card.level-beginner { --pigment: var(--beginner); --pigment-deep: var(--beginner-deep); --pigment-tint: var(--beginner-tint); }
+.shared-card.level-moderate { --pigment: var(--moderate); --pigment-deep: var(--moderate-deep); --pigment-tint: var(--moderate-tint); }
+.shared-card.level-philosopher { --pigment: var(--philosopher); --pigment-deep: var(--philosopher-deep); --pigment-tint: var(--philosopher-tint); }
+.shared-level { margin: 0 0 6px; font-size: 0.85rem; font-weight: 700; color: var(--pigment-deep); letter-spacing: 0.03em; }
+.shared-answer { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.shared-by { margin: 0 0 6px; font-size: 0.9rem; color: var(--muted); }
+.shared-answer .body { font-family: var(--serif); font-size: 1.06rem; line-height: 1.6; white-space: pre-wrap; }
+.shared-answer .body.rich { white-space: normal; }
+.shared-actions { margin-top: 16px; }
