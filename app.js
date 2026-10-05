@@ -653,8 +653,9 @@ function renderAnswers() {
       const actions = document.createElement("div");
       actions.className = "row";
       const open = document.createElement("button");
-      open.className = "link-button";
+      open.className = "link-button with-icon";
       open.textContent = "Open question";
+      open.append(icon("arrow-right"));
       open.onclick = () => openQuestion(q, q.level);
       actions.append(open);
       card.append(actions);
@@ -680,20 +681,18 @@ function answerEntry(row, { onEdit, onDelete, author, own } = {}) {
     tag.textContent = "Shared with groups";
     head.append(tag);
   }
-  for (const [label, fn] of [["Edit", onEdit], ["Delete", onDelete]]) {
-    if (!fn) continue;
-    const b = document.createElement("button");
-    b.className = "link-button";
-    b.type = "button";
-    b.textContent = label;
-    b.onclick = fn;
-    head.append(b);
-  }
+  const actions = document.createElement("span");
+  actions.className = "entry-actions";
+  const status = Object.assign(document.createElement("p"), { className: "status entry-status" });
+  status.hidden = true;
+  if (own && state.features.share) actions.append(shareControls(row, status));
+  if (onEdit) actions.append(iconButton("edit", "Edit this answer", onEdit));
+  if (onDelete) actions.append(iconButton("trash", "Delete this answer", onDelete, { danger: true }));
+  if (actions.childNodes.length) head.append(actions);
   const body = document.createElement("div");
   body.className = "body" + (isRich(row.answer) ? " rich" : "");
   body.append(answerContent(row.answer));
-  wrap.append(head, body);
-  if (own && state.features.share) wrap.append(shareRow(row));
+  wrap.append(head, body, status);
   return wrap;
 }
 
@@ -703,35 +702,48 @@ function answerEntry(row, { onEdit, onDelete, author, own } = {}) {
 
 const shareUrl = (token) => location.origin + location.pathname + "#share=" + token;
 
-function shareRow(row) {
-  const box = document.createElement("div");
-  box.className = "share-row";
-  const draw = (msg, kind) => {
+function shareControls(row, status) {
+  const box = document.createElement("span");
+  box.className = "share-controls";
+  const say = (msg, kind) => {
+    status.hidden = !msg;
+    status.textContent = msg || "";
+    status.className = "status entry-status " + (kind || "");
+  };
+  const draw = () => {
     box.replaceChildren();
     const token = state.shares.get(row.id);
-    const btn = (label, fn, cls) => Object.assign(document.createElement("button"), { type: "button", className: cls || "link-button", textContent: label, onclick: fn });
     if (!token) {
-      box.append(btn("Share link", async () => {
-        draw("Making a link…");
+      box.append(iconButton("share", "Share a link to this answer", async (e) => {
+        const b = e.currentTarget;
+        b.disabled = true;
+        say("Making a link…");
         const { data, error } = await db.rpc("sls_share_answer", { p_answer: row.id });
-        if (error) return draw("Couldn't make a link: " + error.message, "err");
+        b.disabled = false;
+        if (error) return say("Couldn't make a link: " + error.message, "err");
         state.shares.set(row.id, data);
         await copyText(shareUrl(data));
-        draw("Link copied. Anyone with it can read this answer.", "ok");
-      }, "link-button share-btn"));
+        draw();
+        say("Link copied. Anyone with it can read this answer.", "ok");
+      }));
     } else {
-      const tag = Object.assign(document.createElement("span"), { className: "share-on", textContent: "Shared by link" });
-      box.append(tag,
-        btn("Copy link", async () => { await copyText(shareUrl(token)); draw("Link copied.", "ok"); }),
-        btn("Stop sharing", async () => {
+      const copy = iconButton("link", "Copy share link", async () => {
+        await copyText(shareUrl(token));
+        flashIcon(copy, "check", "Copied");
+        say("Link copied.", "ok");
+      });
+      box.append(
+        Object.assign(document.createElement("span"), { className: "share-on", textContent: "Shared by link" }),
+        copy,
+        iconButton("link-off", "Stop sharing this answer", async () => {
           if (!confirm("Stop sharing this answer? The link will stop working for everyone.")) return;
           const { error } = await db.rpc("sls_unshare_answer", { p_answer: row.id });
-          if (error) return draw("Couldn't stop sharing: " + error.message, "err");
+          if (error) return say("Couldn't stop sharing: " + error.message, "err");
           state.shares.delete(row.id);
-          draw("Link turned off.", "ok");
+          draw();
+          say("Link turned off.", "ok");
         }));
     }
-    if (msg) box.append(Object.assign(document.createElement("span"), { className: "status " + (kind || ""), textContent: msg }));
   };
   draw();
   return box;
@@ -783,6 +795,8 @@ async function renderSharedAnswer(token) {
   box.append(card);
   if (q) {
     const go = Object.assign(document.createElement("button"), { type: "button", className: "btn", textContent: "Answer this question yourself" });
+    go.classList.add("with-icon");
+    go.prepend(icon("edit"));
     go.onclick = () => { state.topic = null; state.anyLevel = false; openQuestion(q, q.level); };
     box.append(Object.assign(document.createElement("div"), { className: "shared-actions" }));
     box.lastChild.append(go);
@@ -1871,6 +1885,7 @@ async function copyQuestionLink() {
   const url = location.origin + location.pathname + "#q=" + questionNumber(state.question);
   try {
     await navigator.clipboard.writeText(url);
+    flashIcon($("copy-link"), "check", "Copied");
     setStatus("share-status", "Link copied. Anyone with it can open this question.", "ok");
   } catch (_) {
     window.prompt("Copy this link:", url);
@@ -2039,12 +2054,11 @@ function groupCard(g) {
   invite.className = "group-invite";
   invite.append("Invite code: ");
   invite.append(Object.assign(document.createElement("code"), { textContent: g.invite_code }));
-  const copy = Object.assign(document.createElement("button"), { type: "button", className: "link-button", textContent: "Copy invite link" });
-  copy.onclick = async () => {
+  const copy = iconButton("link", "Copy invite link", async () => {
     const url = location.origin + location.pathname + "#join=" + g.invite_code;
-    try { await navigator.clipboard.writeText(url); copy.textContent = "Copied"; setTimeout(() => (copy.textContent = "Copy invite link"), 2000); }
+    try { await navigator.clipboard.writeText(url); flashIcon(copy, "check", "Invite link copied"); }
     catch (_) { window.prompt("Copy this invite link:", url); }
-  };
+  });
   invite.append(" ", copy);
   card.append(invite);
 
@@ -2054,7 +2068,7 @@ function groupCard(g) {
     const li = document.createElement("li");
     li.append((m.user_id === state.user.id ? "You" : (m.display_name || "A group member")) + (m.is_owner ? " (leader)" : ""));
     if (isOwner && !m.is_owner) {
-      const rm = Object.assign(document.createElement("button"), { type: "button", className: "link-button", textContent: "Remove" });
+      const rm = iconButton("user-minus", "Remove " + (m.display_name || "this person"), null, { danger: true });
       rm.onclick = () => groupAction(() => db.from("study_group_members").delete().eq("group_id", g.id).eq("user_id", m.user_id),
         "Remove " + (m.display_name || "this person") + " from the group?");
       li.append(" ", rm);
@@ -2065,24 +2079,27 @@ function groupCard(g) {
 
   const feed = document.createElement("div");
   feed.className = "group-feed";
-  const feedBtn = Object.assign(document.createElement("button"), { type: "button", className: "btn btn-ghost btn-small", textContent: "See shared answers" });
+  const feedBtn = Object.assign(document.createElement("button"), { type: "button", className: "btn btn-ghost btn-small with-icon", textContent: "See shared answers" });
+  feedBtn.prepend(icon("eye"));
   feedBtn.onclick = () => loadGroupFeed(g, feed, feedBtn);
   card.append(feedBtn, feed);
 
   const actions = document.createElement("div");
-  actions.className = "row group-actions";
-  const add = (label, fn, cls) => { const b = Object.assign(document.createElement("button"), { type: "button", className: cls || "link-button", textContent: label }); b.onclick = fn; actions.append(b); };
+  actions.className = "group-actions";
+  const add = (name, label, fn, danger) => actions.append(iconButton(name, label, fn, { danger }));
   if (isOwner) {
-    add("Rename", () => {
+    add("edit", "Rename group", () => {
       const name = (window.prompt("New name for the group:", g.name) || "").trim();
       if (name && name !== g.name) groupAction(() => db.from("study_groups").update({ name }).eq("id", g.id));
     });
-    add("New invite code", () => groupAction(() => db.rpc("sls_new_invite_code", { p_group: g.id }), "Make a new code? The old code and links will stop working."));
-    add("Delete group", () => groupAction(() => db.from("study_groups").delete().eq("id", g.id), "Delete \"" + g.name + "\" for everyone? Members keep their own answers."));
+    add("refresh", "Make a new invite code", () => groupAction(() => db.rpc("sls_new_invite_code", { p_group: g.id }), "Make a new code? The old code and links will stop working."));
+    add("trash", "Delete group", () => groupAction(() => db.from("study_groups").delete().eq("id", g.id), "Delete \"" + g.name + "\" for everyone? Members keep their own answers."), true);
   } else {
-    add("Leave group", () => groupAction(() => db.from("study_group_members").delete().eq("group_id", g.id).eq("user_id", state.user.id), "Leave \"" + g.name + "\"?"));
+    add("log-out", "Leave group", () => groupAction(() => db.from("study_group_members").delete().eq("group_id", g.id).eq("user_id", state.user.id), "Leave \"" + g.name + "\"?"), true);
   }
-  card.append(actions);
+  const top = Object.assign(document.createElement("div"), { className: "group-top" });
+  title.replaceWith(top);
+  top.append(title, actions);
   return card;
 }
 

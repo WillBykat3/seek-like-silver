@@ -91,10 +91,10 @@
     <!-- Question -->
     <section id="view-question" class="view" hidden>
       <div class="question-top">
-        <button class="link-button" data-nav="home">← Back</button>
+        <button class="link-button with-icon" data-nav="home" data-icon="arrow-left">Back</button>
         <span class="question-tools">
-          <button class="link-button" type="button" id="copy-link">Copy link</button>
-          <button class="link-button" type="button" id="print-question">Print for a group</button>
+          <button class="icon-btn" type="button" id="copy-link" data-icon="link" data-tip="Copy link to this question" aria-label="Copy link to this question"></button>
+          <button class="icon-btn" type="button" id="print-question" data-icon="printer" data-tip="Print for a group" aria-label="Print for a group"></button>
           <span class="topic-pill" id="q-topic" hidden></span>
           <label class="level-switch">
             <span class="visually-hidden">Level</span>
@@ -208,7 +208,7 @@
       <div class="answer-card group-answers" id="group-answers" hidden>
         <h3 class="answer-label">From your groups</h3>
         <p class="muted" id="group-answers-note"></p>
-        <button class="btn btn-ghost btn-small" type="button" id="show-group-answers">Show their answers</button>
+        <button class="btn btn-ghost btn-small with-icon" type="button" id="show-group-answers" data-icon="eye">Show their answers</button>
         <div class="answers-list" id="group-answers-list" hidden></div>
       </div>
     </section>
@@ -217,8 +217,8 @@
     <section id="view-answers" class="view" hidden>
       <h1 class="section-title">My answers</h1>
       <div class="export-row" id="answers-export" hidden>
-        <button class="btn btn-ghost btn-small" type="button" data-export="text">Download my answers</button>
-        <button class="link-button" type="button" data-export="json">Download as data (JSON)</button>
+        <button class="btn btn-ghost btn-small with-icon" type="button" data-export="text" data-icon="download">Download my answers</button>
+        <button class="link-button with-icon" type="button" data-export="json" data-icon="download">Download as data (JSON)</button>
       </div>
       <p class="muted" id="answers-empty" hidden>You haven't saved any answers yet. Pick a level and start seeking.</p>
       <p class="muted" id="answers-signed-out" hidden>Sign in to see your saved answers.</p>
@@ -240,14 +240,14 @@
 
     <!-- An answer someone shared by link -->
     <section id="view-shared" class="view" hidden>
-      <button class="link-button" data-nav="home">← Seek Like Silver</button>
+      <button class="link-button with-icon" data-nav="home" data-icon="arrow-left">Seek Like Silver</button>
       <h1 class="section-title">A shared answer</h1>
       <div id="shared-body"></div>
     </section>
 
     <!-- All questions -->
     <section id="view-all" class="view" hidden>
-      <button class="link-button" data-nav="home">← Back</button>
+      <button class="link-button with-icon" data-nav="home" data-icon="arrow-left">Back</button>
       <h1 class="section-title">All questions</h1>
       <p class="library-intro" id="all-intro"></p>
       <div class="all-tools">
@@ -374,8 +374,8 @@
         <h2 class="panel-title">Your answers and account</h2>
         <p class="muted">Download everything you've written, any time.</p>
         <div class="export-row">
-          <button class="btn btn-ghost btn-small" type="button" data-export="text">Download my answers</button>
-          <button class="link-button" type="button" data-export="json">Download as data (JSON)</button>
+          <button class="btn btn-ghost btn-small with-icon" type="button" data-export="text" data-icon="download">Download my answers</button>
+          <button class="link-button with-icon" type="button" data-export="json" data-icon="download">Download as data (JSON)</button>
         </div>
         <h3 class="danger-title">Delete my account</h3>
         <p class="muted">This permanently deletes your account, every answer you've saved, your sign-in connections, and any groups you started. It can't be undone, so download your answers first if you want to keep them.</p>
@@ -384,7 +384,7 @@
         </label>
         <div class="answer-actions">
           <span class="status" id="delete-status" role="status"></span>
-          <button class="btn btn-danger" type="button" id="delete-account" disabled>Delete my account</button>
+          <button class="btn btn-danger with-icon" type="button" id="delete-account" data-icon="trash" disabled>Delete my account</button>
         </div>
       </section>
 
@@ -409,7 +409,7 @@
   <!-- All questions: choose or random -->
   <dialog id="all-dialog" class="dialog level-dialog" aria-labelledby="all-dialog-title">
     <form method="dialog" class="dialog-close-row">
-      <button class="link-button" aria-label="Close">✕</button>
+      <button class="icon-btn" aria-label="Close" data-icon="x"></button>
     </form>
     <h2 id="all-dialog-title">All questions</h2>
     <p class="muted">How would you like to study?</p>
@@ -428,7 +428,7 @@
   <!-- Level picker for topics -->
   <dialog id="level-dialog" class="dialog level-dialog" aria-labelledby="level-dialog-title">
     <form method="dialog" class="dialog-close-row">
-      <button class="link-button" aria-label="Close">✕</button>
+      <button class="icon-btn" aria-label="Close" data-icon="x"></button>
     </form>
     <h2 id="level-dialog-title">Choose your level</h2>
     <p class="muted" id="level-dialog-topic"></p>
@@ -448,7 +448,7 @@
 
   <dialog id="signin-dialog" class="dialog">
     <form method="dialog" class="dialog-close-row">
-      <button class="link-button" aria-label="Close">✕</button>
+      <button class="icon-btn" aria-label="Close" data-icon="x"></button>
     </form>
     <h2>Sign in</h2>
     <p class="muted">Sign in to save your answers and settings.</p>
@@ -481,6 +481,7 @@
   <script src="library.js"></script>
   <script src="glossary.js"></script>
   <script src="richtext.js"></script>
+  <script src="icons.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
