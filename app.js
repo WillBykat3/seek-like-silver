@@ -2549,9 +2549,35 @@ $("all-random").addEventListener("click", () => {
   const q = pickQuestion(null);
   openQuestion(q, q.level);
 });
-// Printing a handout opens every section, then puts them back.
+// "Print for a group": a one-page worksheet with the question and lines to write on
+// (instead of the whole web page). Printing with the browser's own Print still prints the page.
+function printWorksheet() {
+  const q = state.question;
+  if (!q) return;
+  const sheet = $("print-sheet");
+  sheet.replaceChildren();
+  const el = (tag, cls, text) => Object.assign(document.createElement(tag), { className: cls, textContent: text || "" });
+  const top = el("div", "ps-top");
+  top.append(el("span", "ps-site", "Seek Like Silver"), el("span", "ps-meta", "Question #" + questionNumber(q) + " · " + LEVEL_LABELS[q.level]));
+  const verses = (list) => list.map((r) => r.replace(/-/g, "\u2013")).join("; ");
+  const refs = el("p", "ps-refs");
+  refs.append(el("strong", "", "Read: "), verses(q.passage));
+  if (q.inspiration && q.inspiration.length) refs.append(el("span", "ps-sep", "  ·  "), el("strong", "", "Also: "), verses(q.inspiration));
+  const who = el("div", "ps-name");
+  who.append(el("span", "", "Name"), el("span", "ps-blank"), el("span", "", "Date"), el("span", "ps-blank ps-short"));
+  const lines = el("div", "ps-lines");
+  for (let i = 0; i < 40; i++) lines.append(el("div", "ps-line"));
+  const foot = el("p", "ps-foot", location.host + location.pathname.replace(/index\.html$/, "") + "#q=" + questionNumber(q));
+  sheet.append(top, el("h1", "ps-question", q.prompt), refs, who, lines, foot);
+  document.body.classList.add("printing-sheet");
+  window.print();
+}
+window.addEventListener("afterprint", () => document.body.classList.remove("printing-sheet"));
+
+// Printing the page itself opens every section, then puts them back.
 let printOpened = [];
 window.addEventListener("beforeprint", () => {
+  if (document.body.classList.contains("printing-sheet")) return;
   printOpened = [...document.querySelectorAll(".more-block:not([open])")];
   printOpened.forEach((d) => { d.open = true; });
 });
@@ -2564,7 +2590,7 @@ $("q-level").addEventListener("change", (e) => {
   openQuestion(q, q.level);
 });
 $("copy-link").addEventListener("click", copyQuestionLink);
-$("print-question").addEventListener("click", () => window.print());
+$("print-question").addEventListener("click", printWorksheet);
 document.querySelectorAll("[data-export]").forEach((b) => b.addEventListener("click", () => exportAnswers(b.dataset.export)));
 $("delete-confirm").addEventListener("input", () => { $("delete-account").disabled = $("delete-confirm").value.trim() !== "DELETE"; });
 $("delete-account").addEventListener("click", deleteAccount);
