@@ -1119,7 +1119,9 @@ mark.search-hit { background: var(--moderate-tint); color: inherit; border-radiu
     font-family: var(--serif); color: #000;
   }
   .ps-top { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1.5px solid #000; padding-bottom: 4px; }
-  .ps-site { font-family: var(--display); font-size: 12pt; letter-spacing: 0.04em; font-variant: small-caps; }
+  .ps-site { display: inline-flex; align-items: center; gap: 8px; font-family: var(--display); font-size: 13pt; letter-spacing: 0.04em; font-variant: small-caps; }
+  .ps-logo { width: 0.34in; height: 0.34in; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .ps-top { align-items: center !important; }
   .ps-meta { font-family: var(--sans, inherit); font-size: 9.5pt; font-weight: 700; }
   .ps-question { font-family: var(--serif); font-size: 17pt; line-height: 1.3; font-weight: 600; margin: 16px 0 8px; }
   .ps-refs { font-family: var(--sans, inherit); font-size: 9.5pt; margin: 0 0 14px; color: #222; }

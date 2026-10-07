@@ -2558,7 +2558,9 @@ function printWorksheet() {
   sheet.replaceChildren();
   const el = (tag, cls, text) => Object.assign(document.createElement(tag), { className: cls, textContent: text || "" });
   const top = el("div", "ps-top");
-  top.append(el("span", "ps-site", "Seek Like Silver"), el("span", "ps-meta", "Question #" + questionNumber(q) + " · " + LEVEL_LABELS[q.level]));
+  const site = el("span", "ps-site");
+  site.append(Object.assign(document.createElement("img"), { className: "ps-logo", src: "logo.svg", alt: "" }), "Seek Like Silver");
+  top.append(site, el("span", "ps-meta", "Question #" + questionNumber(q) + " · " + LEVEL_LABELS[q.level]));
   const verses = (list) => list.map((r) => r.replace(/-/g, "\u2013")).join("; ");
   const refs = el("p", "ps-refs");
   refs.append(el("strong", "", "Read: "), verses(q.passage));
