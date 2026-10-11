@@ -63,7 +63,7 @@ jobs:
 
       - name: Keep the encrypted file for 90 days
         if: steps.check.outputs.ready == 'yes'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sls-backup-encrypted
           path: sls-backup-*.tar.gz.gpg
