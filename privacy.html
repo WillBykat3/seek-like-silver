@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy · Seek Like Silver</title>
+  <meta name="description" content="What Seek Like Silver stores, who can see it, and how to download or delete it.">
+  <link rel="icon" href="/logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;0,600;1,400&family=Alegreya+Sans:wght@400;500;700&family=Cormorant+Unicase:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="doc-page">
+  <header class="site-header">
+    <a href="./" class="brand">
+      <img class="brand-logo" src="logo.svg" alt="" width="34" height="34">
+      <span>Seek Like Silver</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a class="btn btn-small" href="./">Back to the site</a>
+    </nav>
+  </header>
+
+  <main class="doc">
+    <h1 class="section-title">Privacy</h1>
+    <p class="doc-updated">Last updated October 10, 2026</p>
+
+    <p class="doc-lead">Seek Like Silver is a free Bible-study site. It has no ads, sells nothing, and doesn't use analytics or tracking cookies. This page explains exactly what it keeps and who can see it.</p>
+
+    <h2>You can use it without an account</h2>
+    <p>Reading questions, verses, the library and the glossary doesn't require signing in, and nothing about you is saved. An account is only needed to save answers, join groups, share an answer by link, or suggest a question.</p>
+
+    <h2>What's stored when you have an account</h2>
+    <ul>
+      <li><strong>Sign-in details.</strong> Your email address and how you sign in (an emailed code or Google). If you use Google, Google shares your email and basic profile details (such as your name and profile-picture link), and the sign-in service stores them with your account. Your password is never seen or stored here; there isn't one.</li>
+      <li><strong>Settings.</strong> Your display name (if you add one), tradition, Bible translation and study level.</li>
+      <li><strong>Your answers,</strong> including edits and their dates.</li>
+      <li><strong>Groups</strong> you create or join: the group's name, its members, its invite code, and the leader's "question for this week".</li>
+      <li><strong>Share links</strong> you create for an answer.</li>
+      <li><strong>Question suggestions</strong> you send.</li>
+    </ul>
+    <p>The sign-in and database service also keeps ordinary technical logs, such as sign-in times and IP addresses, for security.</p>
+
+    <h2>Who can see what</h2>
+    <ul>
+      <li><strong>Your answers are private by default.</strong> Only you can see them.</li>
+      <li><strong>Groups.</strong> If you tick "Share this answer with my groups" when saving, people in your groups can read that answer, with your display name. Group members see each other's display names, never email addresses.</li>
+      <li><strong>Share links.</strong> If you make a share link, anyone who has the link can read that one answer, its question and your display name. "Stop sharing" turns the link off for everyone, and deleting the answer does too.</li>
+      <li><strong>Suggestions</strong> are seen only by the site owner, with your display name (not your email).</li>
+      <li><strong>The site owner</strong> sees overall counts on a private stats page (for example, how many accounts and answers there are), never anyone's email or answers. As the administrator, the owner also has technical access to the database in order to run and repair the site.</li>
+    </ul>
+
+    <h2>Services the site relies on</h2>
+    <ul>
+      <li><strong>Supabase</strong> runs sign-in and the database where accounts, answers and groups are kept. Sign-in codes are sent to your email through an email delivery service, which only receives your address and the code.</li>
+      <li><strong>GitHub</strong> hosts the website itself, and keeps the encrypted backups described below.</li>
+      <li><strong>Google</strong> provides "Continue with Google" and the site's fonts. Pages load Google's sign-in script and fonts, so Google receives ordinary web requests (like your IP address and browser) when you visit.</li>
+      <li><strong>jsDelivr</strong> delivers the code library the site uses to talk to Supabase.</li>
+      <li><strong>YouVersion.</strong> Verse text and the Verse of the Day come from YouVersion through the site's own server, which asks only for the passage and translation; nothing about you is sent. Verse links open on bible.com, where YouVersion's own privacy policy applies.</li>
+    </ul>
+    <p>Each of these services has its own privacy policy. None of them receive your answers.</p>
+
+    <h2>Stored in your browser</h2>
+    <p>Your browser keeps your sign-in session, your study level, the size you set for the answer box, and (until you close the tab) an unsaved draft answer and where you were on the page. This is ordinary site storage on your device, used only to make the site work; it isn't used to track you.</p>
+
+    <h2>Backups</h2>
+    <p>Once a week the database is backed up so answers aren't lost if something goes wrong. Backups are encrypted with a passphrase only the site owner has, and each one is deleted automatically after 90 days.</p>
+
+    <h2>Download or delete your data</h2>
+    <ul>
+      <li><strong>Download:</strong> My answers → "Download my answers" (a readable file) or "Download as data (JSON)".</li>
+      <li><strong>Delete:</strong> Settings → "Delete my account". This permanently removes your account, every answer, your share links, your suggestions, your group memberships and any groups you lead. Copies inside the encrypted backups disappear as those backups expire (within 90 days).</li>
+    </ul>
+
+    <h2>Children</h2>
+    <p>Seek Like Silver isn't meant for children under 13, and they shouldn't create an account.</p>
+
+    <h2>Changes and questions</h2>
+    <p>If this page changes, the date at the top will change too. Questions about privacy can be sent through <strong>Suggest a question</strong> at the bottom of any page.</p>
+  </main>
+
+  <footer class="site-footer">
+    <p>Seek Like Silver is written from the perspective of historic Christianity as summarized in the Nicene Creed.</p>
+    <p class="footer-links"><a href="./">Home</a></p>
+  </footer>
+</body>
+</html>

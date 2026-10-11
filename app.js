@@ -470,6 +470,7 @@ function showView(name, opts = {}) {
   if (name === "settings") renderSettings();
   if (name === "library") { renderLibrary(); renderGlossaryList(); }
   if (name === "groups") renderGroups();
+  if (name === "home") renderHomeWeekly();
   if (name === "stats") renderStats();
   if (name === "all") renderAllQuestions();
   hideTerm();
@@ -523,6 +524,7 @@ function openQuestion(q, level, opts = {}) {
   }
 
   renderFathers(q);
+  renderQuestionWeekly(q);
   renderTradition();
   const n = (k) => (k === 1 ? "1 book" : k + " books");
   $("q-readings-count").textContent = n(q.readings.length);
@@ -648,16 +650,44 @@ function renderTradition() {
   }
 }
 
+// Search on My answers: every word must appear (any case) in the question or in the answer.
+let answersQuery = "";
+function textHasWords(text, words) {
+  const hay = " " + text.toLowerCase().replace(/\s+/g, " ") + " ";
+  return words.every((w) => /^\d+$/.test(w) ? new RegExp("(^|\\D)" + w + "(\\D|$)").test(hay) : hay.includes(w));
+}
+
 function renderAnswers() {
   const list = $("answers-list");
   list.replaceChildren();
   $("answers-signed-out").hidden = !!state.user;
   $("answers-empty").hidden = !state.user || state.answers.size > 0;
   $("answers-export").hidden = !state.user || state.answers.size === 0;
+  $("answers-tools").hidden = !state.user || state.answers.size < 2;
+  $("answers-count").textContent = "";
   if (!state.user) return;
 
+  const query = answersQuery.trim();
+  const words = query.toLowerCase().replace(/#/g, " ").split(/\s+/).filter(Boolean);
+  if ($("answers-search").value !== answersQuery) $("answers-search").value = answersQuery;
   const latest = (rows) => rows.reduce((m, r) => (r.updated_at > m ? r.updated_at : m), "");
-  const groups = [...state.answers.entries()].sort((x, y) => latest(y[1]).localeCompare(latest(x[1])));
+  let groups = [...state.answers.entries()].sort((x, y) => latest(y[1]).localeCompare(latest(x[1])));
+  if (words.length) {
+    let shown = 0;
+    groups = groups.map(([qid, rows]) => {
+      const q = QUESTION_INDEX.get(qid);
+      const qText = q ? "#" + questionNumber(q) + " " + q.prompt + " " + q.passage.join(" ") + " " + LEVEL_LABELS[q.level] : "";
+      // Whole question matches → keep all its answers; otherwise keep only answers that match.
+      const keep = textHasWords(qText, words) ? rows : rows.filter((r) => textHasWords(qText + " " + answerPlainText(r.answer), words));
+      shown += keep.length;
+      return [qid, keep];
+    }).filter(([, rows]) => rows.length);
+    $("answers-count").textContent = shown ? (shown === 1 ? "1 answer matches" : shown + " answers match") : "";
+    if (!shown) {
+      list.append(Object.assign(document.createElement("p"), { className: "muted", textContent: "None of your answers match “" + query + "”. Try fewer or different words." }));
+      return;
+    }
+  }
   for (const [qid, rows] of groups) {
     const q = QUESTION_INDEX.get(qid);
     const level = q ? q.level : rows[0].level;
@@ -669,7 +699,7 @@ function renderAnswers() {
     meta.textContent = LEVEL_LABELS[level] + (q ? " · #" + questionNumber(q) : "") + " · " + (rows.length === 1 ? "1 answer" : rows.length + " answers");
 
     const title = document.createElement("h3");
-    title.textContent = q ? q.prompt : "(This question is no longer in the bank)";
+    if (q) appendHighlighted(title, q.prompt, query); else title.textContent = "(This question is no longer in the bank)";
     card.append(meta, title);
 
     for (const row of rows) card.append(answerEntry(row, { onDelete: () => deleteAnswer(row), own: true }));
@@ -937,6 +967,7 @@ async function loadUserData() {
     state.groups = [];
     state.names = new Map();
     state.profile = { denomination: "general", translation: DEFAULT_TRANSLATION, display_name: "" };
+    renderHomeWeekly();
     return;
   }
 
@@ -956,6 +987,7 @@ async function loadUserData() {
     state.answers.get(r.question_id).push(r);
   }
   await Promise.all([loadGroups(), loadShares()]);
+  renderHomeWeekly();
 }
 
 const ANSWER_COLUMNS = "id, question_id, level, answer, created_at, updated_at, shared";
@@ -2007,7 +2039,10 @@ async function loadGroups() {
   state.groups = [];
   state.names = new Map();
   if (!state.user || !state.features.groups) return;
-  const { data, error } = await db.from("study_groups").select("id, name, owner_id, invite_code, created_at").order("created_at");
+  const BASE = "id, name, owner_id, invite_code, created_at";
+  let { data, error } = await db.from("study_groups").select(BASE + ", weekly_question, weekly_due, weekly_note, weekly_set_at").order("created_at");
+  state.features.weekly = !error;
+  if (error && /weekly_/.test(error.message || "")) ({ data, error } = await db.from("study_groups").select(BASE).order("created_at"));
   if (error) {
     if (/study_groups|schema cache|does not exist/i.test(error.message || "")) state.features.groups = false;
     else console.error("Groups load failed:", error);
@@ -2075,6 +2110,8 @@ function groupCard(g) {
   const title = Object.assign(document.createElement("h2"), { className: "panel-title", textContent: g.name });
   card.append(title);
 
+  if (state.features.weekly) card.append(groupWeeklySection(g, isOwner));
+
   const invite = document.createElement("p");
   invite.className = "group-invite";
   invite.append("Invite code: ");
@@ -2128,6 +2165,249 @@ function groupCard(g) {
   return card;
 }
 
+// ─────────────────────────── Suggest a question ───────────────────────────
+// Signed-in people can send a question idea; only the site owner sees them, on the Stats page. (Update 011.)
+
+function openSuggest() {
+  const signedIn = !!state.user;
+  $("suggest-signed-out").hidden = signedIn;
+  $("suggest-form").hidden = !signedIn;
+  setStatus("suggest-status", "");
+  $("suggest-dialog").showModal();
+  if (signedIn) $("suggest-text").focus();
+}
+
+async function sendSuggestion(e) {
+  e.preventDefault();
+  const text = $("suggest-text").value.trim();
+  if (text.length < 10) return setStatus("suggest-status", "Please write at least a short sentence.", "err");
+  $("suggest-send").disabled = true;
+  setStatus("suggest-status", "Sending…");
+  const { error } = await db.rpc("sls_suggest_question", { p_suggestion: text, p_level: $("suggest-level").value || null, p_note: $("suggest-note").value.trim() || null });
+  $("suggest-send").disabled = false;
+  if (error) {
+    const m = error.message || "";
+    return setStatus("suggest-status",
+      /too_many/.test(m) ? "Thanks! You've sent 5 today, which is the daily limit. Please try again tomorrow."
+      : /sls_suggest_question|schema cache|does not exist/i.test(m) ? "Suggestions aren't switched on yet. Please try again later."
+      : "Couldn't send: " + m, "err");
+  }
+  $("suggest-text").value = "";
+  $("suggest-note").value = "";
+  $("suggest-level").value = "";
+  setStatus("suggest-status", "Thank you! Your suggestion was sent.", "ok");
+}
+
+async function renderSuggestionsAdmin() {
+  const list = $("suggest-list");
+  list.replaceChildren();
+  setStatus("suggest-admin-status", "Loading…");
+  const { data, error } = await db.rpc("sls_suggestions");
+  if (error) {
+    return setStatus("suggest-admin-status", /sls_suggestions|schema cache|does not exist/i.test(error.message || "")
+      ? "Suggestions aren't switched on yet. (Run supabase-migrations/011-group-question-suggestions.sql.)"
+      : "Couldn't load suggestions: " + error.message, "err");
+  }
+  const fresh = data.filter((r) => r.status === "new").length;
+  setStatus("suggest-admin-status", data.length ? fresh + " new · " + data.length + " total" : "No suggestions yet.");
+  for (const r of data) {
+    const li = document.createElement("li");
+    li.className = "suggest-item status-" + r.status;
+    const head = document.createElement("div");
+    head.className = "suggest-head";
+    head.append(Object.assign(document.createElement("span"), { className: "suggest-meta",
+      textContent: ((r.display_name || "").trim() || "Someone") + " · " + formatDate(r.created_at) + (r.level ? " · " + LEVEL_LABELS[r.level] : "") }));
+    if (r.status !== "new") head.append(Object.assign(document.createElement("span"), { className: "suggest-badge", textContent: r.status === "used" ? "Used" : "Dismissed" }));
+    const tools = Object.assign(document.createElement("span"), { className: "entry-actions" });
+    const act = (status, confirmText) => async () => {
+      if (confirmText && !confirm(confirmText)) return;
+      const { error: e2 } = await db.rpc("sls_suggestion_status", { p_id: r.id, p_status: status });
+      if (e2) return setStatus("suggest-admin-status", "Couldn't update: " + e2.message, "err");
+      renderSuggestionsAdmin();
+    };
+    if (r.status === "new") {
+      tools.append(iconButton("check", "Mark as used", act("used")), iconButton("x", "Dismiss", act("dismissed")));
+    } else {
+      tools.append(iconButton("refresh", "Mark as new again", act("new")));
+    }
+    tools.append(iconButton("trash", "Delete suggestion", act("delete", "Delete this suggestion for good?"), { danger: true }));
+    head.append(tools);
+    li.append(head, Object.assign(document.createElement("p"), { className: "suggest-text", textContent: r.suggestion }));
+    if (r.note) li.append(Object.assign(document.createElement("p"), { className: "suggest-note", textContent: r.note }));
+    list.append(li);
+  }
+}
+
+// ─────────────────────────── Group question of the week ───────────────────────────
+// The group leader picks one question (with an optional due date and note); everyone in
+// the group sees it on the Groups page, on the home page, and on that question. (Update 011.)
+
+const isoDay = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+
+function dueInfo(day) {
+  if (!day) return null;
+  const [y, m, d] = day.slice(0, 10).split("-").map(Number);
+  const due = new Date(y, m - 1, d);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const days = Math.round((due - today) / 86400000);
+  const label = due.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  if (days < 0) return { text: "Was due " + label, cls: "late" };
+  if (days === 0) return { text: "Due today", cls: "soon" };
+  if (days === 1) return { text: "Due tomorrow", cls: "soon" };
+  return { text: "Due " + label, cls: "" };
+}
+
+function weeklyFor(q) {
+  return (state.features.weekly ? state.groups : []).filter((g) => q && g.weekly_question === q.id);
+}
+
+function weeklyCard(g, { showGroup }) {
+  const q = QUESTION_INDEX.get(g.weekly_question);
+  const card = document.createElement("div");
+  card.className = "weekly-card level-" + q.level;
+  card.append(Object.assign(document.createElement("p"), { className: "weekly-label", textContent: (showGroup ? g.name + " · " : "") + "Question for this week" }));
+  const open = document.createElement("button");
+  open.type = "button";
+  open.className = "weekly-question";
+  open.append(Object.assign(document.createElement("span"), { className: "weekly-num", textContent: "#" + questionNumber(q) }),
+              Object.assign(document.createElement("span"), { className: "weekly-prompt", textContent: q.prompt }));
+  open.onclick = () => { state.topic = null; state.anyLevel = false; openQuestion(q, q.level); };
+  card.append(open);
+  const meta = document.createElement("p");
+  meta.className = "weekly-meta";
+  meta.append(Object.assign(document.createElement("span"), { className: "weekly-level", textContent: LEVEL_LABELS[q.level] }));
+  const due = dueInfo(g.weekly_due);
+  if (due) meta.append(Object.assign(document.createElement("span"), { className: "weekly-due " + due.cls, textContent: due.text }));
+  const done = state.answers.has(q.id);
+  const mark = Object.assign(document.createElement("span"), { className: "weekly-done" + (done ? " yes" : ""), textContent: done ? "You've answered" : "Not answered yet" });
+  if (done) mark.prepend(icon("check"));
+  meta.append(mark);
+  card.append(meta);
+  if (g.weekly_note) {
+    const note = Object.assign(document.createElement("p"), { className: "weekly-note" });
+    note.append(Object.assign(document.createElement("strong"), { textContent: "From the leader: " }), g.weekly_note);
+    card.append(note);
+  }
+  return card;
+}
+
+function groupWeeklySection(g, isOwner) {
+  const box = document.createElement("div");
+  box.className = "group-weekly";
+  const has = g.weekly_question && QUESTION_INDEX.get(g.weekly_question);
+  if (has) {
+    const card = weeklyCard(g, { showGroup: false });
+    if (isOwner) {
+      const tools = Object.assign(document.createElement("span"), { className: "weekly-tools" });
+      tools.append(iconButton("swap", "Change this week's question", () => openWeeklyDialog(g)),
+        iconButton("x", "Clear this week's question", () => groupAction(
+          () => db.rpc("sls_set_group_question", { p_group: g.id, p_question: null, p_due: null, p_note: null }),
+          "Clear this week's question for \"" + g.name + "\"?"), { danger: true }));
+      card.append(tools);
+    }
+    box.append(card);
+  } else if (isOwner) {
+    const pick = Object.assign(document.createElement("button"), { type: "button", className: "btn btn-ghost btn-small with-icon", textContent: "Pick a question for this week" });
+    pick.prepend(icon("edit"));
+    pick.onclick = () => openWeeklyDialog(g);
+    box.append(pick);
+  } else {
+    return document.createDocumentFragment();
+  }
+  return box;
+}
+
+function renderHomeWeekly() {
+  const box = $("home-weekly");
+  if (!box) return;
+  box.replaceChildren();
+  const items = state.user && state.features.weekly ? state.groups.filter((g) => g.weekly_question && QUESTION_INDEX.get(g.weekly_question)) : [];
+  box.hidden = !items.length;
+  for (const g of items) box.append(weeklyCard(g, { showGroup: true }));
+}
+
+function renderQuestionWeekly(q) {
+  const el = $("q-weekly");
+  const groups = weeklyFor(q);
+  el.hidden = !groups.length;
+  if (!groups.length) return;
+  const due = dueInfo(groups[0].weekly_due);
+  el.textContent = (groups.length === 1 ? groups[0].name + "'s" : "Your groups'") + " question for this week" + (due ? " · " + due.text : "");
+}
+
+let weeklyPick = { group: null, q: null };
+function openWeeklyDialog(g) {
+  weeklyPick = { group: g, q: g.weekly_question ? QUESTION_INDEX.get(g.weekly_question) || null : null };
+  $("weekly-group-name").textContent = "For " + g.name;
+  $("weekly-search").value = "";
+  const inAWeek = new Date(); inAWeek.setDate(inAWeek.getDate() + 7);
+  $("weekly-due").min = isoDay(new Date());
+  $("weekly-due").value = g.weekly_question && g.weekly_due ? g.weekly_due.slice(0, 10) : isoDay(inAWeek);
+  $("weekly-note").value = g.weekly_note || "";
+  setStatus("weekly-status", "");
+  renderWeeklyResults();
+  renderWeeklyPicked();
+  $("weekly-dialog").showModal();
+  $("weekly-search").focus();
+}
+
+function renderWeeklyResults() {
+  const list = $("weekly-results");
+  list.replaceChildren();
+  const query = $("weekly-search").value.trim();
+  const all = [...QUESTION_INDEX.values()];
+  let matches = all.filter((q) => questionMatches(q, query, "phrase"));
+  if (!matches.length) matches = all.filter((q) => questionMatches(q, query, "words"));
+  if (!query) {
+    list.append(Object.assign(document.createElement("li"), { className: "muted weekly-hint", textContent: "Type a question number (like " + questionNumber(all[0]) + ") or a few words." }));
+    return;
+  }
+  if (!matches.length) {
+    list.append(Object.assign(document.createElement("li"), { className: "muted weekly-hint", textContent: "No questions match." }));
+    return;
+  }
+  for (const q of matches.slice(0, 20)) {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "weekly-option level-" + q.level + (weeklyPick.q === q ? " picked" : "");
+    b.setAttribute("aria-pressed", String(weeklyPick.q === q));
+    const num = Object.assign(document.createElement("span"), { className: "weekly-num" });
+    appendHighlighted(num, "#" + questionNumber(q), query);
+    const text = Object.assign(document.createElement("span"), { className: "weekly-option-text" });
+    appendHighlighted(text, q.prompt, query);
+    b.append(num, text);
+    b.onclick = () => { weeklyPick.q = q; renderWeeklyResults(); renderWeeklyPicked(); };
+    li.append(b);
+    list.append(li);
+  }
+  if (matches.length > 20) list.append(Object.assign(document.createElement("li"), { className: "muted weekly-hint", textContent: (matches.length - 20) + " more. Add words to narrow it down." }));
+}
+
+function renderWeeklyPicked() {
+  const q = weeklyPick.q;
+  const el = $("weekly-picked");
+  el.hidden = !q;
+  $("weekly-save").disabled = !q;
+  if (q) el.textContent = "Chosen: #" + questionNumber(q) + " · " + LEVEL_LABELS[q.level] + " · " + q.prompt;
+}
+
+async function saveWeekly(e) {
+  e.preventDefault();
+  const { group, q } = weeklyPick;
+  if (!group || !q) return;
+  setStatus("weekly-status", "Saving…");
+  const { error } = await db.rpc("sls_set_group_question", {
+    p_group: group.id, p_question: q.id, p_due: $("weekly-due").value || null, p_note: $("weekly-note").value.trim() || null,
+  });
+  if (error) return setStatus("weekly-status", /bad_date/.test(error.message) ? "Pick a due date within the next year." : groupError(error), "err");
+  $("weekly-dialog").close();
+  await loadGroups();
+  renderGroups();
+  renderHomeWeekly();
+  setStatus("groups-status", "This week's question is set. Everyone in \"" + group.name + "\" will see it.", "ok");
+}
+
 async function loadGroupFeed(g, feed, btn) {
   btn.disabled = true;
   const ids = g.members.map((m) => m.user_id);
@@ -2158,6 +2438,7 @@ async function groupAction(run, confirmText) {
   await loadGroups();
   setStatus("groups-status", "Done.", "ok");
   renderGroups();
+  renderHomeWeekly();
 }
 
 async function createGroup(e) {
@@ -2270,6 +2551,7 @@ async function renderStats() {
     ["Sign-in methods", null, "Google " + fmt(s.with_google) + " · Email " + fmt(s.with_email) + " · YouVersion " + fmt(s.with_youversion)],
     ["Authenticator on", s.with_authenticator, s.users ? Math.round(100 * s.with_authenticator / s.users) + "% of accounts" : ""]
   ];
+  renderSuggestionsAdmin();
   const wrap = $("stat-tiles");
   wrap.replaceChildren();
   for (const [label, value, sub] of tiles) {
@@ -2593,6 +2875,12 @@ $("q-level").addEventListener("change", (e) => {
 });
 $("copy-link").addEventListener("click", copyQuestionLink);
 $("print-question").addEventListener("click", printWorksheet);
+$("weekly-search").addEventListener("input", renderWeeklyResults);
+$("answers-search").addEventListener("input", (e) => { answersQuery = e.target.value; renderAnswers(); });
+document.querySelectorAll("[data-suggest]").forEach((b) => b.addEventListener("click", openSuggest));
+$("suggest-form").addEventListener("submit", sendSuggestion);
+$("suggest-signin").addEventListener("click", () => { $("suggest-dialog").close(); openSignIn(); });
+$("weekly-form").addEventListener("submit", saveWeekly);
 document.querySelectorAll("[data-export]").forEach((b) => b.addEventListener("click", () => exportAnswers(b.dataset.export)));
 $("delete-confirm").addEventListener("input", () => { $("delete-account").disabled = $("delete-confirm").value.trim() !== "DELETE"; });
 $("delete-account").addEventListener("click", deleteAccount);
@@ -2601,6 +2889,24 @@ $("join-group-form").addEventListener("submit", joinGroup);
 window.addEventListener("popstate", handleRoute);
 setUpTopics();
 $("auth-button").addEventListener("click", () => (state.user ? signOut() : openSignIn()));
+
+// Phone menu: the page links fold into a menu button on narrow screens.
+function setMenu(open) {
+  document.querySelector(".site-header").classList.toggle("menu-open", open);
+  const t = $("nav-toggle");
+  t.setAttribute("aria-expanded", String(open));
+  t.setAttribute("aria-label", open ? "Close menu" : "Menu");
+  t.querySelector("svg.icon").replaceWith(icon(open ? "x" : "menu"));
+}
+$("nav-toggle").addEventListener("click", () => setMenu(!document.querySelector(".site-header").classList.contains("menu-open")));
+$("nav-links").addEventListener("click", (e) => { if (e.target.closest(".nav-link")) setMenu(false); });
+$("auth-button").addEventListener("click", () => setMenu(false));
+// (composedPath, because the menu icon is swapped during the click and is then detached.)
+document.addEventListener("click", (e) => { if (!e.composedPath().some((el) => el.classList && el.classList.contains("site-header"))) setMenu(false); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && document.querySelector(".site-header.menu-open")) { setMenu(false); $("nav-toggle").focus(); }
+});
+window.addEventListener("popstate", () => setMenu(false));
 $("signin-google").addEventListener("click", signInWithGoogle);
 $("signin-youversion").addEventListener("click", () => startYouVersion("signin"));
 if (yvReturn) finishYouVersion(yvReturn);
@@ -2653,3 +2959,31 @@ if (db) db.auth.onAuthStateChange((_event, session) => {
     await refreshAfterSignIn();
   }, 0);
 });
+
+// "Install the app" in Settings: a one-tap button where the browser offers it (Chrome, Edge,
+// Android), instructions everywhere else (iPhone/iPad use Safari's Share → Add to Home Screen).
+let installPrompt = null;
+function renderInstall() {
+  const installed = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  $("install-installed").hidden = !installed;
+  $("install-offer").hidden = installed;
+  $("install-button").hidden = !installPrompt;
+  $("install-ios").hidden = !!installPrompt || !ios;
+  $("install-other").hidden = !!installPrompt || ios;
+}
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installPrompt = e; renderInstall(); });
+window.addEventListener("appinstalled", () => { installPrompt = null; renderInstall(); });
+$("install-button").addEventListener("click", async () => {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  await installPrompt.userChoice.catch(() => null);
+  installPrompt = null;
+  renderInstall();
+});
+renderInstall();
+
+// Installable app + offline studying (see sw.js). Only on the real site or localhost.
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch((e) => console.warn("Offline support unavailable:", e)); });
+}

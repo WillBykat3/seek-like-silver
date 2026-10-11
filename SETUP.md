@@ -97,6 +97,7 @@ Google's menus get renamed from time to time; if a label doesn't match, look for
 - `supabase-migrations/004-merge-accounts.sql`: lets the merge-accounts function find which account owns a Google login.
 - `supabase-migrations/009-remove-authenticator-signin.sql`: removes the short-lived authenticator sign-in (008). Then delete the `authenticator` Edge Function in Supabase.
 - `supabase-migrations/010-share-answers.sql`: lets you share one answer by link (#share=…). Anyone with the link sees that answer, its question and your display name; "Stop sharing" turns the link off. Until it is run, the Share link buttons stay hidden.
+- `supabase-migrations/011-group-question-suggestions.sql`: group leaders can set a "question for this week" (with an optional due date and note); signed-in people can "Suggest a question" (max 5 a day), which only you see, under Stats; and a tiny `sls_ping` function the keep-awake job calls. Until it is run, those features stay hidden or say they aren't switched on yet.
 - `supabase-migrations/007-study-level.sql`: remembers each person's study level from Settings on their account (until it's run, the level is kept on that device only).
 - `supabase-migrations/006-site-stats.sql`: the owner-only Stats page. After running it, add yourself as admin with the one-line insert shown at the top of that file (using your own sign-in email).
 - `supabase-migrations/005-answers-groups.sql`: more than one answer per question, sharing answers with groups, and private study groups. Until it's run, the site keeps one answer per question and Groups says it isn't switched on.
@@ -112,3 +113,27 @@ Name each function correctly **before** its first deploy: the address is fixed a
 Editing a function's file on GitHub does **not** update it in Supabase. Paste the new code and deploy again.
 
 **Account linking:** Authentication → Sign In / Providers → turn on **Allow manual linking** (needed for "Connect Google" in Settings).
+
+
+## Keep-awake and backups (GitHub Actions)
+
+**Keep-awake** (`.github/workflows/keep-awake.yml`) runs every 2 days and makes one tiny public request so the free Supabase project doesn't pause after a week of no visitors. Nothing to set up. To test it: GitHub → **Actions** → **Keep Supabase awake** → **Run workflow**.
+Note: GitHub turns off scheduled jobs in a repository that has had no commits for 60 days. It emails you first; re-enable it from the Actions tab with one click.
+
+**Weekly backup** (`.github/workflows/backup.yml`) saves the database every Sunday, **encrypted**, and keeps each backup for 90 days. The repository is public and anyone signed in to GitHub can download a workflow's files, which is why the backup is never stored unencrypted. Setup, once:
+
+1. **Choose a backup passphrase** (at least 16 characters, e.g. four or five random words). Store it in your password manager. Without it the backups can't be opened, and nobody can recover it for you.
+2. **Get the database connection string:** Supabase → your project → **Connect** (top of the page) → **Session pooler** → copy the URI. Replace `[YOUR-PASSWORD]` with your database password (Supabase → Project Settings → Database → reset it there if you don't know it). Use the *Session pooler* one: GitHub's machines can't reach the "Direct connection" address.
+3. **Add two repository secrets:** GitHub → the repository → **Settings → Secrets and variables → Actions → New repository secret**:
+   - `SUPABASE_DB_URL` = the connection string from step 2
+   - `BACKUP_PASSPHRASE` = the passphrase from step 1
+   (Secrets are encrypted by GitHub and never shown in logs or on the site. Never put them in any file in this repository.)
+4. **Test it:** Actions → **Weekly backup** → **Run workflow**. When it finishes (green check), the run page lists a file **sls-backup-encrypted**.
+
+**To restore** (only if something goes wrong): download the file from a run, unzip it, then on a computer with GnuPG and PostgreSQL 17 tools:
+```
+gpg -d sls-backup-YYYY-MM-DD.tar.gz.gpg > backup.tar.gz     # asks for the passphrase
+tar xzf backup.tar.gz                                        # gives public.dump and auth-accounts.dump
+pg_restore --list public.dump                                # look inside without changing anything
+```
+Restoring into the live database overwrites data, so ask for help (or try it on a new, empty Supabase project first).
