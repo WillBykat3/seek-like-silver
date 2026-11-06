@@ -1252,3 +1252,72 @@ mark.search-hit { background: var(--moderate-tint); color: inherit; border-radiu
 a.btn { text-decoration: none; display: inline-block; }
 .footer-links a { text-decoration: none; }
 .footer-links a:hover { text-decoration: underline; }
+
+/* ───────── Welcome (first visit, and #welcome) ───────── */
+.welcome-hero { text-align: center; padding: 18px 0 8px; }
+.welcome-logo { width: 72px; height: 72px; display: block; margin: 0 auto 10px; }
+.welcome-title {
+  font-family: var(--display);
+  font-size: clamp(2.4rem, 9vw, 3.4rem);
+  font-weight: 700;
+  line-height: 1.05;
+  margin: 0;
+}
+.welcome-tagline { font-size: 1.2rem; color: var(--muted); margin: 10px auto 0; max-width: 26em; }
+.welcome-verse { margin: 28px auto 0; max-width: 32em; padding: 0; }
+.welcome-verse p {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.4rem;
+  line-height: 1.45;
+  margin: 0;
+}
+.welcome-verse footer, .welcome-card figcaption { color: var(--muted); font-size: 0.95rem; margin-top: 10px; }
+.welcome-verse a, .welcome-card a { color: inherit; text-decoration-color: var(--silver); text-underline-offset: 3px; }
+.welcome-verse a:hover, .welcome-card a:hover { color: var(--ink); text-decoration-color: currentColor; }
+.welcome-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 30px; }
+.welcome-btn { min-width: 12em; padding: 12px 22px; font-size: 1.05rem; }
+.welcome-small { color: var(--muted); font-size: 0.95rem; margin: 14px auto 0; max-width: 30em; }
+
+.welcome-about p { font-family: var(--serif); font-size: 1.12rem; line-height: 1.6; margin: 0; }
+.welcome-steps { list-style: none; counter-reset: step; padding: 0; margin: 22px 0 0; display: grid; gap: 12px; }
+@media (min-width: 700px) { .welcome-steps { grid-template-columns: repeat(3, 1fr); } }
+.welcome-steps li {
+  counter-increment: step;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--pigment);
+  border-radius: var(--radius);
+  padding: 14px 16px 16px;
+}
+.welcome-steps li:nth-child(1) { --pigment: var(--beginner); }
+.welcome-steps li:nth-child(2) { --pigment: var(--moderate); }
+.welcome-steps li:nth-child(3) { --pigment: var(--philosopher); }
+.welcome-steps li::before {
+  content: counter(step);
+  display: block;
+  font-family: var(--display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.welcome-step-name { display: block; font-weight: 700; font-size: 1.05rem; }
+.welcome-step-desc { display: block; color: var(--muted); margin-top: 4px; }
+
+.welcome-verse-grid { display: grid; gap: 12px; }
+@media (min-width: 700px) { .welcome-verse-grid { grid-template-columns: repeat(3, 1fr); } }
+.welcome-card {
+  margin: 0;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--silver);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.welcome-card blockquote { margin: 0; font-family: var(--serif); font-size: 1.08rem; line-height: 1.5; }
+.welcome-end { text-align: center; margin-top: 34px; }

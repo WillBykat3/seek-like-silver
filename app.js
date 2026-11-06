@@ -451,7 +451,7 @@ async function renderVerseOfTheDay(run) {
 // ─────────────────────────── Page addresses (back button, reload) ───────────────────────────
 // Each page has its own address: Study is the plain address, others are #answers, #groups,
 // #library, #settings, #all, #stats, and #q=652 for a question.
-const ROUTED_VIEWS = ["answers", "groups", "library", "settings", "stats", "all"];
+const ROUTED_VIEWS = ["answers", "groups", "library", "settings", "stats", "all", "welcome"];
 function setRoute(hash) {
   const url = location.pathname + location.search + hash;
   if (url !== location.pathname + location.search + location.hash) history.pushState(null, "", url);
@@ -459,7 +459,8 @@ function setRoute(hash) {
 
 function showView(name, opts = {}) {
   if (!opts.fromHistory && name !== "question") setRoute(name === "home" ? "" : "#" + name);
-  for (const v of ["home", "question", "answers", "groups", "library", "settings", "stats", "all", "shared"]) {
+  if (name === "home") markWelcomed();
+  for (const v of ["welcome", "home", "question", "answers", "groups", "library", "settings", "stats", "all", "shared"]) {
     $("view-" + v).hidden = v !== name;
   }
   document.querySelectorAll(".nav-link").forEach((b) => {
@@ -1098,7 +1099,13 @@ function redirectUrl() {
   return window.location.origin + window.location.pathname;
 }
 
-function openSignIn() {
+function openSignIn(opts = {}) {
+  // "Create an account" and "Sign in" are the same step: a new email or Google account
+  // gets an account the first time it's used. Only the wording changes.
+  $("signin-title").textContent = opts.create ? "Create your account" : "Sign in";
+  $("signin-intro").textContent = opts.create
+    ? "It's free. Use Google or your email. If you already have an account, this signs you in."
+    : "Sign in to save your answers and settings.";
   // Keep anything typed so far; signing in reloads the question view.
   if (state.question && !$("view-question").hidden && !answerEditor.isEmpty()) {
     stashDraft(answerEditor.getValue());
@@ -2478,6 +2485,33 @@ function takePendingJoin() {
 
 // ─────────────────────────── Links into the site (#q=b17, #join=CODE) ───────────────────────────
 
+// ─────────────────────────── Welcome page ───────────────────────────
+// New visitors land on a short welcome page instead of the level picker. Once they've
+// gone on to the main page (or if they're signed in) the plain address goes straight
+// to the level picker. Links to a question, a shared answer or a group skip it.
+const WELCOMED_KEY = "sls-welcomed";
+function markWelcomed() {
+  try { localStorage.setItem(WELCOMED_KEY, "1"); } catch (_) { /* ignore */ }
+}
+function showWelcomeFirst() {
+  if (state.user) return false;
+  try {
+    if (localStorage.getItem(WELCOMED_KEY)) return false;
+    // Signed in on this device: Supabase keeps the session as sb-<project>-auth-token.
+    // Checked here because the sign-in state isn't known yet on the first load.
+    for (let i = 0; i < localStorage.length; i++) {
+      if (/^sb-.+-auth-token$/.test(localStorage.key(i) || "")) return false;
+    }
+  } catch (_) { /* storage blocked: still show the welcome page */ }
+  return true;
+}
+$("welcome-count").textContent = QUESTION_INDEX.size;
+const leaveWelcome = () => { state.question = null; showView("home"); };
+$("welcome-start").addEventListener("click", leaveWelcome);
+document.querySelectorAll("[data-welcome-start]").forEach((b) => b.addEventListener("click", leaveWelcome));
+$("welcome-create").addEventListener("click", () => { leaveWelcome(); openSignIn({ create: true }); });
+$("welcome-signin").addEventListener("click", () => { leaveWelcome(); openSignIn(); });
+
 // Show whatever page the address points to (on load, reload, and back/forward).
 function handleRoute() {
   const h = location.hash;
@@ -2497,6 +2531,8 @@ function handleRoute() {
     if (!state.user) openSignIn();
   } else if (ROUTED_VIEWS.includes(h.slice(1))) {
     showView(h.slice(1), go);
+  } else if (showWelcomeFirst()) {
+    showView("welcome", go);
   } else {
     showView("home", go);
   }
@@ -2931,6 +2967,7 @@ async function refreshAfterSignIn() {
   if (!$("view-answers").hidden) renderAnswers();
   if (!$("view-settings").hidden) renderSettings();
   if (!$("view-groups").hidden) renderGroups();
+  if (state.user && !$("view-welcome").hidden && !location.hash) showView("home", { fromHistory: true }); // signed in from the welcome page
   if (state.user) restoreDraft();
   if (!refreshedOnce) { refreshedOnce = true; handleRoute(); restoreScroll(); }
   renderHomeVerses();

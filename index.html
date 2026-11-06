@@ -47,6 +47,65 @@
   </header>
 
   <main>
+    <!-- Welcome: the first page a new visitor sees (also at #welcome) -->
+    <section id="view-welcome" class="view welcome" hidden>
+      <div class="welcome-hero">
+        <img class="welcome-logo" src="logo.svg" alt="" width="72" height="72">
+        <h1 class="welcome-title">Seek Like Silver</h1>
+        <p class="welcome-tagline">A free place to study the Christian faith, one question at a time.</p>
+        <blockquote class="welcome-verse">
+          <p>“If thou seekest her as silver, and searchest for her as for hid treasures; then shalt thou understand the fear of the LORD, and find the knowledge of God.”</p>
+          <footer><a href="https://www.bible.com/bible/1/PRO.2.4-5.KJV" target="_blank" rel="noopener">Proverbs 2:4–5 (KJV)</a></footer>
+        </blockquote>
+        <div class="welcome-actions">
+          <button class="btn welcome-btn" type="button" id="welcome-start">Get started</button>
+          <button class="btn btn-ghost welcome-btn" type="button" id="welcome-create">Create an account</button>
+        </div>
+        <p class="welcome-small">No account needed to start studying. Create one when you want to save your answers. Already have one? <button type="button" class="link-button inline-link" id="welcome-signin">Sign in</button></p>
+      </div>
+
+      <section class="welcome-about" aria-labelledby="welcome-about-title">
+        <h2 class="section-title" id="welcome-about-title">What is Seek Like Silver?</h2>
+        <p>Seek Like Silver gives you a question about God and the Bible, the Scripture to answer it from, and what the earliest Christian teachers said about it. Then you write your own answer, in your own words. It's written from the perspective of historic Christianity as summarized in the Nicene Creed.</p>
+        <ol class="welcome-steps">
+          <li>
+            <span class="welcome-step-name">Choose your level</span>
+            <span class="welcome-step-desc">Beginner, Moderate or Philosopher, or pick a topic like prayer or salvation. There are <span id="welcome-count">90</span> questions to start with.</span>
+          </li>
+          <li>
+            <span class="welcome-step-name">Read and think</span>
+            <span class="welcome-step-desc">Each question comes with Bible verses, the early church fathers in their own words, and books to read further.</span>
+          </li>
+          <li>
+            <span class="welcome-step-name">Write your answer</span>
+            <span class="welcome-step-desc">Save it to come back to later. Your answers stay private unless you choose to share them.</span>
+          </li>
+        </ol>
+      </section>
+
+      <section class="welcome-verses" aria-labelledby="welcome-verses-title">
+        <h2 class="section-title" id="welcome-verses-title">Search the Scriptures</h2>
+        <div class="welcome-verse-grid">
+          <figure class="welcome-card">
+            <blockquote>“These were more noble than those in Thessalonica, in that they received the word with all readiness of mind, and searched the scriptures daily, whether those things were so.”</blockquote>
+            <figcaption><a href="https://www.bible.com/bible/1/ACT.17.11.KJV" target="_blank" rel="noopener">Acts 17:11 (KJV)</a></figcaption>
+          </figure>
+          <figure class="welcome-card">
+            <blockquote>“Thy word is a lamp unto my feet, and a light unto my path.”</blockquote>
+            <figcaption><a href="https://www.bible.com/bible/1/PSA.119.105.KJV" target="_blank" rel="noopener">Psalm 119:105 (KJV)</a></figcaption>
+          </figure>
+          <figure class="welcome-card">
+            <blockquote>“Study to shew thyself approved unto God, a workman that needeth not to be ashamed, rightly dividing the word of truth.”</blockquote>
+            <figcaption><a href="https://www.bible.com/bible/1/2TI.2.15.KJV" target="_blank" rel="noopener">2 Timothy 2:15 (KJV)</a></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <div class="welcome-end">
+        <button class="btn welcome-btn" type="button" data-welcome-start>Start studying</button>
+      </div>
+    </section>
+
     <!-- Home: pick a level -->
     <section id="view-home" class="view">
       <div class="hero">
@@ -437,6 +496,8 @@
     <p>Seek Like Silver is written from the perspective of historic Christianity as summarized in the Nicene Creed.</p>
     <p>Verse links open in YouVersion (the Bible App).</p>
     <p class="footer-links">
+      <a href="#welcome" data-nav="welcome">About</a>
+      <span aria-hidden="true">·</span>
       <button type="button" class="link-button" data-suggest>Suggest a question</button>
       <span aria-hidden="true">·</span>
       <a href="privacy.html">Privacy</a>
@@ -541,8 +602,8 @@
     <form method="dialog" class="dialog-close-row">
       <button class="icon-btn" aria-label="Close" data-icon="x"></button>
     </form>
-    <h2>Sign in</h2>
-    <p class="muted">Sign in to save your answers and settings.</p>
+    <h2 id="signin-title">Sign in</h2>
+    <p class="muted" id="signin-intro">Sign in to save your answers and settings.</p>
 
     <div id="google-btn" class="google-btn"></div>
     <button class="btn btn-full btn-provider" id="signin-google" hidden>Continue with Google</button>
